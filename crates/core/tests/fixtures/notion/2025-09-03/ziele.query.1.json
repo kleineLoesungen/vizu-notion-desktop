@@ -1,0 +1,401 @@
+{
+  "has_more": false,
+  "next_cursor": null,
+  "object": "list",
+  "page_or_data_source": {},
+  "results": [
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-0000000000a6",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000003",
+        "database_id": "00000000-0000-0000-0000-000000000006",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Beschreibung": {
+          "id": "d%7C%60y",
+          "rich_text": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Ziel Nummer 5",
+              "text": {
+                "content": "Ziel Nummer 5",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "rich_text"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Ohne Projekte",
+              "text": {
+                "content": "Ohne Projekte",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Ohne-Projekte-000000000000000000000000000000a6"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-0000000000a4",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000003",
+        "database_id": "00000000-0000-0000-0000-000000000006",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Beschreibung": {
+          "id": "d%7C%60y",
+          "rich_text": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Ziel Nummer 4",
+              "text": {
+                "content": "Ziel Nummer 4",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "rich_text"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Kosten senken",
+              "text": {
+                "content": "Kosten senken",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Kosten-senken-000000000000000000000000000000a4"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-0000000000a3",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000003",
+        "database_id": "00000000-0000-0000-0000-000000000006",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Beschreibung": {
+          "id": "d%7C%60y",
+          "rich_text": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Ziel Nummer 3",
+              "text": {
+                "content": "Ziel Nummer 3",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "rich_text"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Qualität",
+              "text": {
+                "content": "Qualität",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Qualit-t-000000000000000000000000000000a3"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-0000000000a5",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000003",
+        "database_id": "00000000-0000-0000-0000-000000000006",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Beschreibung": {
+          "id": "d%7C%60y",
+          "rich_text": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Ziel Nummer 2",
+              "text": {
+                "content": "Ziel Nummer 2",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "rich_text"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Reichweite ",
+              "text": {
+                "content": "Reichweite ",
+                "link": null
+              },
+              "type": "text"
+            },
+            {
+              "annotations": {
+                "bold": true,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "stärken",
+              "text": {
+                "content": "stärken",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Reichweite-st-rken-000000000000000000000000000000a5"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-0000000000a2",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000003",
+        "database_id": "00000000-0000-0000-0000-000000000006",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Beschreibung": {
+          "id": "d%7C%60y",
+          "rich_text": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Ziel Nummer 1",
+              "text": {
+                "content": "Ziel Nummer 1",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "rich_text"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Wachstum",
+              "text": {
+                "content": "Wachstum",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Wachstum-000000000000000000000000000000a2"
+    }
+  ],
+  "type": "page_or_data_source"
+}

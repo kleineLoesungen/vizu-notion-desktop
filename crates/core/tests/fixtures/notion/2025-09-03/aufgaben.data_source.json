@@ -1,0 +1,87 @@
+{
+  "archived": false,
+  "cover": null,
+  "created_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+  },
+  "created_time": "2026-09-15T22:05:00.000Z",
+  "database_parent": {
+    "page_id": "00000000-0000-0000-0000-000000000007",
+    "type": "page_id"
+  },
+  "database_type": null,
+  "description": [],
+  "icon": null,
+  "id": "00000000-0000-0000-0000-000000000001",
+  "in_trash": false,
+  "is_inline": false,
+  "last_edited_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+  },
+  "last_edited_time": "2026-09-15T22:05:00.000Z",
+  "object": "data_source",
+  "parent": {
+    "database_id": "00000000-0000-0000-0000-000000000004",
+    "type": "database_id"
+  },
+  "properties": {
+    "Erledigt": {
+      "checkbox": {},
+      "description": null,
+      "id": "q%3FJ%5D",
+      "name": "Erledigt",
+      "type": "checkbox"
+    },
+    "Name": {
+      "description": null,
+      "id": "title",
+      "name": "Name",
+      "title": {},
+      "type": "title"
+    },
+    "Projekt": {
+      "description": null,
+      "id": "vPbE",
+      "name": "Projekt",
+      "relation": {
+        "data_source_id": "00000000-0000-0000-0000-000000000002",
+        "database_id": "00000000-0000-0000-0000-000000000005",
+        "single_property": {},
+        "type": "single_property"
+      },
+      "type": "relation"
+    },
+    "Punkte": {
+      "description": null,
+      "id": "t%7Dgf",
+      "name": "Punkte",
+      "number": {
+        "format": "number"
+      },
+      "type": "number"
+    }
+  },
+  "public_url": null,
+  "title": [
+    {
+      "annotations": {
+        "bold": false,
+        "code": false,
+        "color": "default",
+        "italic": false,
+        "strikethrough": false,
+        "underline": false
+      },
+      "href": null,
+      "plain_text": "vizu Aufgaben",
+      "text": {
+        "content": "vizu Aufgaben",
+        "link": null
+      },
+      "type": "text"
+    }
+  ],
+  "url": "https://app.notion.com/p/00000000000000000000000000000004"
+}

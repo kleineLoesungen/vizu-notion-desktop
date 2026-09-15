@@ -115,6 +115,7 @@ Beim Lesen aufgefallen. Jede Behebung ändert die Ausgabe gegenüber der Webapp.
 | `title`/`rich_text` nimmt nur das **erste** Textstück (`[0].plain_text`) | Titel mit Formatierung werden abgeschnitten | beheben (alle Stücke verbinden) |
 | Notion-Typen `status`, `people`, `formula`, `rollup`, `unique_id`, `created_time` fehlen in der Mermaid-Pipeline → `""` | Die README nennt `status` als Rolle, in Mermaid-Vorlagen ist sie aber leer | beheben |
 | Relationstyp wird an der **ersten Seite** erkannt | Leere erste Seite → Relation wird nicht aufgelöst | beheben: Schema aus `retrieve database` nehmen |
+| Relationen mit mehr als 25 Verknüpfungen (`has_more`) werden nicht nachgeladen | fehlende Kanten ohne Hinweis | beheben (S3) |
 | Knoten gleichen Textes verschmelzen innerhalb einer Quelle | gewollt (dokumentiert) | übernehmen |
 | Metro/Flow und Mermaid rufen Notion über zwei getrennte Wege ab | doppelte Logik | zusammenführen in `core::rows` |
 
@@ -211,9 +212,23 @@ und `/v1/data_sources/{id}/query` werden angenommen (401 ohne Token).
   genau diese 10 s. **Für Phase 1:** eigener `ureq`-Resolver, der
   IPv4-Adressen zuerst probiert, plus Verbindungs- und Gesamt-Timeout; ein
   Abbruch wird als eigener Fehler („Notion nicht erreichbar") gemeldet.
-* **Noch nicht an echten Daten gesehen:** Blättern über 100 Seiten, 429 mit
-  `Retry-After`, Relationen. Wird in Phase 1 über festgehaltene Antworten
-  getestet; für Relationen braucht es eine zweite Testdatenbank.
+* **Testdatensatz (2026-09-16):** Über eine eigene interne Integration mit
+  Schreibrecht hat ein Skript unter einer Testseite drei verknüpfte
+  Datenbanken angelegt (Ziele 5, Projekte 12, Aufgaben 130). Die Antworten
+  liegen anonymisiert unter `crates/core/tests/fixtures/notion/`. Befunde:
+  * **Blättern** geprüft: 130 Aufgaben kommen in zwei Stapeln, mit beiden
+    API-Versionen gleich.
+  * `status`-, `formula`- und selbstbezügliche `relation`-Spalten lassen sich
+    über die API anlegen und werden gelesen (`status.name` z. B. „Done").
+  * **Relationen tragen `has_more`.** Notion liefert im Seitenobjekt höchstens
+    25 verknüpfte Seiten; darüber hinaus muss
+    `GET /pages/{id}/properties/{property_id}` blättern. Die Webapp ignoriert
+    das und verliert stillschweigend Relationen → **in Phase 1 beheben**.
+  * Seitenadressen lauten `https://app.notion.com/p/…`. Die Webapp baut
+    `https://notion.so/{id}` — die Anwendung übernimmt stattdessen das Feld
+    `url` aus der Antwort.
+  * Ein 429 trat bei 178 Anfragen mit 3/s nicht auf; der Fall wird mit einer
+    nachgebauten Antwort getestet.
 
 **S4 — auf den Beginn von Phase 5 verschoben** (E4: Metro kommt zuletzt, das
 Risiko blockiert Phase 1–4 nicht). Befunde vorab:

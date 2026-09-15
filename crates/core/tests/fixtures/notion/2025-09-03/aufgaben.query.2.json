@@ -1,0 +1,2164 @@
+{
+  "has_more": false,
+  "next_cursor": null,
+  "object": "list",
+  "page_or_data_source": {},
+  "results": [
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-000000000014",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": true,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Doppelt",
+              "text": {
+                "content": "Doppelt",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-00000000001d"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 6,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Doppelt-00000000000000000000000000000014"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-000000000085",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": false,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 029",
+              "text": {
+                "content": "Aufgabe 029",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-00000000001f"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 5,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-029-00000000000000000000000000000085"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-000000000086",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": false,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 028",
+              "text": {
+                "content": "Aufgabe 028",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-000000000021"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 4,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-028-00000000000000000000000000000086"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-000000000087",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": true,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 027",
+              "text": {
+                "content": "Aufgabe 027",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-000000000023"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 3,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-027-00000000000000000000000000000087"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-000000000088",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": false,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 026",
+              "text": {
+                "content": "Aufgabe 026",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 2,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-026-00000000000000000000000000000088"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-000000000089",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": false,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 025",
+              "text": {
+                "content": "Aufgabe 025",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-000000000027"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 1,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-025-00000000000000000000000000000089"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-00000000008a",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": true,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 024",
+              "text": {
+                "content": "Aufgabe 024",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-000000000029"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 0,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-024-0000000000000000000000000000008a"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-00000000008b",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": false,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 023",
+              "text": {
+                "content": "Aufgabe 023",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-00000000002b"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 7,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-023-0000000000000000000000000000008b"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-00000000008c",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": false,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 022",
+              "text": {
+                "content": "Aufgabe 022",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-00000000002d"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 6,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-022-0000000000000000000000000000008c"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-00000000008d",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": true,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 021",
+              "text": {
+                "content": "Aufgabe 021",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-000000000017"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 5,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-021-0000000000000000000000000000008d"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-00000000008e",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": false,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Doppelt",
+              "text": {
+                "content": "Doppelt",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-000000000019"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 4,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Doppelt-0000000000000000000000000000008e"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-00000000008f",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": false,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 019",
+              "text": {
+                "content": "Aufgabe 019",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-00000000001b"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 3,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-019-0000000000000000000000000000008f"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-000000000090",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": true,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 018",
+              "text": {
+                "content": "Aufgabe 018",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-00000000001d"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 2,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-018-00000000000000000000000000000090"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-000000000091",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": false,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 017",
+              "text": {
+                "content": "Aufgabe 017",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-00000000001f"
+            },
+            {
+              "id": "00000000-0000-0000-0000-00000000002d"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 1,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-017-00000000000000000000000000000091"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-000000000092",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": false,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 016",
+              "text": {
+                "content": "Aufgabe 016",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-000000000021"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 0,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-016-00000000000000000000000000000092"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-000000000093",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": true,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 015",
+              "text": {
+                "content": "Aufgabe 015",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-000000000023"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 7,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-015-00000000000000000000000000000093"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-000000000094",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": false,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 014",
+              "text": {
+                "content": "Aufgabe 014",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-000000000025"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 6,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-014-00000000000000000000000000000094"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-000000000095",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": false,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 013",
+              "text": {
+                "content": "Aufgabe 013",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 5,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-013-00000000000000000000000000000095"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-000000000096",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": true,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 012",
+              "text": {
+                "content": "Aufgabe 012",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-000000000029"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 4,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-012-00000000000000000000000000000096"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-000000000097",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": false,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 011",
+              "text": {
+                "content": "Aufgabe 011",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-00000000002b"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 3,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-011-00000000000000000000000000000097"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-000000000098",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": false,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Doppelt",
+              "text": {
+                "content": "Doppelt",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-00000000002d"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 2,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Doppelt-00000000000000000000000000000098"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-000000000099",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": true,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 009",
+              "text": {
+                "content": "Aufgabe 009",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-000000000017"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 1,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-009-00000000000000000000000000000099"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-00000000009a",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": false,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 008",
+              "text": {
+                "content": "Aufgabe 008",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-000000000019"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 0,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-008-0000000000000000000000000000009a"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-00000000009b",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": false,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 007",
+              "text": {
+                "content": "Aufgabe 007",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-00000000001b"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 7,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-007-0000000000000000000000000000009b"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-00000000009c",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": true,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 006",
+              "text": {
+                "content": "Aufgabe 006",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-00000000001d"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 6,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-006-0000000000000000000000000000009c"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-00000000009d",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": false,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 005",
+              "text": {
+                "content": "Aufgabe 005",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-00000000001f"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 5,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-005-0000000000000000000000000000009d"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-00000000009e",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": false,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 004",
+              "text": {
+                "content": "Aufgabe 004",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-000000000021"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 4,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-004-0000000000000000000000000000009e"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-00000000009f",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": true,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 003",
+              "text": {
+                "content": "Aufgabe 003",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-000000000023"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 3,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-003-0000000000000000000000000000009f"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-0000000000a0",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": false,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 002",
+              "text": {
+                "content": "Aufgabe 002",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-000000000025"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 2,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-002-000000000000000000000000000000a0"
+    },
+    {
+      "archived": false,
+      "cover": null,
+      "created_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "created_time": "2026-09-15T22:05:00.000Z",
+      "icon": null,
+      "id": "00000000-0000-0000-0000-0000000000a1",
+      "in_trash": false,
+      "is_archived": false,
+      "is_locked": false,
+      "last_edited_by": {
+        "id": "00000000-0000-0000-0000-000000000008",
+        "object": "user"
+      },
+      "last_edited_time": "2026-09-15T22:05:00.000Z",
+      "object": "page",
+      "parent": {
+        "data_source_id": "00000000-0000-0000-0000-000000000001",
+        "database_id": "00000000-0000-0000-0000-000000000004",
+        "type": "data_source_id"
+      },
+      "properties": {
+        "Erledigt": {
+          "checkbox": false,
+          "id": "q%3FJ%5D",
+          "type": "checkbox"
+        },
+        "Name": {
+          "id": "title",
+          "title": [
+            {
+              "annotations": {
+                "bold": false,
+                "code": false,
+                "color": "default",
+                "italic": false,
+                "strikethrough": false,
+                "underline": false
+              },
+              "href": null,
+              "plain_text": "Aufgabe 001",
+              "text": {
+                "content": "Aufgabe 001",
+                "link": null
+              },
+              "type": "text"
+            }
+          ],
+          "type": "title"
+        },
+        "Projekt": {
+          "has_more": false,
+          "id": "vPbE",
+          "relation": [
+            {
+              "id": "00000000-0000-0000-0000-000000000027"
+            }
+          ],
+          "type": "relation"
+        },
+        "Punkte": {
+          "id": "t%7Dgf",
+          "number": 1,
+          "type": "number"
+        }
+      },
+      "public_url": null,
+      "url": "https://app.notion.com/p/Aufgabe-001-000000000000000000000000000000a1"
+    }
+  ],
+  "type": "page_or_data_source"
+}
