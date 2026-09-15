@@ -1,0 +1,6 @@
+[
+ {"id":"p1","title":"Website","next":"Launch","parent":"Marketing","status":"Aktiv","date":"2026-01-10"},
+ {"id":"p2","title":"Launch","next":"","parent":"Marketing","status":"Geplant","date":"2026-03-01"},
+ {"id":"p3","title":"App","next":"Launch","parent":"Produkt","status":"Aktiv","date":"2026-02-01"},
+ {"id":"p3","title":"App","next":"Website","parent":"Produkt","status":"Aktiv","date":"2026-02-01"}
+]

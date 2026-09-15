@@ -1,0 +1,11 @@
+---
+title: "Join"
+sources:
+  - Ziele
+  - Projekte
+---
+flowchart TD
+{{#each (join-rows Ziele "project" Projekte "title" "proj")}}
+  {{title}} --> {{proj_parent}}
+  %% {{this.proj_status}}
+{{/each}}

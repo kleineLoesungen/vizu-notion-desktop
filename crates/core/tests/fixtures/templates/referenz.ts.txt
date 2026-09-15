@@ -1,0 +1,45 @@
+// Referenz: rendert jede Fixture mit der Original-Logik der Webapp
+// (templates.ts + Nachbearbeitung aus server/routes/api/mermaid/[templateId].get.ts).
+import fs from 'node:fs'
+import path from 'node:path'
+import { loadTemplates, getTemplates, buildClassDefs, resetClassAccumulator, getClassAssignments } from './templates.ts'
+
+const root = process.argv[2]!
+for (const name of fs.readdirSync(root)) {
+  const dir = path.join(root, name)
+  if (!fs.statSync(dir).isDirectory()) continue
+  const sources: Record<string, string> = JSON.parse(fs.readFileSync(path.join(dir, 'sources.json'), 'utf-8'))
+  ;(globalThis as any).__config = { sources: Object.keys(sources).map((n) => ({ name: n, databaseId: n, columnMappings: {} })) }
+  const tmp = fs.mkdtempSync('/tmp/tpl-')
+  fs.copyFileSync(path.join(dir, 'template.mmd'), path.join(tmp, name + '.mmd'))
+  let out: string
+  try {
+    await loadTemplates(tmp)
+    const t = getTemplates()[0]!
+    const context: Record<string, unknown> = {}
+    for (const [src, file] of Object.entries(sources)) context[src] = JSON.parse(fs.readFileSync(path.join(root, file), 'utf-8'))
+    resetClassAccumulator()
+    let diagramString = t.compiled(context)
+    const classDefBlock = buildClassDefs(t.styles)
+    if (classDefBlock) {
+      const lines = diagramString.split('\n')
+      const firstContentIdx = lines.findIndex(l => l.trim().length > 0)
+      lines.splice(firstContentIdx + 1, 0, classDefBlock)
+      diagramString = lines.join('\n')
+    }
+    const classAssignments = getClassAssignments()
+    if (classAssignments.size > 0) {
+      const byClass = new Map<string, string[]>()
+      for (const [nodeId, cls] of classAssignments) {
+        if (!byClass.has(cls)) byClass.set(cls, [])
+        byClass.get(cls)!.push(nodeId)
+      }
+      diagramString = diagramString.trimEnd() + '\n' + Array.from(byClass.entries()).map(([c, ids]) => `class ${ids.join(',')} ${c}`).join('\n')
+    }
+    out = diagramString
+  } catch (e: any) {
+    out = 'FEHLER: ' + e.message
+  }
+  fs.writeFileSync(path.join(dir, 'expected.mmd'), out)
+  console.log(`--- ${name}\n${out}`)
+}

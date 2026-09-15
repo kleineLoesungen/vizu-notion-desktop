@@ -1,0 +1,19 @@
+---
+title: "Gruppen"
+sources:
+  - Projekte
+---
+flowchart TD
+{{#each (group Projekte "parent")}}
+  subgraph {{this.parent}}
+  {{#group-item}}
+    {{title}}
+  {{/group-item}}
+  end
+{{/each}}
+{{#each (group Projekte "status")}}
+  classDef cls-{{nodeId "status" status}} fill:{{palette @index}},color:#fff
+  {{#group-item}}
+  {{title}}:::cls-{{nodeId "status" status}}
+  {{/group-item}}
+{{/each}}

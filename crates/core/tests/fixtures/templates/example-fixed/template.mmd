@@ -1,0 +1,59 @@
+---
+# title: shown as the viz type button label in the UI
+title: "Example Diagram"
+
+# sources: list one or more source names exactly as they appear in sources.json.
+# The template appears on every source page listed here.
+sources:
+  - my-source
+---
+{{!--
+  mermaid.example.mmd — copy this file, rename it (e.g. my-diagram.mmd), and edit.
+  Place it in config/ alongside sources.json, then restart the container.
+  The template title will appear as a viz type button on any source page it references.
+--}}
+flowchart TD
+  %% Use {{fieldName}} to insert a single value from the current row.
+  %% fieldName must match a key in that source's columnMappings (not the raw Notion property name).
+  %%
+  %% Use {{#each sourceName}} ... {{/each}} to iterate over all rows from a source.
+  %% Inside the block, {{this.fieldName}} accesses a field on each row.
+  %% {{this.id}} is always available as a stable unique identifier (no columnMappings entry needed).
+
+  %% Example: static node
+  Start([Start])
+
+  %% Example: iterate over rows, using page ID as unique node handle
+  {{#each my-source}}
+  node_{{this.id}}["{{this.title}}"]
+  {{/each}}
+
+  %% Example: link rows in sequence — skip the first item with #unless @first
+  {{#each my-source}}
+  {{#unless @first}}Start --> node_{{this.id}}["{{this.title}}"]{{/unless}}
+  {{/each}}
+
+  %% Example: group rows by a field value (e.g. group by "product")
+  %% (group sourceName "fieldName") returns [{fieldName: key, items: rows[]}]
+  %% Use {{#group-item}}...{{/group-item}} inside #each to iterate grouped items.
+  {{#each (group my-source "product")}}
+  subgraph {{product}}
+    {{#group-item}}
+    {{title}}
+    {{/group-item}}
+  end
+  {{/each}}
+
+  %% Example: attribute-based node styling with palette
+  %% Each distinct value of "parent" gets a unique color automatically.
+  %% classDef names must be valid Mermaid identifiers — use nodeId to derive a stable name.
+  %% Note: write {{nodeId "parent" parent}} explicitly here (not bare {{parent}}) because
+  %% inside a classDef line the value is used as a CSS class name suffix, not a Mermaid node
+  %% definition. The rewriter would turn bare {{parent}} into nXXXXXX["label"] which is
+  %% invalid as a class name.
+  {{#each (group my-source "parent")}}
+  classDef cls-{{nodeId "parent" parent}} fill:{{palette @index}},stroke:{{palette @index}},color:#fff,rx:5
+  {{#group-item}}
+  {{title}}:::cls-{{nodeId "parent" parent}}
+  {{/group-item}}
+  {{/each}}

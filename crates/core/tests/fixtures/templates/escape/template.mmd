@@ -1,0 +1,10 @@
+---
+title: "Sonderzeichen"
+sources:
+  - Daten
+---
+flowchart TD
+{{#each Daten}}
+  {{title}} --> {{next}}
+  %% roh: {{this.title}} | {{this.next}} | {{{this.next}}}
+{{/each}}

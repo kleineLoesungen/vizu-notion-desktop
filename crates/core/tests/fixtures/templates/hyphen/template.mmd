@@ -1,0 +1,17 @@
+---
+title: "Bindestrich"
+sources:
+  - my-source
+---
+flowchart TD
+{{#each my-source}}
+  {{title}} --> {{next}}
+  node_{{this.id}}["{{this.title}}"]
+{{/each}}
+{{#each (group my-source "parent")}}
+  subgraph {{this.parent}}
+  {{#group-item}}
+  {{title}}
+  {{/group-item}}
+  end
+{{/each}}

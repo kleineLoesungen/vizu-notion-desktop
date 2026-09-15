@@ -1,0 +1,28 @@
+---
+title: Kanten
+sources:
+  - Projekte
+  - Ziele
+styles:
+  Projekte.status:
+    shape: circle
+    stroke: "#333"
+---
+{{!-- Kommentar --}}
+flowchart TD
+  {{#each Projekte}}{{#unless @first}}, {{/unless}}{{this.title}}{{/each}}
+  {{#each Projekte}}
+    {{#if next}}
+    {{title}} --> {{next}}
+    {{else}}
+    {{title}} --> Ende
+    {{/if}}
+    {{status}}
+    {{#each @root.Ziele}}
+      %% {{@../index}}.{{@index}} {{../title}} / {{title}} {{#if @last}}letztes{{/if}}
+    {{/each}}
+  {{/each}}
+  %% {{Projekte.[0].title}} {{fehlt}} {{this.fehlt.tief}}
+{{#each (group Ziele "project")}}
+  %% Gruppe {{@index}}: {{project}} / {{this.project}}
+{{/each}}

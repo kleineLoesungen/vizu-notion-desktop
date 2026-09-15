@@ -1,0 +1,26 @@
+---
+title: "Stile"
+sources:
+  - Projekte
+  - Ziele
+styles:
+  title:
+    shape: rounded
+  Ziele.title:
+    fill: "#4e79a7"
+    stroke: "#2d5a8e"
+  parent:
+    shape: stadium
+    fill: "#f28e2b"
+    stroke-width: 2
+  status:
+    shape: diamond
+---
+flowchart LR
+{{#each Projekte}}
+  {{title}} --> {{parent}}
+  {{title}} -.-> {{status}}
+{{/each}}
+{{#each Ziele}}
+  {{title}} --> {{project}}
+{{/each}}

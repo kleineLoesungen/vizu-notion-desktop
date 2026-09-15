@@ -1,0 +1,46 @@
+flowchart TD
+  %% Use nztntfp[""] to insert a single value from the current row.
+  %% fieldName must match a key in that source's columnMappings (not the raw Notion property name).
+  %%
+  %% Use  to iterate over all rows from a source.
+  %% Inside the block,  accesses a field on each row.
+  %%  is always available as a stable unique identifier (no columnMappings entry needed).
+
+  %% Example: static node
+  Start([Start])
+
+  %% Example: iterate over rows, using page ID as unique node handle
+  node_p1["Website"]
+  node_p2["Launch"]
+  node_p3["App"]
+  node_p3["App"]
+
+  %% Example: link rows in sequence — skip the first item with #unless @first
+  
+  Start --> node_p2["Launch"]
+  Start --> node_p3["App"]
+  Start --> node_p3["App"]
+
+  %% Example: group rows by a field value (e.g. group by "product")
+  %% (group sourceName "fieldName") returns [{fieldName: key, items: rows[]}]
+  %% Use  inside #each to iterate grouped items.
+  subgraph 
+    ndc7alm["Website"]
+    nfhbsli["Launch"]
+    n1023wss["App"]
+    n1023wss["App"]
+  end
+
+  %% Example: attribute-based node styling with palette
+  %% Each distinct value of "parent" gets a unique color automatically.
+  %% classDef names must be valid Mermaid identifiers — use nodeId to derive a stable name.
+  %% Note: write nztntfp[""] explicitly here (not bare nztntfp[""]) because
+  %% inside a classDef line the value is used as a CSS class name suffix, not a Mermaid node
+  %% definition. The rewriter would turn bare nztntfp[""] into nXXXXXX["label"] which is
+  %% invalid as a class name.
+  classDef cls-n3j7po5["Marketing"] fill:#4e79a7,stroke:#4e79a7,color:#fff,rx:5
+  n17bp1vw["Website"]:::cls-n3j7po5["Marketing"]
+  ndoshhk["Launch"]:::cls-n3j7po5["Marketing"]
+  classDef cls-ngof7vd["Produkt"] fill:#f28e2b,stroke:#f28e2b,color:#fff,rx:5
+  ncf2txt["App"]:::cls-ngof7vd["Produkt"]
+  ncf2txt["App"]:::cls-ngof7vd["Produkt"]

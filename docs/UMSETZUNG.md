@@ -65,9 +65,11 @@ Alle in `[workspace.dependencies]`, jede einzeln mit `just check` und `cargo den
 
 | Kiste | Wofür | Anmerkung |
 |---|---|---|
-| `ureq` 3 mit `rustls` | Notion-HTTP | Blockierend, kein tokio in `core`, kein OpenSSL. Läuft im Desktop über `spawn_blocking`. |
-| `handlebars` 6 | Vorlagen | Größtes Kompatibilitätsrisiko, siehe Spike S1 |
-| YAML-Parser fürs Frontmatter | `title`, `sources`, `styles` | `serde_yaml` ist eingestellt. Auswahl im Spike S2. |
+| `ureq` 3.4 (`rustls-no-provider`, `platform-verifier`, `gzip`, `json`) + `rustls` 0.23 (`ring`) | Notion-HTTP | Blockierend, kein tokio in `core`, kein OpenSSL, Systemzertifikate. Läuft im Desktop über `spawn_blocking`. Braucht CDLA-Permissive-2.0 in `deny.toml` (S3). |
+| `handlebars` 6.4 | Vorlagen | bytegleich zur Webapp (S1) |
+| `serde-saphyr` 1.2 | Frontmatter | `serde_yaml` ist eingestellt (S2) |
+| `serde_json` mit `preserve_order` | Reihenfolge der `styles` | sonst weicht `classDef` ab (S1) |
+| `regex` | Umschreiber der Vorlagen | dieselben Muster wie in `templates.ts` |
 | `keyring` *(nur bei E2 = Schlüsselbund)* | Token | Unter Linux Secret Service, was neben WebKitGTK kaum ins Gewicht fällt |
 
 ### 2.2 Datenbank (Migration `0001_init.sql` neu, weil noch unveröffentlicht)
@@ -92,17 +94,17 @@ Die `note`-Tabelle und alles darum entfallen (Phase 1).
 importieren und liefern **bytegleichen Mermaid-Text**. Dafür:
 
 * **Goldene Dateien:** Die Node-Pipeline der Webapp läuft einmalig auf
-  festgehaltenen Notion-Antworten (JSON, anonymisiert) und schreibt den
-  erwarteten `diagramString`. Die Dateien liegen unter
-  `crates/core/tests/fixtures/`, und `core` muss sie genau treffen. Node wird
-  dafür nur ein einziges Mal gebraucht, nicht im Build.
+  festgehaltenen Eingaben und schreibt den erwarteten `diagramString`. Die
+  Dateien liegen unter `crates/core/tests/fixtures/`, und `core` muss sie
+  genau treffen. Node wird dafür nur ein einziges Mal gebraucht, nicht im
+  Build. Für die Vorlagen-Engine sind sie seit Spike S1 vorhanden; für
+  `core::rows` (Notion-Antworten → Zeilen) kommen sie in Phase 2 dazu.
 * **Knotenkennung genau nachbauen:** FNV-1a über **UTF-16-Codeeinheiten**
   (`charCodeAt`), nicht über UTF-8-Bytes, sonst weichen Kennungen bei
   Emoji ab. Ausgabe: `n` + base36, auf 6 Stellen aufgefüllt. Scope
   `quelle\0gruppe`.
-* **HTML-Escaping:** Handlebars.js maskiert `& < > " ' \` =`, handlebars-rust
-  nicht genau dieselben Zeichen. Die Maskierungsfunktion wird deshalb
-  angeglichen.
+* **HTML-Escaping:** Handlebars.js maskiert ``& < > " ' ` =``. In Rust wird
+  genau diese Maskierung als eigene `escape_fn` gesetzt.
 
 ### 3.1 Eigenheiten der Webapp — übernehmen oder beheben? **(E6)**
 
@@ -116,12 +118,26 @@ Beim Lesen aufgefallen. Jede Behebung ändert die Ausgabe gegenüber der Webapp.
 | Knoten gleichen Textes verschmelzen innerhalb einer Quelle | gewollt (dokumentiert) | übernehmen |
 | Metro/Flow und Mermaid rufen Notion über zwei getrennte Wege ab | doppelte Logik | zusammenführen in `core::rows` |
 
+In Spike S1 kamen weitere Befunde dazu. Sie betreffen die **Vorlagen-Engine**
+selbst; eine Änderung dort verschiebt Knotenkennungen in bestehenden
+Diagrammen. Deshalb: Engine bleibt bytegleich, behoben wird in Beispiel und Doku.
+
+| Befund | Folge | Behandlung |
+|---|---|---|
+| `config/mermaid.example` beginnt mit `{{!-- … --}}` **vor** dem Frontmatter | Die mitgelieferte Vorlage wird mit „title fehlt" abgelehnt | eigenes Beispiel mit Kommentar hinter dem Frontmatter |
+| Handlebars in `%%`-Kommentarzeilen wird ausgewertet | `%% Use {{fieldName}} …` erzeugt Knotentext im Kommentar, `{{#each …}}` im Kommentar öffnet echte Blöcke | in Beispiel und Doku `\{{…}}` schreiben |
+| `classDef cls-{{nodeId "parent" parent}}` (so im Beispiel empfohlen) | ergibt `classDef cls-nXXXX["Wert"]` — ungültiges Mermaid | Beispiel und Doku korrigieren; ggf. eigener Helfer `classId` (nur Kennung) |
+| Quellnamen mit Bindestrich (`my-source`) erkennt der Umschreiber nicht als Quelle | Knotenkennungen ohne Quellbezug; `Quelle.feld`-Stile greifen nicht | dokumentieren; beim Anlegen einer Quelle warnen |
+| Innerhalb von `group-item` fließt der Gruppenschlüssel in die Kennung ein | Dieselbe Seite bekommt in und außerhalb einer Gruppe verschiedene Knoten | dokumentieren |
+| `{{this.feld}}` wird HTML-maskiert (`&amp;`, `&quot;`) | Entitäten stehen im Mermaid-Text | dokumentieren, `{{{this.feld}}}` als Ausweg nennen |
+
 ### 3.2 Notion-API-Version
 
 Die Webapp nutzt `@notionhq/client` 2.3 (API `2022-06-28`). Mit `2025-09-03`
-hat Notion **Datenquellen** eingeführt (`/v1/data_sources/{id}/query`). Im
-Spike S3 prüfen, welche Version für mehrquellige Datenbanken nötig ist. Die
-Version steht als Konstante an **einer** Stelle in `core::notion`.
+hat Notion **Datenquellen** eingeführt (`/v1/data_sources/{id}/query`).
+Geplant ist `2025-09-03`: Der Endpunkt ist erreichbar (S3). Die Datenbank-ID aus
+`sources.json` wird beim Abruf über `retrieve database` in ihre Datenquelle(n)
+aufgelöst. Die Version steht als Konstante an **einer** Stelle in `core::notion`.
 
 ---
 
@@ -140,6 +156,57 @@ Jede Phase endet mit grünem `just check` und einem Commit. Tests in `core` komm
 
 Fällt S1 durch, ist die Alternative eine eigene, kleine Handlebars-Teilmenge in
 `core`. Das kostet mehr Aufwand, das Format der Vorlagen bleibt aber gleich.
+
+#### Ergebnisse (2026-09-15)
+
+**S1 — bestanden.** Ein Nachbau von `templates.ts` mit `handlebars` 6.4.4
+(MIT) trifft die Node-Referenz in **10 von 11 Fällen bytegleich**; im elften
+lehnen beide die Vorlage ab. Geprüft: alle Helfer, Bindestriche in Helfer- und
+Quellnamen, `@root`, `../`, `@../index`, `@first`/`@last`, `else`, Kommentare,
+Leerzeilenbehandlung um Blöcke, Windows-Zeilenenden, Umlaute und Emoji im
+Hash. Die Fälle liegen als goldene Dateien unter
+`crates/core/tests/fixtures/templates/` (siehe README dort).
+
+Was beim Nachbau zu beachten ist:
+
+* Die Maskierung muss als eigene `escape_fn` wie Handlebars.js arbeiten
+  (`&amp; &lt; &gt; &quot; &#x27; &#x60; &#x3D;`).
+* `serde_json` braucht das Merkmal `preserve_order` — sonst stehen die
+  `classDef`-Zeilen alphabetisch statt in der Reihenfolge der `styles`.
+* `group-item` legt einen eigenen `BlockContext` an; `_groupKey` wird über
+  `RenderContext::evaluate` gelesen.
+* **Nicht unterstützt:** `{{liste.length}}`. handlebars-rust bricht mit Fehler
+  ab, Handlebars.js liefert die Länge. Kommt in keiner dokumentierten Vorlage
+  vor; der Fehler wird mit verständlicher Meldung durchgereicht.
+
+**S2 — bestanden.** `serde-saphyr` 1.2 (MIT/Apache, reines Rust, YAML 1.2
+wie js-yaml) liest das Frontmatter einschließlich `Quelle.feld`-Schlüsseln.
+Frontmatter wird wie bei gray-matter nur am Dateianfang erkannt.
+
+**S3 — Transport bestanden, Datenabruf offen.** `ureq` 3.4 mit
+`rustls-no-provider` + `platform-verifier` + `rustls` (ring) spricht TLS mit
+`api.notion.com`; die Systemzertifikate werden benutzt (wichtig hinter
+Firmen-Proxys mit eigener Zertifizierungsstelle). `Notion-Version: 2025-09-03`
+und `/v1/data_sources/{id}/query` werden angenommen (401 ohne Token).
+
+* `cargo deny` meldet `webpki-root-certs` mit **CDLA-Permissive-2.0** (die
+  Mozilla-Zertifikatsliste, eine freizügige Datenlizenz ohne Weitergabepflichten
+  für den Code). Sie kommt über `rustls-platform-verifier` herein und ist mit
+  rustls nicht vermeidbar → in Phase 1 mit Begründung in `deny.toml` erlaubt.
+* **Offen, braucht Token und Testdatenbank:** Datenbank → Datenquelle
+  auflösen, Blättern, 429 mit `Retry-After`, Eigenschaftstypen. Wird zu
+  Beginn von Phase 1 nachgeholt.
+
+**S4 — auf den Beginn von Phase 5 verschoben** (E4: Metro kommt zuletzt, das
+Risiko blockiert Phase 1–4 nicht). Befunde vorab:
+
+* Metroviz erwartet `d3` und `i18next` als globale Objekte (die Webapp setzt
+  beides vor dem Import) und benutzt `innerHTML` — zulässig in `ui/src/lib/`,
+  nicht in Komponenten.
+* `metroviz.css` enthält 145 Farbangaben. Der Farbwächter prüft `.css` → die
+  Farben wandern als Variablen nach `theme.css`. `.js` prüft er nicht; die 36
+  Farben dort (Linienpalette) sollen trotzdem aus `core` kommen, weil `core`
+  die Linien ohnehin baut.
 
 ### Phase 1 — Fundament: Quellen, Token, Abruf
 

@@ -1,0 +1,28 @@
+flowchart TD
+classDef cls_Projekte_status stroke:#333
+  Website, Launch, App, App
+    n1njlt2w["Website"] --> n132tkh0["Launch"]
+    nez8alm(("Aktiv"))
+      %% 0.0 Website / n1938rn1["Wachstum"] 
+      %% 0.1 Website / n1rk78ua["Reichweite"] 
+      %% 0.2 Website / n1mufyeo["Ohne Projekt"] letztes
+    n132tkh0["Launch"] --> Ende
+    n178els8(("Geplant"))
+      %% 1.0 Launch / n1938rn1["Wachstum"] 
+      %% 1.1 Launch / n1rk78ua["Reichweite"] 
+      %% 1.2 Launch / n1mufyeo["Ohne Projekt"] letztes
+    n6r77pq["App"] --> n132tkh0["Launch"]
+    nez8alm(("Aktiv"))
+      %% 2.0 App / n1938rn1["Wachstum"] 
+      %% 2.1 App / n1rk78ua["Reichweite"] 
+      %% 2.2 App / n1mufyeo["Ohne Projekt"] letztes
+    n6r77pq["App"] --> n1njlt2w["Website"]
+    nez8alm(("Aktiv"))
+      %% 3.0 App / n1938rn1["Wachstum"] 
+      %% 3.1 App / n1rk78ua["Reichweite"] 
+      %% 3.2 App / n1mufyeo["Ohne Projekt"] letztes
+  %% Website nztntfp[""] 
+  %% Gruppe 0: ngwebas["Website"] / Website
+  %% Gruppe 1: nt925f4["App"] / App
+  %% Gruppe 2: n1h6quzk[""] /
+class nez8alm,n178els8 cls_Projekte_status

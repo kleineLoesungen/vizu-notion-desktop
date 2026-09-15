@@ -1,0 +1,15 @@
+---
+title: "Lookup"
+sources:
+  - Ziele
+  - Projekte
+---
+flowchart TD
+{{#each Ziele}}
+subgraph {{this.title}}
+{{#each (lookup-by Projekte "title" project)}}
+  {{title}}
+  %% aussen: {{../title}} {{@index}}
+{{/each}}
+end
+{{/each}}

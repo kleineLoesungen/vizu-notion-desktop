@@ -1,0 +1,10 @@
+---
+title: "Basis"
+sources:
+  - Projekte
+---
+flowchart TD
+{{#each Projekte}}
+  {{#if next}}{{title}} --> {{next}}{{/if}}
+  %% {{@index}} {{this.id}} {{#if @first}}erste{{/if}}
+{{/each}}
