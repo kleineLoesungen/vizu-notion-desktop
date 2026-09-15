@@ -183,7 +183,7 @@ Was beim Nachbau zu beachten ist:
 wie js-yaml) liest das Frontmatter einschließlich `Quelle.feld`-Schlüsseln.
 Frontmatter wird wie bei gray-matter nur am Dateianfang erkannt.
 
-**S3 — Transport bestanden, Datenabruf offen.** `ureq` 3.4 mit
+**S3 — bestanden, mit Befund (IPv6).** `ureq` 3.4 mit
 `rustls-no-provider` + `platform-verifier` + `rustls` (ring) spricht TLS mit
 `api.notion.com`; die Systemzertifikate werden benutzt (wichtig hinter
 Firmen-Proxys mit eigener Zertifizierungsstelle). `Notion-Version: 2025-09-03`
@@ -193,9 +193,27 @@ und `/v1/data_sources/{id}/query` werden angenommen (401 ohne Token).
   Mozilla-Zertifikatsliste, eine freizügige Datenlizenz ohne Weitergabepflichten
   für den Code). Sie kommt über `rustls-platform-verifier` herein und ist mit
   rustls nicht vermeidbar → in Phase 1 mit Begründung in `deny.toml` erlaubt.
-* **Offen, braucht Token und Testdatenbank:** Datenbank → Datenquelle
-  auflösen, Blättern, 429 mit `Retry-After`, Eigenschaftstypen. Wird zu
-  Beginn von Phase 1 nachgeholt.
+* **Test gegen eine echte Datenbank** (17 Seiten; `title`, `rich_text`,
+  `multi_select`, `date`, `url`, `files`):
+  * `GET /databases/{id}` liefert mit `2025-09-03` **keine `properties`**
+    mehr, sondern `data_sources: [{id, name}]`. Das Schema kommt aus
+    `GET /data_sources/{id}`, die Seiten aus `POST /data_sources/{id}/query`.
+  * `POST /databases/{id}/query` (Weg der Webapp) antwortet mit
+    `2025-09-03` **400 `invalid_request_url`**; mit `2022-06-28` geht er noch.
+  * Seiten tragen `parent: {type, data_source_id, database_id}`.
+  * `multi_select` ist eine Liste von `{id, name, color}`. **Achtung:** Die
+    Webapp macht daraus *einen* Text `"A, B"` — nur Relationen werden in
+    mehrere Zeilen aufgefächert. Bleibt so (goldene Dateien), wird dokumentiert.
+* **Befund Netzwerk:** Beim ersten Lauf hing der Abruf minutenlang im
+  Verbindungsaufbau über **IPv6** (`SYN_SENT`). ureq wartet ohne
+  `timeout_connect` unbegrenzt an der ersten Adresse und versucht IPv4 nie.
+  Mit 10 s Verbindungs-Timeout lief es durch, die erste Anfrage kostete aber
+  genau diese 10 s. **Für Phase 1:** eigener `ureq`-Resolver, der
+  IPv4-Adressen zuerst probiert, plus Verbindungs- und Gesamt-Timeout; ein
+  Abbruch wird als eigener Fehler („Notion nicht erreichbar") gemeldet.
+* **Noch nicht an echten Daten gesehen:** Blättern über 100 Seiten, 429 mit
+  `Retry-After`, Relationen. Wird in Phase 1 über festgehaltene Antworten
+  getestet; für Relationen braucht es eine zweite Testdatenbank.
 
 **S4 — auf den Beginn von Phase 5 verschoben** (E4: Metro kommt zuletzt, das
 Risiko blockiert Phase 1–4 nicht). Befunde vorab:
