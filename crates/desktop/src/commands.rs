@@ -18,41 +18,55 @@ use serde::Serialize;
 use tauri::State;
 use ts_rs::TS;
 use uuid::Uuid;
-use vizu_notion_core::note::{self, Note, NoteInput, Order};
-use vizu_notion_core::{Config, Paths};
+use vizu_notion_core::fetch::{self, FetchStatus, SourceOverview};
+use vizu_notion_core::secret::{self, TokenStatus};
+use vizu_notion_core::source::{self, Source};
+use vizu_notion_core::{Config, Paths, notion};
 
-use crate::error::ApiResult;
+use crate::error::{ApiError, ApiResult};
 use crate::state::AppState;
 
-// --- Notizen ---------------------------------------------------------------
+// --- Quellen ---------------------------------------------------------------
 
 #[tauri::command]
-pub async fn note_list(state: State<'_, AppState>, order: Order) -> ApiResult<Vec<Note>> {
-    state.with(|app| note::list(app.conn(), order))
+pub async fn source_list(state: State<'_, AppState>) -> ApiResult<Vec<SourceOverview>> {
+    state.with(|app| fetch::overview(app.conn()))
 }
 
 #[tauri::command]
-pub async fn note_get(state: State<'_, AppState>, id: Uuid) -> ApiResult<Note> {
-    state.with(|app| note::get(app.conn(), id))
+pub async fn source_get(state: State<'_, AppState>, id: Uuid) -> ApiResult<Source> {
+    state.with(|app| source::get(app.conn(), id))
 }
 
+/// Ruft eine Quelle von Notion ab und speichert das Ergebnis.
+///
+/// Der Netzabruf dauert Sekunden. Er läuft deshalb in `spawn_blocking` und
+/// **ohne** die Sperre auf die Anwendung — sonst stünde das Fenster still.
+/// Gesperrt wird nur zweimal kurz: Quelle und Token holen, Ergebnis speichern.
 #[tauri::command]
-pub async fn note_create(state: State<'_, AppState>, input: NoteInput) -> ApiResult<Note> {
-    state.with(|app| note::create(app.conn(), input))
+pub async fn source_fetch(state: State<'_, AppState>, id: Uuid) -> ApiResult<FetchStatus> {
+    let (source, token) = state.with(|app| {
+        let source = source::get(app.conn(), id)?;
+        let token = secret::resolve(app.secrets())?;
+        Ok((source, token))
+    })?;
+
+    let download = tauri::async_runtime::spawn_blocking(move || {
+        let client = notion::Client::new(notion::HttpTransport::new(&token));
+        fetch::download(&client, &source)
+    })
+    .await
+    .map_err(|e| ApiError::internal(format!("Abruf abgebrochen: {e}")))??;
+
+    state.with(|app| fetch::store(app.conn(), &download))
 }
 
-#[tauri::command]
-pub async fn note_update(
-    state: State<'_, AppState>,
-    id: Uuid,
-    input: NoteInput,
-) -> ApiResult<Note> {
-    state.with(|app| note::update(app.conn(), id, input))
-}
+// --- Token -----------------------------------------------------------------
 
+/// Ob ein Token da ist und woher — nie der Token selbst.
 #[tauri::command]
-pub async fn note_delete(state: State<'_, AppState>, id: Uuid) -> ApiResult<()> {
-    state.with(|app| note::delete(app.conn(), id))
+pub async fn token_status(state: State<'_, AppState>) -> ApiResult<TokenStatus> {
+    state.with(|app| Ok(secret::status(app.secrets())))
 }
 
 // --- Einstellungen ---------------------------------------------------------

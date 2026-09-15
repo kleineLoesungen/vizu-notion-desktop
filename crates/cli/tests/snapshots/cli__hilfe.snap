@@ -2,12 +2,14 @@
 source: crates/cli/tests/cli.rs
 expression: text
 ---
-Verwaltet Notizen. Dieselbe Fachlogik bedient die Oberfläche `vizu-notion-desktop`.
+Verwaltet Notion-Quellen und ruft ihre Daten ab. Dieselbe Fachlogik und dieselbe Datenbank benutzt die Oberfläche `vizu-notion-desktop`.
 
 Usage: vizu-notion [OPTIONS] <COMMAND>
 
 Commands:
-  note         Notizen verwalten
+  source       Quellen verwalten: welche Notion-Datenbank unter welchem Namen
+  fetch        Daten von Notion abrufen und zwischenspeichern
+  token        Den Notion-Token speichern, prüfen oder löschen
   config       Einstellungen anzeigen und ändern
   paths        Zeigt, wo die Anwendung ihre Dateien ablegt
   completions  Vervollständigung für die Shell ausgeben

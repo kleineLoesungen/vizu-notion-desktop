@@ -12,6 +12,8 @@
 //! | 3 | nicht gefunden |
 //! | 4 | Eingabe ungültig |
 //! | 5 | Kennung nicht eindeutig |
+//! | 6 | Notion nicht erreichbar oder Fehler von Notion |
+//! | 7 | kein Token, oder Notion lehnt ihn ab |
 
 use std::process::ExitCode;
 
@@ -21,13 +23,18 @@ pub const FAILURE: u8 = 1;
 pub const NOT_FOUND: u8 = 3;
 pub const INVALID_INPUT: u8 = 4;
 pub const AMBIGUOUS: u8 = 5;
+pub const NOTION: u8 = 6;
+pub const TOKEN: u8 = 7;
 
 fn exit_code(err: &CoreError) -> u8 {
-    match err {
-        CoreError::NotFound => NOT_FOUND,
-        CoreError::Validation(_) => INVALID_INPUT,
-        CoreError::Ambiguous { .. } => AMBIGUOUS,
-        _ => FAILURE,
+    use vizu_notion_core::ErrorCode as C;
+    match err.code() {
+        C::NotFound => NOT_FOUND,
+        C::ValidationFailed => INVALID_INPUT,
+        C::AmbiguousId => AMBIGUOUS,
+        C::NotionUnreachable | C::NotionError | C::NotionNotShared => NOTION,
+        C::TokenMissing | C::NotionUnauthorized => TOKEN,
+        C::ConfigInvalid | C::InternalError | C::SecretStoreUnavailable => FAILURE,
     }
 }
 

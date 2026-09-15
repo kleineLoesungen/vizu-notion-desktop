@@ -1,0 +1,10 @@
+---
+source: crates/cli/tests/cli.rs
+expression: text
+---
+{
+  "error": {
+    "code": "token_missing",
+    "message": "kein Notion-Token hinterlegt — mit `vizu-notion token set` speichern"
+  }
+}

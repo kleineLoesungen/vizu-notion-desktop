@@ -1,6 +1,6 @@
 # Rezepte
 
-Konkrete Handgriffe mit Code zum Abschauen. `note` ist überall die Vorlage.
+Konkrete Handgriffe mit Code zum Abschauen. `source` ist überall die Vorlage.
 
 ---
 
@@ -74,20 +74,23 @@ Die Konsole des Webviews: in `just dev` Rechtsklick → **Element untersuchen**.
 
 ## Einen IPC-Befehl hinzufügen
 
-Beispiel: Notizen nach einem Wort durchsuchen.
+Beispiel: Quellen nach einem Wort durchsuchen.
 
 ### 1. Die Logik nach `core` — mit Test
 
 ```rust
-// crates/core/src/note.rs
-pub fn search(conn: &Connection, query: &str) -> Result<Vec<Note>> {
+// crates/core/src/source.rs
+pub fn search(conn: &Connection, query: &str) -> Result<Vec<Source>> {
     let pattern = format!("%{}%", query.trim());
     let mut stmt = conn.prepare(
-        "SELECT id, title, body, created_at, updated_at FROM notes \
-         WHERE title LIKE ?1 OR body LIKE ?1 ORDER BY updated_at DESC",
+        "SELECT id, name, database_id, created_at, updated_at FROM sources \
+         WHERE name LIKE ?1 ORDER BY name COLLATE NOCASE",
     )?;
-    let rows = stmt.query_map([pattern], from_row)?;
-    rows.collect::<std::result::Result<Vec<_>, _>>()?.into_iter().collect()
+    let heads = stmt.query_map([pattern], head_from_row)?;
+    heads.collect::<std::result::Result<Vec<_>, _>>()?
+        .into_iter()
+        .map(|head| with_mappings(conn, head?))
+        .collect()
 }
 ```
 
@@ -99,8 +102,8 @@ Kommandozeile.
 ```rust
 // crates/desktop/src/commands.rs
 #[tauri::command]
-pub async fn note_search(state: State<'_, AppState>, query: String) -> ApiResult<Vec<Note>> {
-    state.with(|app| note::search(app.conn(), &query))
+pub async fn source_search(state: State<'_, AppState>, query: String) -> ApiResult<Vec<Source>> {
+    state.with(|app| source::search(app.conn(), &query))
 }
 ```
 
@@ -110,7 +113,7 @@ pub async fn note_search(state: State<'_, AppState>, query: String) -> ApiResult
 // crates/desktop/src/lib.rs
 .invoke_handler(tauri::generate_handler![
     …
-    commands::note_search,
+    commands::source_search,
 ])
 ```
 
@@ -118,9 +121,9 @@ pub async fn note_search(state: State<'_, AppState>, query: String) -> ApiResult
 
 ```ts
 // ui/src/api.ts
-notes: {
+sources: {
   …
-  search: (query: string) => call<Note[]>("note_search", { query }),
+  search: (query: string) => call<Source[]>("source_search", { query }),
 },
 ```
 
@@ -135,7 +138,7 @@ Einen Aufruf in `tests/ipc_contract.rs` ergänzen, der das JSON so schickt wie
 das Webview:
 
 ```rust
-let found = ctx.invoke("note_search", json!({ "query": "Milch" })).unwrap();
+let found = ctx.invoke("source_search", json!({ "query": "Projekt" })).unwrap();
 ```
 
 ---
@@ -145,11 +148,11 @@ let found = ctx.invoke("note_search", json!({ "query": "Milch" })).unwrap();
 Wenn es sich nicht vermeiden lässt:
 
 ```rust
-pub async fn note_move(state: State<'_, AppState>, id: Uuid, target_folder: Uuid) -> …
+pub async fn source_fetch(state: State<'_, AppState>, id: Uuid, force_schema: bool) -> …
 ```
 
 ```ts
-call<Note>("note_move", { id, targetFolder })   // camelCase!
+call<FetchStatus>("source_fetch", { id, forceSchema })   // camelCase!
 ```
 
 Oder in Rust die Übersetzung abschalten — dann gilt snake_case auch im JSON:
@@ -165,7 +168,7 @@ Oder in Rust die Übersetzung abschalten — dann gilt snake_case auch im JSON:
 ```rust
 #[derive(Debug, Clone, Serialize, ts_rs::TS)]
 pub struct Stats {
-    pub notes: i64,
+    pub sources: i64,
     #[ts(type = "string")]                  // OffsetDateTime → RFC-3339-Text
     #[serde(with = "crate::timestamp::serde_rfc3339")]
     pub last_change: OffsetDateTime,
@@ -255,7 +258,7 @@ Beispiel: `task` mit Titel und Erledigt-Kennzeichen.
 
 1. **Migration** `crates/core/migrations/0002_tasks.sql`, `STRICT`, eintragen
    in `crates/core/src/db.rs`.
-2. **Modul** `note.rs` → `task.rs` kopieren, `#[derive(TS)]` an `Task` und
+2. **Modul** `source.rs` → `task.rs` kopieren, `#[derive(TS)]` an `Task` und
    `TaskInput`, `pub mod task;` in `lib.rs`.
 3. **Tests** `crates/core/tests/task.rs` — zuerst.
 4. **CLI** `args.rs` + `commands/task.rs`, beide Ausgabefassungen.
@@ -302,7 +305,7 @@ gebaut wird.
 mockIPC((cmd, args) => { … })            // ersetzt Rust
 render(<App previewDelayMs={0} />);
 await user.click(screen.getByRole("button", { name: "Speichern" }));
-expect(commands("note_create")[0]?.args).toEqual({ input: { … } });
+expect(commands("source_fetch")[0]?.args).toEqual({ id: "a" });
 ```
 
 * Nach **Rolle und Namen** suchen, nicht nach CSS-Klassen.
@@ -316,7 +319,7 @@ expect(commands("note_create")[0]?.args).toEqual({ input: { … } });
 
 ```bash
 just dev-sandbox
-just sandbox note list
+just sandbox source list
 rm -rf .local
 ```
 

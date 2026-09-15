@@ -62,11 +62,13 @@ verstehen.
 ```
 ui/src/api.ts                         crates/desktop/src/commands.rs
 ─────────────                         ──────────────────────────────
-api.notes.update(id, draft)
-  └▶ invoke("note_update",     ──▶    #[tauri::command]
-            { id, input })            async fn note_update(state, id: Uuid, input: NoteInput)
-                                        └▶ state.with(|app| note::update(app.conn(), id, input))
-  ◀── Note                     ◀──    Ok(Note)            → JSON
+api.sources.fetch(id)
+  └▶ invoke("source_fetch",    ──▶    #[tauri::command]
+            { id })                   async fn source_fetch(state, id: Uuid)
+                                        └▶ Quelle + Token holen (kurz gesperrt)
+                                        └▶ fetch::download(…) in spawn_blocking, ohne Sperre
+                                        └▶ fetch::store(app.conn(), &download)
+  ◀── FetchStatus              ◀──    Ok(FetchStatus)     → JSON
   ◀── throw ApiError           ◀──    Err(ApiError)       → abgelehntes Promise
 ```
 
@@ -87,8 +89,8 @@ Vier Riegel halten diese Grenze zusammen:
 
 ### Warum `api.ts` Argumente einwortig hält
 
-Tauri übersetzt Rust-Argumentnamen in camelCase: `note_id` erwartet im JSON
-`noteId`. Das ist dokumentiert, wird aber zuverlässig vergessen — von Menschen
+Tauri übersetzt Rust-Argumentnamen in camelCase: `source_id` erwartete im JSON
+`sourceId`. Das ist dokumentiert, wird aber zuverlässig vergessen — von Menschen
 und von Sprachmodellen. Einwortige Namen (`id`, `input`, `order`) machen die
 Frage gegenstandslos.
 
@@ -143,7 +145,7 @@ Notiz.body ──marked──▶ HTML ──DOMPurify──▶ sicheres HTML ─
 ```
 
 * **Bereinigt wird immer.** Im Webview hätte ein eingeschleustes Skript
-  Zugriff auf jeden IPC-Befehl — also auf `note_delete`.
+  Zugriff auf jeden IPC-Befehl — und damit auf die Daten jeder Quelle.
 * **Mermaid wird nachgeladen.** Vite legt es als eigene Stücke ins Bündel.
   Eine Notiz ohne Diagramm lädt es nie; die Anwendung startet ohne Wartezeit
   und ohne Netz.

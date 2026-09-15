@@ -41,6 +41,18 @@ time = { version = "0.3", features = ["formatting", "parsing", "macros", "local-
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 
+# Notion-HTTP. Blockierend, damit core kein async braucht; die Desktop-Schale
+# ruft es über spawn_blocking. rustls statt OpenSSL, Zertifikate aus dem
+# System (platform-verifier) — wichtig hinter Firmen-Proxys. Den Kryptoanbieter
+# (ring) bringt rustls mit. Begründung und Messungen: docs/UMSETZUNG.md, S3.
+ureq = { version = "3.4.2", default-features = false, features = ["rustls-no-provider", "platform-verifier", "gzip", "json"] }
+rustls = { version = "0.23.45", default-features = false, features = ["ring", "std", "tls12"] }
+# Schlüsselbund des Systems für den Notion-Token: Keychain auf macOS, Secret
+# Service über zbus (reines Rust) auf Linux.
+keyring = "4.2.0"
+# Token von Hand eingeben, ohne dass er im Terminal sichtbar wird.
+rpassword = "7.5.4"
+
 # TypeScript-Typen aus den Rust-Typen. Siehe CLAUDE.md, „Die IPC-Grenze".
 ts-rs = { version = "12.0.1", features = ["uuid-impl", "no-serde-warnings"] }
 

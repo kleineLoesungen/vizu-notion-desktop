@@ -20,11 +20,16 @@ use tauri::ipc::{CallbackFn, InvokeBody};
 use tauri::test::{INVOKE_KEY, MockRuntime, mock_builder, mock_context, noop_assets};
 use tauri::webview::InvokeRequest;
 use tauri::{WebviewWindow, WebviewWindowBuilder};
-use vizu_notion_core::{App, Paths};
+use vizu_notion_core::secret::{MemoryStore, SecretStore};
+use vizu_notion_core::source::{ColumnMapping, SourceInput};
+use vizu_notion_core::{App, Paths, source};
 use vizu_notion_desktop::{AppState, configure};
 
 struct Ctx {
     _dir: tempfile::TempDir,
+    /// Derselbe Speicher, den die Anwendung benutzt — nie der Schlüsselbund
+    /// des Rechners, auf dem die Tests laufen.
+    secrets: std::sync::Arc<MemoryStore>,
     // Die App muss leben, solange das Fenster benutzt wird.
     _app: tauri::App<MockRuntime>,
     window: WebviewWindow<MockRuntime>,
@@ -33,8 +38,39 @@ struct Ctx {
 impl Ctx {
     fn new() -> Self {
         let dir = tempfile::tempdir().unwrap();
-        let core = App::open(Paths::under(dir.path())).unwrap();
-        Self::with_state(dir, AppState::new(core))
+        let secrets = std::sync::Arc::new(MemoryStore::default());
+        let core = App::open_with(Paths::under(dir.path()), Box::new(secrets.clone())).unwrap();
+        Self {
+            secrets,
+            ..Self::with_state(dir, AppState::new(core))
+        }
+    }
+
+    /// Eine Quelle, wie sie sonst die Kommandozeile anlegt.
+    fn source(&self, name: &str) -> uuid::Uuid {
+        let app = App::open_with(
+            Paths::under(self.dir_path()),
+            Box::new(MemoryStore::default()),
+        )
+        .unwrap();
+        source::create(
+            app.conn(),
+            SourceInput::new(
+                name,
+                "396f66270f5d8034b55cebc685aa5e50",
+                vec![ColumnMapping::new("title", "Name")],
+            ),
+        )
+        .unwrap()
+        .id
+    }
+
+    fn set_token(&self, token: &str) {
+        self.secrets.save(token).unwrap();
+    }
+
+    fn dir_path(&self) -> std::path::PathBuf {
+        self._dir.path().to_path_buf()
     }
 
     fn with_state(dir: tempfile::TempDir, state: AppState) -> Self {
@@ -46,6 +82,7 @@ impl Ctx {
             .expect("Fenster der Attrappe");
         Self {
             _dir: dir,
+            secrets: std::sync::Arc::new(MemoryStore::default()),
             _app: app,
             window,
         }
@@ -73,57 +110,58 @@ impl Ctx {
 }
 
 #[test]
-fn legt_an_listet_aendert_und_loescht() {
+fn listet_quellen_mit_ihrem_abrufstand() {
     let ctx = Ctx::new();
+    let source = ctx.source("Projekte");
 
-    let created = ctx
-        .invoke(
-            "note_create",
-            json!({ "input": { "title": "Einkauf", "body": "Milch" } }),
-        )
-        .unwrap();
-    assert_eq!(created["title"], "Einkauf");
-    let id = created["id"].as_str().unwrap().to_string();
+    let list = ctx.invoke("source_list", json!({})).unwrap();
 
-    let list = ctx
-        .invoke("note_list", json!({ "order": "recent" }))
-        .unwrap();
     assert_eq!(list.as_array().unwrap().len(), 1);
+    assert_eq!(list[0]["source"]["name"], "Projekte");
+    assert_eq!(list[0]["source"]["mappings"][0]["role"], "title");
+    assert!(list[0]["fetch"].is_null(), "noch nie abgerufen");
 
-    let updated = ctx
-        .invoke(
-            "note_update",
-            json!({ "id": id, "input": { "title": "Großeinkauf", "body": "" } }),
-        )
+    let single = ctx
+        .invoke("source_get", json!({ "id": source.to_string() }))
         .unwrap();
-    assert_eq!(updated["title"], "Großeinkauf");
-
-    ctx.invoke("note_delete", json!({ "id": id })).unwrap();
-    let list = ctx
-        .invoke("note_list", json!({ "order": "title" }))
-        .unwrap();
-    assert!(list.as_array().unwrap().is_empty());
+    assert_eq!(single["id"], source.to_string());
 }
 
 #[test]
-fn eingabefehler_kommen_mit_feldern_an() {
+fn ein_abruf_ohne_token_nennt_den_grund_statt_es_zu_versuchen() {
+    // Ohne Token darf gar keine Anfrage an Notion gehen — der Fehler kommt
+    // sofort und trägt einen eigenen Code, damit die Oberfläche den Hinweis
+    // auf `token set` zeigen kann.
     let ctx = Ctx::new();
+    let source = ctx.source("Projekte");
+
     let err = ctx
-        .invoke(
-            "note_create",
-            json!({ "input": { "title": "  ", "body": "" } }),
-        )
+        .invoke("source_fetch", json!({ "id": source.to_string() }))
         .unwrap_err();
 
-    assert_eq!(err["code"], "validation_failed");
-    assert_eq!(err["fields"][0]["field"], "title");
+    assert_eq!(err["code"], "token_missing");
+}
+
+#[test]
+fn der_token_selbst_kommt_nie_ins_webview() {
+    let ctx = Ctx::new();
+    ctx.set_token("ntn_1234567890abcdefghijklmnopqrstuv");
+
+    let status = ctx.invoke("token_status", json!({})).unwrap();
+
+    assert_eq!(status["origin"], "store");
+    assert_eq!(status["hint"], "ntn_…stuv");
+    assert!(
+        !status.to_string().contains("1234567890"),
+        "Token sichtbar: {status}"
+    );
 }
 
 #[test]
 fn unbekannte_kennung_ist_not_found() {
     let ctx = Ctx::new();
     let err = ctx
-        .invoke("note_get", json!({ "id": uuid::Uuid::now_v7() }))
+        .invoke("source_get", json!({ "id": uuid::Uuid::now_v7() }))
         .unwrap_err();
     assert_eq!(err["code"], "not_found");
     assert!(err.get("fields").is_none(), "kein Eingabefehler");
@@ -152,25 +190,20 @@ fn ein_fehler_beim_start_erreicht_jeden_befehl() {
     let state = AppState::failed(vizu_notion_desktop::ApiError::internal("kaputt"));
     let ctx = Ctx::with_state(dir, state);
 
-    let err = ctx
-        .invoke("note_list", json!({ "order": "recent" }))
-        .unwrap_err();
+    let err = ctx.invoke("source_list", json!({})).unwrap_err();
     assert_eq!(err["message"], "kaputt");
 }
 
 #[test]
 fn falscher_argumentname_wird_abgelehnt() {
-    // Der häufigste Tauri-Fehler: Rust erwartet `input`, das Webview schickt
-    // etwas anderes. Der Aufruf muss scheitern, nicht still leer anlegen.
+    // Der häufigste Tauri-Fehler: Rust erwartet `id`, das Webview schickt
+    // etwas anderes. Der Aufruf muss scheitern, nicht still nichts tun.
     let ctx = Ctx::new();
     let err = ctx
-        .invoke(
-            "note_create",
-            json!({ "note": { "title": "x", "body": "" } }),
-        )
+        .invoke("source_get", json!({ "sourceId": uuid::Uuid::now_v7() }))
         .unwrap_err();
     assert!(
-        err.to_string().contains("input"),
+        err.to_string().contains("id"),
         "Meldung nennt das fehlende Argument: {err}"
     );
 }

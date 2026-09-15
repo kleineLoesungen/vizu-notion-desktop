@@ -9,15 +9,15 @@
 
 use std::path::PathBuf;
 
-use clap::{Args as ClapArgs, Parser, Subcommand, ValueEnum};
+use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
 #[command(
     name = "vizu-notion",
     version,
-    about = "Beispielanwendung des Vizu Notion-Kits",
-    long_about = "Verwaltet Notizen. Dieselbe Fachlogik bedient die Oberfläche \
-                  `vizu-notion-desktop`.",
+    about = "Notion-Datenbanken als Diagramme",
+    long_about = "Verwaltet Notion-Quellen und ruft ihre Daten ab. Dieselbe Fachlogik \
+                  und dieselbe Datenbank benutzt die Oberfläche `vizu-notion-desktop`.",
     propagate_version = true
 )]
 pub struct Cli {
@@ -56,9 +56,22 @@ pub struct Cli {
 
 #[derive(Debug, Subcommand)]
 pub enum Command {
-    /// Notizen verwalten.
+    /// Quellen verwalten: welche Notion-Datenbank unter welchem Namen.
     #[command(subcommand)]
-    Note(NoteCommand),
+    Source(SourceCommand),
+
+    /// Daten von Notion abrufen und zwischenspeichern.
+    ///
+    /// Ohne Angabe werden alle Quellen abgerufen. Bricht beim ersten Fehler ab.
+    Fetch {
+        /// Name oder Kennung der Quelle.
+        #[arg(value_name = "QUELLE")]
+        sources: Vec<String>,
+    },
+
+    /// Den Notion-Token speichern, prüfen oder löschen.
+    #[command(subcommand)]
+    Token(TokenCommand),
 
     /// Einstellungen anzeigen und ändern.
     #[command(subcommand)]
@@ -83,56 +96,97 @@ pub enum Command {
 }
 
 #[derive(Debug, Subcommand)]
-pub enum NoteCommand {
-    /// Neue Notiz anlegen.
-    Add(NoteFields),
-
-    /// Alle Notizen auflisten.
+pub enum SourceCommand {
+    /// Alle Quellen mit dem Stand ihres letzten Abrufs.
     #[command(alias = "ls")]
-    List {
-        /// Sortierung.
-        #[arg(long, value_enum, default_value_t = Order::Recent)]
-        order: Order,
-    },
+    List,
 
-    /// Eine Notiz vollständig anzeigen.
+    /// Eine Quelle vollständig anzeigen.
     Show {
-        /// Kennung oder ein eindeutiger Anfang davon.
-        id: String,
+        /// Name, Kennung oder ein eindeutiges Ende der Kennung.
+        #[arg(value_name = "QUELLE")]
+        source: String,
     },
 
-    /// Eine Notiz ändern. Nicht angegebene Felder bleiben, wie sie sind.
+    /// Neue Quelle anlegen.
+    ///
+    /// Beispiel: `vizu-notion source add Projekte --database 396f6627… --map title=Name --map next=Nächstes`
+    Add {
+        /// Unter diesem Namen benutzen Vorlagen die Quelle.
+        name: String,
+
+        /// Kennung oder Adresse der Notion-Datenbank.
+        #[arg(long, value_name = "ID")]
+        database: String,
+
+        /// Rolle einer Spalte zuordnen, mehrfach möglich.
+        #[arg(long = "map", value_name = "ROLLE=SPALTE", value_parser = parse_mapping)]
+        mappings: Vec<(String, String)>,
+    },
+
+    /// Eine Quelle ändern. Nicht Angegebenes bleibt, wie es ist.
     Edit {
-        /// Kennung oder ein eindeutiger Anfang davon.
-        id: String,
+        #[arg(value_name = "QUELLE")]
+        source: String,
 
         #[arg(long)]
-        title: Option<String>,
+        name: Option<String>,
 
-        #[arg(long)]
-        body: Option<String>,
+        #[arg(long, value_name = "ID")]
+        database: Option<String>,
+
+        /// Rolle zuordnen oder umhängen, mehrfach möglich.
+        #[arg(long = "map", value_name = "ROLLE=SPALTE", value_parser = parse_mapping)]
+        mappings: Vec<(String, String)>,
+
+        /// Zuordnung einer Rolle entfernen, mehrfach möglich.
+        #[arg(long = "unmap", value_name = "ROLLE")]
+        unmap: Vec<String>,
     },
 
-    /// Eine Notiz löschen.
+    /// Eine Quelle samt zwischengespeicherten Daten löschen.
     #[command(alias = "delete")]
     Rm {
-        /// Kennung oder ein eindeutiger Anfang davon.
-        id: String,
+        #[arg(value_name = "QUELLE")]
+        source: String,
 
         /// Nicht nachfragen.
         #[arg(short = 'y', long)]
         yes: bool,
     },
+
+    /// Quellen aus der `sources.json` der Webapp vizu-notion-local anlegen.
+    ///
+    /// Alle oder keine: Ist ein Eintrag ungültig, wird nichts angelegt.
+    Import {
+        /// Pfad zur Datei, `-` für stdin.
+        #[arg(value_name = "DATEI")]
+        file: PathBuf,
+    },
 }
 
-#[derive(Debug, ClapArgs)]
-pub struct NoteFields {
-    /// Titel der Notiz.
-    pub title: String,
+#[derive(Debug, Subcommand)]
+pub enum TokenCommand {
+    /// Token speichern — im Schlüsselbund des Systems.
+    ///
+    /// Im Terminal wird verdeckt nachgefragt. Ohne Terminal kommt der Token
+    /// von stdin: `pass notion | vizu-notion token set`. Als Argument gibt es
+    /// ihn absichtlich nicht — er stünde sonst in der Shell-Historie.
+    Set,
 
-    /// Text der Notiz. `-` liest von stdin.
-    #[arg(long, default_value = "")]
-    pub body: String,
+    /// Zeigt, ob und woher ein Token kommt — nie den Token selbst.
+    Status,
+
+    /// Gespeicherten Token löschen. `VIZU_NOTION_TOKEN` bleibt unberührt.
+    Clear,
+}
+
+/// `title=Name` → (`title`, `Name`). Nur die Form; ob die Rolle gültig ist,
+/// prüft core.
+fn parse_mapping(raw: &str) -> Result<(String, String), String> {
+    raw.split_once('=')
+        .map(|(role, property)| (role.to_string(), property.to_string()))
+        .ok_or_else(|| format!("„{raw}\u{201c}: erwartet ROLLE=SPALTE, z. B. title=Name"))
 }
 
 #[derive(Debug, Subcommand)]
@@ -147,23 +201,6 @@ pub enum ConfigCommand {
 
     /// Einstellungen auf die Voreinstellung zurücksetzen.
     Reset,
-}
-
-#[derive(Debug, Clone, Copy, ValueEnum)]
-pub enum Order {
-    /// Zuletzt geändert zuerst.
-    Recent,
-    /// Alphabetisch nach Titel.
-    Title,
-}
-
-impl From<Order> for vizu_notion_core::note::Order {
-    fn from(o: Order) -> Self {
-        match o {
-            Order::Recent => vizu_notion_core::note::Order::Recent,
-            Order::Title => vizu_notion_core::note::Order::Title,
-        }
-    }
 }
 
 pub use clap_complete::Shell;

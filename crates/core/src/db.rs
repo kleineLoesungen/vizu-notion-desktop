@@ -71,7 +71,7 @@ mod tests {
     fn frische_datenbank_hat_das_schema() {
         let conn = open_in_memory().unwrap();
         let count: i64 = conn
-            .query_row("SELECT count(*) FROM notes", [], |r| r.get(0))
+            .query_row("SELECT count(*) FROM sources", [], |r| r.get(0))
             .unwrap();
         assert_eq!(count, 0);
     }

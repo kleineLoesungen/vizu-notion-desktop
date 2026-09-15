@@ -12,7 +12,9 @@
 //! **Neuer Typ über IPC?** Unten in `TYPES` eintragen, `#[derive(TS)]` am Typ.
 
 use ts_rs::TS;
-use vizu_notion_core::note::{Note, NoteInput, Order};
+use vizu_notion_core::fetch::{FetchStatus, SourceOverview};
+use vizu_notion_core::secret::{TokenOrigin, TokenStatus};
+use vizu_notion_core::source::{ColumnMapping, Source, SourceInput};
 use vizu_notion_core::{Config, ErrorCode, FieldError, Theme};
 use vizu_notion_desktop::ApiError;
 use vizu_notion_desktop::commands::AppInfo;
@@ -34,13 +36,17 @@ fn generate() -> String {
     let types = [
         decl::<ApiError>(&cfg),
         decl::<AppInfo>(&cfg),
+        decl::<ColumnMapping>(&cfg),
         decl::<Config>(&cfg),
         decl::<ErrorCode>(&cfg),
+        decl::<FetchStatus>(&cfg),
         decl::<FieldError>(&cfg),
-        decl::<Note>(&cfg),
-        decl::<NoteInput>(&cfg),
-        decl::<Order>(&cfg),
+        decl::<Source>(&cfg),
+        decl::<SourceInput>(&cfg),
+        decl::<SourceOverview>(&cfg),
         decl::<Theme>(&cfg),
+        decl::<TokenOrigin>(&cfg),
+        decl::<TokenStatus>(&cfg),
     ];
 
     let mut out = String::from(

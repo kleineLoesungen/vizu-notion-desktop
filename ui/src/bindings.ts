@@ -9,6 +9,16 @@ export type ApiError = { code: ErrorCode, message: string, fields?: Array<FieldE
  */
 export type AppInfo = { version: string, data_dir: string, config_file: string, db_file: string, log_file: string, };
 
+export type ColumnMapping = { 
+/**
+ * Wie die Vorlage das Feld nennt: `title`, `next`, `parent` …
+ */
+role: string, 
+/**
+ * Wie die Spalte in Notion heißt — genau so geschrieben.
+ */
+property: string, };
+
 export type Config = { 
 /**
  * Fenstertitel und Name in der Oberfläche.
@@ -30,31 +40,72 @@ accent: string, };
  * Fehlerhülle der Desktop-Schale. Ein Skript und die Oberfläche können sich
  * darauf verlassen — ein Name wird deshalb nie umbenannt, nur ergänzt.
  */
-export type ErrorCode = "not_found" | "validation_failed" | "ambiguous_id" | "config_invalid" | "internal_error";
+export type ErrorCode = "not_found" | "validation_failed" | "ambiguous_id" | "config_invalid" | "internal_error" | "token_missing" | "notion_unauthorized" | "notion_not_shared" | "notion_unreachable" | "notion_error" | "secret_store_unavailable";
+
+/**
+ * Stand des letzten Abrufs einer Quelle.
+ */
+export type FetchStatus = { source_id: string, database_title: string, database_url: string, page_count: number, request_count: number, fetched_at: string, };
 
 /**
  * Eine Meldung, die zu genau einem Eingabefeld gehört.
  *
- * `field` ist englisch und entspricht dem Feldnamen im Modell (`title`,
- * `body`). `message` ist deutsch und für Menschen.
+ * `field` ist englisch und entspricht dem Feldnamen im Modell (`name`,
+ * `database_id`). Bei Listen steht der Eintrag dabei: `mappings.next` für
+ * die Rolle `next`, `sources[2].name` beim Import. `message` ist deutsch und
+ * für Menschen.
  */
 export type FieldError = { field: string, message: string, };
 
-export type Note = { id: string, title: string, body: string, created_at: string, updated_at: string, };
+export type Source = { id: string, name: string, 
+/**
+ * Die Notion-Kennung, klein und mit Bindestrichen.
+ */
+database_id: string, 
+/**
+ * Nach Rolle sortiert.
+ */
+mappings: Array<ColumnMapping>, created_at: string, updated_at: string, };
 
 /**
  * Was von außen hereinkommt — ungeprüft.
- *
- * Der Typ ist absichtlich ein anderer als [`Note`]: so lässt sich nichts
- * speichern, ohne vorher durch [`NoteInput::clean`] gegangen zu sein.
- *
- * `Deserialize`, weil die Oberfläche genau diesen Typ über IPC schickt.
  */
-export type NoteInput = { title: string, body: string, };
+export type SourceInput = { name: string, 
+/**
+ * Kennung, Seitenname mit Kennung oder Adresse aus Notion.
+ */
+database_id: string, mappings: Array<ColumnMapping>, };
 
 /**
- * Wonach die Liste sortiert wird.
+ * Eine Quelle mit dem Stand ihres letzten Abrufs — für Listen.
  */
-export type Order = "recent" | "title";
+export type SourceOverview = { source: Source, 
+/**
+ * `null`: noch nie abgerufen.
+ */
+fetch: FetchStatus | null, };
 
 export type Theme = "system" | "light" | "dark";
+
+export type TokenOrigin = "environment" | "store";
+
+/**
+ * Was sich über den Token sagen lässt, ohne ihn zu zeigen.
+ */
+export type TokenStatus = { 
+/**
+ * `None`: kein Token.
+ */
+origin: TokenOrigin | null, 
+/**
+ * Z. B. `ntn_…a1b2`.
+ */
+hint: string | null, 
+/**
+ * Wo die Anwendung speichert.
+ */
+store: string, 
+/**
+ * Der Speicher ließ sich nicht lesen.
+ */
+store_error: string | null, };

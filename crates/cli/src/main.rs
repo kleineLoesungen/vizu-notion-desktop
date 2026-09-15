@@ -53,9 +53,17 @@ fn run(cli: Cli) -> Result<()> {
             out.paths(&paths);
             Ok(())
         }
-        Command::Note(cmd) => {
+        Command::Source(cmd) => {
             let app = App::open(paths)?;
-            commands::note::run(cmd, &app, &out)
+            commands::source::run(cmd, &app, &out)
+        }
+        Command::Fetch { sources } => {
+            let app = App::open(paths)?;
+            commands::fetch::run(sources, &app, &out)
+        }
+        Command::Token(cmd) => {
+            let app = App::open(paths)?;
+            commands::token::run(cmd, &app, &out)
         }
         Command::Config(cmd) => {
             let mut app = App::open(paths)?;

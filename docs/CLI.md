@@ -1,43 +1,119 @@
 # Die Kommandozeile
 
-`vizu-notion` ist die zweite Schale über derselben Fachlogik wie die Desktop-Anwendung.
-Beide arbeiten auf derselben Datenbank.
+`vizu-notion` ist die zweite Schale über derselben Fachlogik wie die
+Desktop-Anwendung. Beide arbeiten auf derselben Datenbank und demselben Token.
 
 ```bash
-vizu-notion note add "Einkauf" --body "Milch, Brot"
-vizu-notion note list
-vizu-notion note show 8a551a8d
-vizu-notion note edit 8a551a8d --title "Großeinkauf"
-vizu-notion note rm 8a551a8d --yes
+vizu-notion token set                       # Token, verdeckt eingegeben
+vizu-notion source add Projekte --database 396f6627… --map title=Name --map next=Nächstes
+vizu-notion fetch                           # alle Quellen abrufen
+vizu-notion source list
 ```
+
+## Der Token
+
+Er wird **nie** als Argument übergeben — sonst stünde er in der Shell-Historie.
+
+```bash
+vizu-notion token set            # fragt verdeckt nach
+pass notion | vizu-notion token set   # oder aus einem Passwortspeicher
+vizu-notion token status         # zeigt nur Herkunft und ntn_…stuv
+vizu-notion token clear
+```
+
+Gespeichert wird im **Schlüsselbund des Systems** (Keychain, Secret Service).
+Zwei Auswege, wenn es keinen gibt oder ein Skript ihn nicht benutzen soll:
+
+| Variable | Wirkung |
+|---|---|
+| `VIZU_NOTION_TOKEN` | wird direkt benutzt und hat **Vorrang** vor dem Gespeicherten |
+| `VIZU_NOTION_TOKEN_FILE` | Datei statt Schlüsselbund; wird mit Rechten 0600 angelegt |
+
+Ein Token braucht Leserecht auf die Datenbanken, und die Datenbanken müssen in
+Notion mit der Integration **geteilt** sein (Seite → ••• → Verbindungen).
+
+## Quellen
+
+Eine Quelle ist eine Notion-Datenbank unter einem Namen. Unter diesem Namen
+benutzen Vorlagen sie später (`{{#each Projekte}}`).
+
+```bash
+vizu-notion source add Projekte --database <ID> --map title=Name --map next=Nächstes
+vizu-notion source list
+vizu-notion source show Projekte
+vizu-notion source edit Projekte --map date=Start --unmap next
+vizu-notion source rm Projekte --yes
+```
+
+* **`--database`** nimmt alles, was man aus Notion kopieren kann: die 32
+  Zeichen, eine UUID mit Bindestrichen, `Projekte-396f…` oder die ganze
+  Adresse. Die Ansicht hinter `?v=` wird abgeschnitten.
+* **`--map ROLLE=SPALTE`** ordnet eine Notion-Spalte einer Rolle zu. Rollen sind
+  Buchstaben, Ziffern und `_` (`title`, `next`, `parent`, `tag`, `status`,
+  `date`) — genau so heißen sie in Vorlagen. `id` ist vergeben: das ist immer
+  die Seiten-ID.
+* **`edit`** ersetzt nur, was genannt wird. Zeigt eine Quelle danach auf eine
+  **andere** Datenbank, werden die zwischengespeicherten Seiten verworfen.
+
+### Aus der Webapp übernehmen
+
+```bash
+vizu-notion source import sources.json
+cat sources.json | vizu-notion source import -
+```
+
+Liest die `sources.json` der Webapp vizu-notion-local. **Alles oder nichts:**
+Ist ein Eintrag ungültig oder gibt es einen Namen schon, wird nichts angelegt,
+und der Fehler nennt den Eintrag: `sources[2].name`.
+
+## Abrufen
+
+```bash
+vizu-notion fetch                # alle Quellen
+vizu-notion fetch Projekte Ziele # nur diese
+vizu-notion fetch --json | jq '.[].page_count'
+```
+
+Der Abruf holt Schema und **alle** Seiten (er blättert), lädt Relationen mit
+mehr als 25 Zielen nach und ersetzt den Zwischenspeicher der Quelle in einer
+Transaktion. Höchstens drei Anfragen je Sekunde; ein „zu viele Anfragen" von
+Notion wird abgewartet und wiederholt.
+
+Passt eine zugeordnete Spalte nicht zum Schema in Notion, bricht der Abruf mit
+Rückgabewert 4 ab und nennt Rolle und vorhandene Spalten — meist ein Tippfehler.
+
+Fortschritt geht auf stderr, die Nutzausgabe auf stdout. Mehrere Quellen werden
+nacheinander abgerufen; beim ersten Fehler bricht der Befehl ab, bereits
+Abgerufenes bleibt gespeichert.
 
 ## Kennungen
 
-Die Kennung ist eine UUID. In der Bedienung genügt das **Endstück**, so wie
-`note list` es anzeigt:
+Quellen werden über ihren **Namen** angesprochen (ohne Rücksicht auf Groß- und
+Kleinschreibung). Es geht auch die Kennung oder ihr **Endstück**, so wie
+`source list` es zeigt:
 
 ```
-ID        TITEL    GEÄNDERT
-8a551a8d  Zebra    15.09.2026 08:40
-bd10122c  Bauplan  15.09.2026 08:40
+ID        NAME      SEITEN  ABGERUFEN
+2f40b1c7  Projekte      12  16.09.2026 09:12
+9a17ee02  Ziele          5  16.09.2026 09:12
 ```
 
 Warum das Ende und nicht der Anfang: Eine UUIDv7 beginnt mit dem Zeitstempel.
-Zwei Notizen aus derselben Sekunde sähen am Anfang gleich aus.
-
-Ist ein Endstück nicht eindeutig, bricht der Befehl mit Rückgabewert 5 ab und
-zeigt die Treffer — nie wird einfach einer davon genommen.
+Zwei Quellen aus derselben Sekunde sähen am Anfang gleich aus. Ist ein Endstück
+nicht eindeutig, bricht der Befehl mit Rückgabewert 5 ab und zeigt die Treffer.
 
 ## Rückgabewerte
 
 | Wert | Bedeutung | Beispiel |
 |---|---|---|
 | 0 | in Ordnung | |
-| 1 | allgemeiner Fehler | Platte voll, Datenbank nicht lesbar |
-| 2 | falscher Aufruf | `vizu-notion note gibtsnicht` — vergibt clap selbst |
-| 3 | nicht gefunden | `vizu-notion note show ffffffff` |
-| 4 | Eingabe ungültig | leerer Titel, `accent = "blau"` |
-| 5 | Kennung nicht eindeutig | `vizu-notion note show a` bei mehreren Treffern |
+| 1 | allgemeiner Fehler | Platte voll, Schlüsselbund verweigert |
+| 2 | falscher Aufruf | `--map title` ohne `=` — vergibt clap selbst |
+| 3 | nicht gefunden | `vizu-notion source show Gibtsnicht` |
+| 4 | Eingabe ungültig | leerer Name, unbekannte Spalte, `accent = "blau"` |
+| 5 | Kennung nicht eindeutig | `vizu-notion source show a` bei mehreren Treffern |
+| 6 | Notion | nicht erreichbar, nicht geteilt, Fehler von Notion |
+| 7 | Token | keiner hinterlegt, oder Notion lehnt ihn ab |
 
 Festgelegt in `crates/cli/src/exit.rs`, geprüft in `crates/cli/tests/cli.rs`.
 
@@ -47,20 +123,31 @@ Festgelegt in `crates/cli/src/exit.rs`, geprüft in `crates/cli/tests/cli.rs`.
 funktioniert:
 
 ```bash
-vizu-notion note list --json | jq -r '.[] | "\(.id)\t\(.title)"'
+vizu-notion source list --json | jq -r '.[] | "\(.source.name)\t\(.fetch.page_count // "—")"'
 ```
 
 Zeitstempel stehen in UTC als RFC-3339-Text. Für Menschen rechnet die Ausgabe in
-Ortszeit um, für Maschinen nie.
+Ortszeit um, für Maschinen nie. Der Token erscheint in keiner Ausgabe.
 
 ```json
 [
   {
-    "id": "01a0a3cb-177a-759b-ade1-12c4280a20d3",
-    "title": "Bauplan",
-    "body": "Regal",
-    "created_at": "2026-09-15T06:39:51.162336Z",
-    "updated_at": "2026-09-15T06:39:51.162336Z"
+    "source": {
+      "id": "01a0a3cb-177a-759b-ade1-12c4280a20d3",
+      "name": "Projekte",
+      "database_id": "396f6627-0f5d-8034-b55c-ebc685aa5e50",
+      "mappings": [{ "role": "title", "property": "Name" }],
+      "created_at": "2026-09-16T06:39:51.162336Z",
+      "updated_at": "2026-09-16T06:39:51.162336Z"
+    },
+    "fetch": {
+      "source_id": "01a0a3cb-177a-759b-ade1-12c4280a20d3",
+      "database_title": "vizu Projekte",
+      "database_url": "https://app.notion.com/p/396f66270f5d8034b55cebc685aa5e50",
+      "page_count": 12,
+      "request_count": 4,
+      "fetched_at": "2026-09-16T07:02:11.004112Z"
+    }
   }
 ]
 ```
@@ -75,9 +162,9 @@ eine Fehlermeldung als Nutzdaten liest:
   "error": {
     "code": "validation_failed",
     "fields": [
-      { "field": "title", "message": "darf nicht leer sein" }
+      { "field": "mappings.next", "message": "Spalte „Nachfolger“ gibt es in „vizu Projekte“ nicht (vorhanden: Name, Nächstes, Start)" }
     ],
-    "message": "title: darf nicht leer sein"
+    "message": "mappings.next: Spalte „Nachfolger“ gibt es in „vizu Projekte“ nicht (vorhanden: Name, Nächstes, Start)"
   }
 }
 ```
@@ -87,23 +174,26 @@ eine Fehlermeldung als Nutzdaten liest:
 | `validation_failed` | 4 | `fields` |
 | `not_found` | 3 | |
 | `ambiguous_id` | 5 | `matches` |
+| `token_missing` | 7 | |
+| `notion_unauthorized` | 7 | |
+| `notion_not_shared` | 6 | |
+| `notion_unreachable` | 6 | |
+| `notion_error` | 6 | |
+| `secret_store_unavailable` | 1 | |
 | `config_invalid` | 1 | |
 | `internal_error` | 1 | |
 
 ## In Skripten und Pipelines
 
 ```bash
-# Text aus einer Datei
-cat notiz.md | vizu-notion note add "Aus der Datei" --body -
-
-# Ohne Terminal gibt es keine Rückfrage, sondern einen Fehler.
-vizu-notion note rm 8a551a8d --yes
+# Token aus einem Passwortspeicher, ohne Schlüsselbund
+VIZU_NOTION_TOKEN="$(pass notion)" vizu-notion fetch --json
 
 # Eigene Verzeichnisse — der saubere Weg für Tests und CI
-VIZU_NOTION_DATA_DIR=/tmp/t/data VIZU_NOTION_CONFIG_DIR=/tmp/t/config vizu-notion note list
+VIZU_NOTION_DATA_DIR=/tmp/t/data VIZU_NOTION_CONFIG_DIR=/tmp/t/config vizu-notion source list
 ```
 
-`note rm` fragt nach, wenn stdin ein Terminal ist. Ist es keins, bricht der
+`source rm` fragt nach, wenn stdin ein Terminal ist. Ist es keins, bricht der
 Befehl ab und verweist auf `--yes`. Stillschweigend zu löschen, weil niemand
 antworten kann, wäre die falsche Voreinstellung.
 
@@ -115,7 +205,7 @@ Dieselbe Datei, die auch die Oberfläche liest und schreibt.
 vizu-notion config show
 vizu-notion config set theme dark          # system | light | dark
 vizu-notion config set accent "#aa3344"    # #rrggbb
-vizu-notion config set app_name "Notizbuch"
+vizu-notion config set app_name "Vizu Notion"
 vizu-notion config reset
 ```
 
@@ -141,9 +231,9 @@ vizu-notion paths --json | jq -r .db_file
 Geht auf stderr, nie auf stdout.
 
 ```bash
-vizu-notion -v note list          # info
-vizu-notion -vv note list         # debug
-VIZU_NOTION_LOG=vizu-notion=trace vizu-notion note list
+vizu-notion -v fetch           # info
+vizu-notion -vv fetch          # debug: jede Anfrage an Notion
+VIZU_NOTION_LOG=vizu-notion=trace vizu-notion fetch
 ```
 
 ## Vervollständigung und Handbuch

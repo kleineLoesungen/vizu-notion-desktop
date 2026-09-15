@@ -2,10 +2,11 @@
 source: crates/cli/tests/cli.rs
 expression: text
 ---
-Bauplan
-───────
-Regal
-
-Kennung:   [uuid]
-Angelegt:  [datum]
-Geändert:  [datum]
+Projekte
+────────
+Datenbank:  [uuid]
+Zuordnung:
+  next   →  Nächstes
+  title  →  Name
+Abgerufen:  noch nie
+Kennung:    [uuid]

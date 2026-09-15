@@ -4,6 +4,10 @@
 //! stderr, Rückgabewert. Die fachlichen Regeln stehen in den Tests von
 //! `vizu-notion-core` — hier geht es nur ums Durchreichen und ums Format.
 //!
+//! Kein Test hier spricht mit Notion oder mit dem Schlüsselbund: Der Token
+//! liegt über `VIZU_NOTION_TOKEN_FILE` in einem Wegwerfverzeichnis, und
+//! Abrufe gegen festgehaltene Antworten prüft `crates/core/tests/fetch.rs`.
+//!
 //! # Schnappschüsse
 //!
 //! Die erwartete Ausgabe steht in `tests/snapshots/`. Ändert sich das Format
@@ -13,12 +17,16 @@
 //! just snapshots        # cargo insta review — Änderung ansehen und annehmen
 //! ```
 //!
-//! Kennungen und Zeitstempel sind bei jedem Lauf andere. Sie werden vor dem
-//! Vergleich ersetzt (siehe `FILTERS`) — sonst schlüge jeder Lauf fehl.
+//! Kennungen, Zeitstempel und Pfade sind bei jedem Lauf andere. Sie werden vor
+//! dem Vergleich ersetzt (siehe `FILTERS`).
 
-use std::process::Command;
+use std::io::Write;
+use std::process::{Command, Stdio};
 
 use tempfile::TempDir;
+
+const DB: &str = "396f66270f5d8034b55cebc685aa5e50";
+const TOKEN: &str = "ntn_1234567890abcdefghijklmnopqrstuv";
 
 /// Was in jedem Schnappschuss vereinheitlicht wird.
 const FILTERS: &[(&str, &str)] = &[
@@ -35,9 +43,7 @@ const FILTERS: &[(&str, &str)] = &[
 ];
 
 struct Ctx {
-    _dir: TempDir,
-    data: std::path::PathBuf,
-    config: std::path::PathBuf,
+    dir: TempDir,
 }
 
 impl Ctx {
@@ -46,47 +52,76 @@ impl Ctx {
             .prefix("vizu-notion-test-")
             .tempdir()
             .unwrap();
-        Self {
-            data: dir.path().join("data"),
-            config: dir.path().join("config"),
-            _dir: dir,
-        }
+        Self { dir }
+    }
+
+    fn command(&self, args: &[&str]) -> Command {
+        // CARGO_BIN_EXE_* setzt cargo für Abnahmetests. Damit wird genau das
+        // Binary getestet, das gerade gebaut wurde.
+        let mut cmd = Command::new(env!("CARGO_BIN_EXE_vizu-notion"));
+        cmd.args(args)
+            .arg("--data-dir")
+            .arg(self.dir.path().join("data"))
+            .arg("--config-dir")
+            .arg(self.dir.path().join("config"))
+            // Nie der echte Schlüsselbund, nie ein Token aus der Umgebung
+            // dessen, der die Tests laufen lässt.
+            .env("VIZU_NOTION_TOKEN_FILE", self.dir.path().join("token"))
+            .env_remove("VIZU_NOTION_TOKEN");
+        cmd
     }
 
     fn run(&self, args: &[&str]) -> Output {
-        // CARGO_BIN_EXE_* setzt cargo für Abnahmetests. Damit wird genau das
-        // Binary getestet, das gerade gebaut wurde.
-        let out = Command::new(env!("CARGO_BIN_EXE_vizu-notion"))
-            .args(args)
-            .arg("--data-dir")
-            .arg(&self.data)
-            .arg("--config-dir")
-            .arg(&self.config)
-            // Ohne stdin ist kein Terminal da — die Rückfrage von `note rm`
-            // wird damit zum Fehler, wie im Skript auch.
-            .stdin(std::process::Stdio::null())
+        // Ohne stdin ist kein Terminal da — Rückfragen werden zum Fehler, wie
+        // im Skript auch.
+        let out = self
+            .command(args)
+            .stdin(Stdio::null())
             .output()
             .expect("vizu-notion startbar");
-
-        Output {
-            stdout: String::from_utf8(out.stdout).expect("stdout ist UTF-8"),
-            stderr: String::from_utf8(out.stderr).expect("stderr ist UTF-8"),
-            code: out.status.code().expect("kein Signal"),
-        }
+        Output::from(out)
     }
 
-    /// Legt Beispieldaten an und gibt das Endstück der Kennung zurück.
-    fn seed(&self) -> String {
-        self.run(&["note", "add", "Einkauf", "--body", "Milch, Brot"])
-            .ok();
-        let out = self
-            .run(&["note", "add", "Bauplan", "--body", "Regal"])
-            .ok();
-        out.stdout
-            .split_whitespace()
-            .nth(1)
-            .expect("Kurzkennung in der Rückmeldung")
-            .to_string()
+    fn run_with_stdin(&self, args: &[&str], input: &str) -> Output {
+        let mut child = self
+            .command(args)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap();
+        child
+            .stdin
+            .take()
+            .unwrap()
+            .write_all(input.as_bytes())
+            .unwrap();
+        Output::from(child.wait_with_output().unwrap())
+    }
+
+    fn seed(&self) {
+        self.run(&[
+            "source",
+            "add",
+            "Projekte",
+            "--database",
+            DB,
+            "--map",
+            "title=Name",
+            "--map",
+            "next=Nächstes",
+        ])
+        .ok();
+        self.run(&[
+            "source",
+            "add",
+            "Aufgaben",
+            "--database",
+            DB,
+            "--map",
+            "title=Name",
+        ])
+        .ok();
     }
 }
 
@@ -94,6 +129,16 @@ struct Output {
     stdout: String,
     stderr: String,
     code: i32,
+}
+
+impl From<std::process::Output> for Output {
+    fn from(out: std::process::Output) -> Self {
+        Self {
+            stdout: String::from_utf8(out.stdout).expect("stdout ist UTF-8"),
+            stderr: String::from_utf8(out.stderr).expect("stderr ist UTF-8"),
+            code: out.status.code().expect("kein Signal"),
+        }
+    }
 }
 
 impl Output {
@@ -105,6 +150,10 @@ impl Output {
             self.code, self.stderr
         );
         self
+    }
+
+    fn json(&self) -> serde_json::Value {
+        serde_json::from_str(&self.stdout).unwrap_or_else(|e| panic!("{e}:\n{}", self.stdout))
     }
 }
 
@@ -123,58 +172,218 @@ fn hilfe_nennt_alle_befehle() {
 }
 
 #[test]
-fn leere_sammlung_sagt_wie_es_weitergeht() {
+fn leere_liste_sagt_wie_es_weitergeht() {
     let ctx = Ctx::new();
-    snapshot("liste_leer", &ctx.run(&["note", "list"]).ok().stdout);
+    snapshot("liste_leer", &ctx.run(&["source", "list"]).ok().stdout);
 }
 
 #[test]
 fn liste_ist_eine_tabelle() {
     let ctx = Ctx::new();
     ctx.seed();
-    snapshot("liste", &ctx.run(&["note", "list"]).ok().stdout);
+    snapshot("liste", &ctx.run(&["source", "list"]).ok().stdout);
 }
 
 #[test]
-fn liste_als_json_ist_ein_array() {
+fn liste_als_json_ist_ein_array_mit_abrufstand() {
     let ctx = Ctx::new();
     ctx.seed();
-    let out = ctx.run(&["note", "list", "--json"]).ok().stdout;
-    // Ein Array, damit `jq '.[].title'` ohne Umweg funktioniert.
-    assert!(out.trim_start().starts_with('['), "kein Array:\n{out}");
-    snapshot("liste_json", &out);
+    let out = ctx.run(&["source", "list", "--json"]).ok();
+    let list = out.json();
+    assert_eq!(list.as_array().unwrap().len(), 2);
+    assert_eq!(list[0]["source"]["name"], "Aufgaben");
+    assert!(list[0]["fetch"].is_null(), "noch nie abgerufen");
+    snapshot("liste_json", &out.stdout);
 }
 
 #[test]
-fn einzelansicht_zeigt_die_volle_kennung() {
+fn einzelansicht_zeigt_zuordnung_und_volle_kennungen() {
     let ctx = Ctx::new();
-    let id = ctx.seed();
-    snapshot("show", &ctx.run(&["note", "show", &id]).ok().stdout);
+    ctx.seed();
+    snapshot(
+        "show",
+        &ctx.run(&["source", "show", "projekte"]).ok().stdout,
+    );
+}
+
+// --- Quellen ---------------------------------------------------------------
+
+#[test]
+fn edit_haengt_rollen_um_und_laesst_den_rest_stehen() {
+    let ctx = Ctx::new();
+    ctx.seed();
+    ctx.run(&[
+        "source",
+        "edit",
+        "Projekte",
+        "--map",
+        "next=Nachfolger",
+        "--map",
+        "date=Start",
+        "--unmap",
+        "title",
+    ])
+    .ok();
+
+    let shown = ctx
+        .run(&["source", "show", "Projekte", "--json"])
+        .ok()
+        .json();
+    assert_eq!(
+        shown["source"]["mappings"],
+        serde_json::json!([
+            { "role": "date", "property": "Start" },
+            { "role": "next", "property": "Nachfolger" }
+        ])
+    );
+    assert_eq!(
+        shown["source"]["database_id"],
+        "396f6627-0f5d-8034-b55c-ebc685aa5e50"
+    );
+}
+
+#[test]
+fn import_liest_die_sources_json_der_webapp() {
+    let ctx = Ctx::new();
+    let file = ctx.dir.path().join("sources.json");
+    std::fs::write(
+        &file,
+        format!(
+            r#"{{ "sources": [
+                {{ "databaseId": "{DB}", "name": "Project Milestones",
+                   "columnMappings": {{ "title": "Name", "next": "Next Milestone" }} }}
+            ] }}"#
+        ),
+    )
+    .unwrap();
+
+    let out = ctx.run(&["source", "import", file.to_str().unwrap()]).ok();
+    assert!(
+        out.stdout
+            .contains("1 Quellen angelegt: Project Milestones"),
+        "{}",
+        out.stdout
+    );
+
+    let piped = ctx.run_with_stdin(
+        &["source", "import", "-", "--json"],
+        &format!(r#"{{ "sources": [ {{ "databaseId": "{DB}", "name": "Zweite", "columnMappings": {{}} }} ] }}"#),
+    );
+    assert_eq!(piped.code, 0, "{}", piped.stderr);
+    assert_eq!(piped.json()[0]["name"], "Zweite");
+}
+
+#[test]
+fn eine_spalte_ohne_gleichheitszeichen_ist_ein_falscher_aufruf() {
+    let ctx = Ctx::new();
+    let out = ctx.run(&["source", "add", "X", "--database", DB, "--map", "title"]);
+    assert_eq!(out.code, 2);
+    assert!(out.stderr.contains("ROLLE=SPALTE"), "{}", out.stderr);
+}
+
+#[test]
+fn loeschen_ohne_terminal_verlangt_ausdrueckliche_bestaetigung() {
+    let ctx = Ctx::new();
+    ctx.seed();
+    let out = ctx.run(&["source", "rm", "Projekte"]);
+    assert_ne!(out.code, 0);
+    assert!(out.stderr.contains("--yes"), "{}", out.stderr);
+    ctx.run(&["source", "show", "Projekte"]).ok();
+
+    ctx.run(&["source", "rm", "Projekte", "--yes"]).ok();
+    assert_eq!(ctx.run(&["source", "show", "Projekte"]).code, 3);
+}
+
+// --- Token -----------------------------------------------------------------
+
+#[test]
+fn token_kommt_von_stdin_und_wird_nie_ausgegeben() {
+    let ctx = Ctx::new();
+    let set = ctx.run_with_stdin(&["token", "set"], &format!("{TOKEN}\n"));
+    assert_eq!(set.code, 0, "{}", set.stderr);
+    assert!(set.stdout.contains("ntn_…stuv"), "{}", set.stdout);
+
+    let status = ctx.run(&["token", "status"]).ok();
+    let status_json = ctx.run(&["token", "status", "--json"]).ok();
+    for text in [
+        &set.stdout,
+        &set.stderr,
+        &status.stdout,
+        &status_json.stdout,
+    ] {
+        assert!(!text.contains("1234567890"), "Token sichtbar:\n{text}");
+    }
+    assert_eq!(status_json.json()["origin"], "store");
+    snapshot("token_status", &status.stdout);
+
+    ctx.run(&["token", "clear"]).ok();
+    assert!(ctx.run(&["token", "status", "--json"]).ok().json()["origin"].is_null());
+}
+
+#[test]
+fn ein_offensichtlich_falscher_token_wird_nicht_gespeichert() {
+    let ctx = Ctx::new();
+    let out = ctx.run_with_stdin(&["token", "set", "--json"], "kurz");
+    assert_eq!(out.code, 4);
+    let err: serde_json::Value = serde_json::from_str(&out.stderr).unwrap();
+    assert_eq!(err["error"]["fields"][0]["field"], "token");
+    assert!(ctx.run(&["token", "status", "--json"]).ok().json()["origin"].is_null());
+}
+
+// --- Abruf -----------------------------------------------------------------
+
+#[test]
+fn abruf_ohne_quellen_ist_kein_fehler() {
+    let ctx = Ctx::new();
+    let out = ctx.run(&["fetch"]).ok();
+    assert!(out.stdout.contains("source add"), "{}", out.stdout);
+    assert_eq!(
+        ctx.run(&["fetch", "--json"]).ok().json(),
+        serde_json::json!([])
+    );
+}
+
+#[test]
+fn abruf_ohne_token_ergibt_sieben_und_sagt_wie_es_geht() {
+    let ctx = Ctx::new();
+    ctx.seed();
+    let out = ctx.run(&["fetch", "Projekte", "--json"]);
+    assert_eq!(out.code, 7, "{}", out.stderr);
+    snapshot("fetch_ohne_token_json", &out.stderr);
 }
 
 // --- Rückgabewerte ---------------------------------------------------------
 
 #[test]
-fn ungueltige_eingabe_ergibt_vier() {
+fn ungueltige_eingabe_ergibt_vier_mit_allen_feldern() {
     let ctx = Ctx::new();
-    let out = ctx.run(&["note", "add", ""]);
+    let out = ctx.run(&[
+        "source",
+        "add",
+        " ",
+        "--database",
+        "keine",
+        "--map",
+        "title=",
+    ]);
     assert_eq!(out.code, 4);
     assert!(out.stdout.is_empty(), "Fehler gehören nach stderr");
     snapshot("fehler_eingabe", &out.stderr);
 }
 
 #[test]
-fn eingabefehler_als_json_nennt_das_feld() {
+fn eingabefehler_als_json_nennt_die_felder() {
     let ctx = Ctx::new();
-    let out = ctx.run(&["note", "add", "", "--json"]);
+    let out = ctx.run(&["source", "add", " ", "--database", "keine", "--json"]);
     assert_eq!(out.code, 4);
     snapshot("fehler_eingabe_json", &out.stderr);
 }
 
 #[test]
-fn unbekannte_kennung_ergibt_drei() {
+fn unbekannte_quelle_ergibt_drei() {
     let ctx = Ctx::new();
-    assert_eq!(ctx.run(&["note", "show", "ffffffff"]).code, 3);
+    assert_eq!(ctx.run(&["source", "show", "Gibtsnicht"]).code, 3);
+    assert_eq!(ctx.run(&["fetch", "Gibtsnicht"]).code, 3);
 }
 
 #[test]
@@ -182,26 +391,30 @@ fn falscher_aufruf_ergibt_zwei() {
     // Den Rückgabewert 2 vergibt clap selbst. Der Test hält fest, dass wir ihn
     // nicht versehentlich überschreiben.
     let ctx = Ctx::new();
-    assert_eq!(ctx.run(&["note", "gibtsnicht"]).code, 2);
+    assert_eq!(ctx.run(&["source", "gibtsnicht"]).code, 2);
 }
 
 #[test]
 fn mehrdeutige_kennung_ergibt_fuenf_und_zeigt_die_treffer() {
     let ctx = Ctx::new();
 
-    // Ein Hexzeichen hat 16 mögliche Werte. Bei 17 Notizen müssen sich nach
+    // Ein Hexzeichen hat 16 mögliche Werte. Bei 17 Quellen müssen sich nach
     // dem Schubfachprinzip zwei das letzte Zeichen teilen — damit ist der
     // mehrdeutige Fall garantiert und der Test nicht vom Zufall abhängig.
     for i in 0..17 {
-        ctx.run(&["note", "add", &format!("Notiz {i}")]).ok();
+        ctx.run(&["source", "add", &format!("Quelle {i}"), "--database", DB])
+            .ok();
     }
 
-    let list: serde_json::Value =
-        serde_json::from_str(&ctx.run(&["note", "list", "--json"]).ok().stdout).unwrap();
-
+    let list = ctx.run(&["source", "list", "--json"]).ok().json();
     let mut nach_endzeichen: std::collections::HashMap<char, usize> = Default::default();
-    for note in list.as_array().unwrap() {
-        let last = note["id"].as_str().unwrap().chars().next_back().unwrap();
+    for s in list.as_array().unwrap() {
+        let last = s["source"]["id"]
+            .as_str()
+            .unwrap()
+            .chars()
+            .next_back()
+            .unwrap();
         *nach_endzeichen.entry(last).or_default() += 1;
     }
     let (zeichen, _) = nach_endzeichen
@@ -209,7 +422,7 @@ fn mehrdeutige_kennung_ergibt_fuenf_und_zeigt_die_treffer() {
         .find(|(_, n)| **n > 1)
         .expect("Schubfachprinzip garantiert eine Dopplung");
 
-    let out = ctx.run(&["note", "show", &zeichen.to_string()]);
+    let out = ctx.run(&["source", "show", &zeichen.to_string()]);
     assert_eq!(out.code, 5, "{}", out.stderr);
     assert!(
         out.stderr.contains("mehr Zeichen angeben"),
@@ -218,40 +431,14 @@ fn mehrdeutige_kennung_ergibt_fuenf_und_zeigt_die_treffer() {
     );
 }
 
-#[test]
-fn loeschen_ohne_terminal_verlangt_ausdrueckliche_bestaetigung() {
-    // Stillschweigend löschen, weil niemand antworten kann, wäre die falsche
-    // Voreinstellung.
-    let ctx = Ctx::new();
-    let id = ctx.seed();
-    let out = ctx.run(&["note", "rm", &id]);
-    assert_ne!(out.code, 0);
-    assert!(out.stderr.contains("--yes"), "{}", out.stderr);
-    ctx.run(&["note", "show", &id]).ok();
-}
-
 // --- Verhalten -------------------------------------------------------------
-
-#[test]
-fn edit_laesst_nicht_genannte_felder_stehen() {
-    let ctx = Ctx::new();
-    let id = ctx.seed();
-    ctx.run(&["note", "edit", &id, "--title", "Anderer Titel"])
-        .ok();
-
-    let out = ctx.run(&["note", "show", &id, "--json"]).ok().stdout;
-    let note: serde_json::Value = serde_json::from_str(&out).unwrap();
-    assert_eq!(note["title"], "Anderer Titel");
-    assert_eq!(note["body"], "Regal", "Text blieb unverändert");
-}
 
 #[test]
 fn einstellungen_ueberleben_den_programmstart() {
     let ctx = Ctx::new();
     ctx.run(&["config", "set", "theme", "dark"]).ok();
 
-    let out = ctx.run(&["config", "show", "--json"]).ok().stdout;
-    let config: serde_json::Value = serde_json::from_str(&out).unwrap();
+    let config = ctx.run(&["config", "show", "--json"]).ok().json();
     assert_eq!(config["theme"], "dark");
 }
 
@@ -262,37 +449,9 @@ fn eine_kaputte_einstellung_wird_nicht_uebernommen() {
         .ok();
     assert_eq!(ctx.run(&["config", "set", "accent", "blau"]).code, 4);
 
-    let out = ctx.run(&["config", "show", "--json"]).ok().stdout;
-    let config: serde_json::Value = serde_json::from_str(&out).unwrap();
+    let config = ctx.run(&["config", "show", "--json"]).ok().json();
     assert_eq!(config["accent"], "#3b6ea5", "alter Wert blieb stehen");
     assert_eq!(config["app_name"], "Vereinsportal");
-}
-
-#[test]
-fn text_kommt_auch_von_stdin() {
-    use std::io::Write;
-    let ctx = Ctx::new();
-    let mut child = Command::new(env!("CARGO_BIN_EXE_vizu-notion"))
-        .args(["note", "add", "Aus der Pipe", "--body", "-", "--json"])
-        .arg("--data-dir")
-        .arg(&ctx.data)
-        .arg("--config-dir")
-        .arg(&ctx.config)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .spawn()
-        .unwrap();
-    child
-        .stdin
-        .take()
-        .unwrap()
-        .write_all(b"Inhalt aus der Pipe")
-        .unwrap();
-    let out = child.wait_with_output().unwrap();
-    assert!(out.status.success());
-
-    let note: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
-    assert_eq!(note["body"], "Inhalt aus der Pipe");
 }
 
 #[test]

@@ -2,4 +2,6 @@
 source: crates/cli/tests/cli.rs
 expression: text
 ---
-Keine Notizen. Anlegen mit:  vizu-notion note add "Titel"
+Keine Quellen. Anlegen mit:
+  vizu-notion source add Projekte --database <ID> --map title=Name
+  vizu-notion source import sources.json

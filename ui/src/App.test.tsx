@@ -13,8 +13,8 @@ import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it } from "vitest";
-import { App, EXAMPLE_NOTE } from "./App";
-import type { ApiError, Config, Note, NoteInput } from "./bindings";
+import { App } from "./App";
+import type { ApiError, Config, FetchStatus, SourceOverview, TokenStatus } from "./bindings";
 
 type Call = { cmd: string; args: Record<string, unknown> };
 
@@ -22,14 +22,36 @@ class Rejection {
   constructor(readonly error: ApiError) {}
 }
 
-function note(id: string, input: NoteInput): Note {
-  const stamp = "2026-09-15T06:39:51Z";
-  return { id, ...input, created_at: stamp, updated_at: stamp };
+const STAMP = "2026-09-16T06:39:51Z";
+
+function overview(id: string, name: string, pages?: number): SourceOverview {
+  return {
+    source: {
+      id,
+      name,
+      database_id: "396f6627-0f5d-8034-b55c-ebc685aa5e50",
+      mappings: [{ role: "title", property: "Name" }],
+      created_at: STAMP,
+      updated_at: STAMP,
+    },
+    fetch:
+      pages === undefined
+        ? null
+        : {
+            source_id: id,
+            database_title: `vizu ${name}`,
+            database_url: "https://app.notion.com/p/396f66270f5d8034b55cebc685aa5e50",
+            page_count: pages,
+            request_count: 4,
+            fetched_at: STAMP,
+          },
+  };
 }
 
-let notes: Note[];
+let sources: SourceOverview[];
 let calls: Call[];
 let config: Config;
+let token: TokenStatus;
 let nextError: ApiError | null;
 
 function backend(cmd: string, args: Record<string, unknown> = {}): unknown {
@@ -53,23 +75,15 @@ function backend(cmd: string, args: Record<string, unknown> = {}): unknown {
         db_file: "/tmp/db",
         log_file: "/tmp/l",
       };
-    case "note_list":
-      return notes;
-    case "note_get":
-      return notes.find((n) => n.id === args.id);
-    case "note_create": {
-      const created = note(`id-${notes.length + 1}`, args.input as NoteInput);
-      notes = [created, ...notes];
-      return created;
+    case "token_status":
+      return token;
+    case "source_list":
+      return sources;
+    case "source_fetch": {
+      const id = args.id as string;
+      sources = sources.map((s) => (s.source.id === id ? overview(id, s.source.name, 12) : s));
+      return sources.find((s) => s.source.id === id)?.fetch as FetchStatus;
     }
-    case "note_update": {
-      const updated = note(args.id as string, args.input as NoteInput);
-      notes = notes.map((n) => (n.id === updated.id ? updated : n));
-      return updated;
-    }
-    case "note_delete":
-      notes = notes.filter((n) => n.id !== args.id);
-      return null;
     default:
       // Fenster-API und Plugins: annehmen, nichts tun.
       return null;
@@ -77,10 +91,11 @@ function backend(cmd: string, args: Record<string, unknown> = {}): unknown {
 }
 
 beforeEach(() => {
-  notes = [];
+  sources = [];
   calls = [];
   nextError = null;
   config = { app_name: "Vizu Notion", theme: "light", accent: "#3b6ea5" };
+  token = { origin: "store", hint: "ntn_…stuv", store: "Schlüsselbund", store_error: null };
   mockWindows("main");
   mockIPC((cmd, args) => {
     try {
@@ -98,96 +113,86 @@ function commands(name: string): Call[] {
 }
 
 describe("Oberfläche", () => {
-  it("lädt beim Start Einstellungen und Notizen", async () => {
-    notes = [note("a", { title: "Einkauf", body: "Milch" })];
-    render(<App previewDelayMs={0} />);
+  it("lädt beim Start Einstellungen, Token und Quellen", async () => {
+    sources = [overview("a", "Projekte", 12)];
+    render(<App />);
 
-    expect(await screen.findByRole("button", { name: /Einkauf/ })).toBeTruthy();
-    expect(commands("note_list")[0]?.args).toEqual({ order: "recent" });
+    expect(await screen.findByRole("button", { name: /Projekte/ })).toBeTruthy();
+    expect(commands("source_list")).toHaveLength(1);
     expect(document.documentElement.dataset.theme).toBe("light");
   });
 
-  it("legt eine Notiz an und schickt den Entwurf als `input`", async () => {
-    const user = userEvent.setup();
-    render(<App previewDelayMs={0} />);
-
-    await user.click(
-      (await screen.findAllByRole("button", { name: "Neue Notiz" }))[0] as HTMLElement,
-    );
-    await user.type(screen.getByRole("textbox", { name: "Titel" }), "Einkauf");
-    await user.type(screen.getByRole("textbox", { name: "Text" }), "Milch");
-    await user.click(screen.getByRole("button", { name: "Speichern" }));
-
-    await waitFor(() => expect(commands("note_create")).toHaveLength(1));
-    expect(commands("note_create")[0]?.args).toEqual({
-      input: { title: "Einkauf", body: "Milch" },
-    });
-    expect(await screen.findByRole("button", { name: /Einkauf/ })).toBeTruthy();
+  it("sagt ohne Quellen, wie man eine anlegt", async () => {
+    render(<App />);
+    expect(await screen.findByText("Willkommen")).toBeTruthy();
+    expect(screen.getByText(/source add Projekte/)).toBeTruthy();
   });
 
-  it("zeigt einen Eingabefehler am Feld, nicht oben", async () => {
-    const user = userEvent.setup();
-    render(<App previewDelayMs={0} />);
+  it("weist auf den fehlenden Token hin", async () => {
+    token = { origin: null, hint: null, store: "Schlüsselbund", store_error: null };
+    render(<App />);
+    expect(await screen.findByText(/Kein Notion-Token hinterlegt/)).toBeTruthy();
+    expect(screen.getByText("vizu-notion token set")).toBeTruthy();
+  });
 
-    await user.click(
-      (await screen.findAllByRole("button", { name: "Neue Notiz" }))[0] as HTMLElement,
-    );
+  it("ruft eine Quelle ab und zeigt den neuen Stand", async () => {
+    const user = userEvent.setup();
+    sources = [overview("a", "Projekte")];
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: /Projekte/ }));
+    expect(screen.getByText("noch nie")).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Von Notion abrufen" }));
+
+    await waitFor(() => expect(commands("source_fetch")).toHaveLength(1));
+    expect(commands("source_fetch")[0]?.args).toEqual({ id: "a" });
+    expect(await screen.findByText(/12 Seiten in 4 Anfragen/)).toBeTruthy();
+  });
+
+  it("ruft mit „Alle abrufen“ jede Quelle einzeln ab", async () => {
+    const user = userEvent.setup();
+    sources = [overview("a", "Projekte"), overview("b", "Aufgaben")];
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Alle abrufen" }));
+
+    await waitFor(() => expect(commands("source_fetch")).toHaveLength(2));
+    expect(commands("source_fetch").map((c) => c.args.id)).toEqual(["a", "b"]);
+  });
+
+  it("zeigt einen Fehler von Notion oben", async () => {
+    const user = userEvent.setup();
+    sources = [overview("a", "Projekte")];
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: /Projekte/ }));
     nextError = {
-      code: "validation_failed",
-      message: "title: darf nicht leer sein",
-      fields: [{ field: "title", message: "darf nicht leer sein" }],
+      code: "notion_not_shared",
+      message: "Notion: nicht gefunden — ist sie mit der Integration geteilt?",
     };
-    await user.click(screen.getByRole("button", { name: "Speichern" }));
+    await user.click(screen.getByRole("button", { name: "Von Notion abrufen" }));
 
-    const title = screen.getByRole("textbox", { name: "Titel" });
-    await waitFor(() => expect(title.getAttribute("aria-invalid")).toBe("true"));
-    expect(screen.getByText("darf nicht leer sein")).toBeTruthy();
-    expect(document.querySelector(".banner")).toBeNull();
+    expect(await screen.findByText(/mit der Integration geteilt/)).toBeTruthy();
   });
 
-  it("zeigt einen Programmfehler oben", async () => {
-    nextError = { code: "internal_error", message: "Datenbankfehler: disk full" };
-    render(<App previewDelayMs={0} />);
-    expect(await screen.findByText("Datenbankfehler: disk full")).toBeTruthy();
-  });
-
-  it("löscht erst nach der Rückfrage", async () => {
+  it("öffnet den Verweis nach Notion über das Opener-Plugin statt im Fenster", async () => {
     const user = userEvent.setup();
-    notes = [note("a", { title: "Weg damit", body: "" })];
-    render(<App previewDelayMs={0} />);
+    sources = [overview("a", "Projekte", 12)];
+    render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: /Weg damit/ }));
-    await user.click(screen.getByRole("button", { name: "Löschen" }));
-    expect(commands("note_delete")).toHaveLength(0);
-
-    await user.click(screen.getByRole("button", { name: "Endgültig löschen" }));
-    await waitFor(() => expect(commands("note_delete")[0]?.args).toEqual({ id: "a" }));
-  });
-
-  it("legt die Beispielnotiz mit Diagramm an", async () => {
-    const user = userEvent.setup();
-    render(<App previewDelayMs={0} />);
-
-    await user.click(await screen.findByRole("button", { name: "Beispiel mit Diagramm anlegen" }));
-    await waitFor(() => expect(commands("note_create")[0]?.args).toEqual({ input: EXAMPLE_NOTE }));
-  });
-
-  it("öffnet Verweise über das Opener-Plugin statt im Fenster", async () => {
-    const user = userEvent.setup();
-    notes = [note("a", { title: "Mit Verweis", body: "[Doku](https://tauri.app)" })];
-    render(<App previewDelayMs={0} />);
-
-    await user.click(await screen.findByRole("button", { name: /Mit Verweis/ }));
-    const link = await screen.findByRole("link", { name: "Doku" });
-    await user.click(link);
+    await user.click(await screen.findByRole("button", { name: /Projekte/ }));
+    await user.click(screen.getByRole("link", { name: /in Notion öffnen/ }));
 
     await waitFor(() => expect(commands("plugin:opener|open_url")).toHaveLength(1));
-    expect(commands("plugin:opener|open_url")[0]?.args).toMatchObject({ url: "https://tauri.app" });
+    expect(commands("plugin:opener|open_url")[0]?.args).toMatchObject({
+      url: "https://app.notion.com/p/396f66270f5d8034b55cebc685aa5e50",
+    });
   });
 
   it("speichert Einstellungen und wendet die Akzentfarbe an", async () => {
     const user = userEvent.setup();
-    render(<App previewDelayMs={0} />);
+    render(<App />);
 
     await user.click(await screen.findByRole("button", { name: "Einstellungen" }));
     const accent = screen.getByRole("textbox", { name: "Akzentfarbe" });
@@ -198,5 +203,27 @@ describe("Oberfläche", () => {
     await waitFor(() => expect(commands("config_set")).toHaveLength(1));
     expect(document.documentElement.style.getPropertyValue("--accent")).toBe("#ffdd00");
     expect(document.documentElement.dataset.accentLight).toBe("true");
+  });
+
+  it("zeigt einen Eingabefehler am Feld, nicht oben", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Einstellungen" }));
+    nextError = {
+      code: "validation_failed",
+      message: "accent: erwartet #rrggbb",
+      fields: [{ field: "accent", message: "erwartet #rrggbb" }],
+    };
+    await user.click(screen.getByRole("button", { name: "Übernehmen" }));
+
+    // Die Meldung steht unter dem Feld, auf das sie sich bezieht …
+    const message = await screen.findByText("erwartet #rrggbb");
+    expect(message.id).toBe("accent-error");
+    expect(
+      screen.getByRole("textbox", { name: "Akzentfarbe" }).getAttribute("aria-describedby"),
+    ).toBe("accent-error");
+    // … und nicht oben im Fenster.
+    expect(document.querySelector(".banner")).toBeNull();
   });
 });

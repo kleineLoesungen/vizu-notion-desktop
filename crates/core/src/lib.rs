@@ -1,4 +1,4 @@
-//! Fachlogik des Kits.
+//! Fachlogik von vizu-notion: Quellen, Notion-Abruf, Zwischenspeicher.
 //!
 //! # Die eine wichtige Regel
 //!
@@ -15,39 +15,57 @@
 //! # Einstieg
 //!
 //! ```no_run
-//! use vizu_notion_core::{App, Paths, note::{self, NoteInput, Order}};
+//! use vizu_notion_core::{App, Paths, fetch, source::{self, ColumnMapping, SourceInput}};
 //!
 //! let app = App::open(Paths::resolve()?)?;
-//! let created = note::create(app.conn(), NoteInput::new("Titel", "Text"))?;
-//! let all = note::list(app.conn(), Order::Recent)?;
+//! let projekte = source::create(
+//!     app.conn(),
+//!     SourceInput::new("Projekte", "396f66270f5d8034b55cebc685aa5e50",
+//!                      vec![ColumnMapping::new("title", "Name")]),
+//! )?;
+//! let status = fetch::fetch_with_http(app.conn(), app.secrets(), &projekte)?;
 //! # Ok::<(), vizu_notion_core::Error>(())
 //! ```
 
 pub mod config;
 pub mod db;
 pub mod error;
-pub mod note;
+pub mod fetch;
+pub mod ids;
+pub mod notion;
 pub mod paths;
+pub mod secret;
+pub mod source;
 pub mod timestamp;
 
 pub use config::{Config, Theme};
-pub use error::{Error, ErrorCode, FieldError, Result, ValidationError};
+pub use error::{Error, ErrorCode, FieldError, NotionErrorKind, Result, ValidationError};
 pub use paths::Paths;
 
 use rusqlite::Connection;
 
-/// Alles, was eine laufende Anwendung braucht: Pfade, Einstellungen, Datenbank.
+/// Alles, was eine laufende Anwendung braucht: Pfade, Einstellungen,
+/// Datenbank und der Speicher für den Notion-Token.
 ///
 /// Beide Schalen bauen sich beim Start genau eines davon.
 pub struct App {
     paths: Paths,
     config: Config,
     conn: Connection,
+    secrets: Box<dyn secret::SecretStore>,
 }
 
 impl App {
     /// Legt Verzeichnisse an, liest die Einstellungen und öffnet die Datenbank.
+    ///
+    /// Der Token liegt im Schlüsselbund, außer `VIZU_NOTION_TOKEN_FILE` ist
+    /// gesetzt — siehe [`secret::default_store`].
     pub fn open(paths: Paths) -> Result<Self> {
+        Self::open_with(paths, secret::default_store())
+    }
+
+    /// Wie [`App::open`], mit ausdrücklich gewähltem Token-Speicher.
+    pub fn open_with(paths: Paths, secrets: Box<dyn secret::SecretStore>) -> Result<Self> {
         paths.ensure()?;
         let config = Config::load(&paths.config_file())?;
         let conn = db::open(&paths.db_file())?;
@@ -55,6 +73,7 @@ impl App {
             paths,
             config,
             conn,
+            secrets,
         })
     }
 
@@ -67,11 +86,16 @@ impl App {
             paths: Paths::under(std::env::temp_dir().join("vizu-notion-in-memory")),
             config: Config::default(),
             conn: db::open_in_memory()?,
+            secrets: Box::new(secret::MemoryStore::default()),
         })
     }
 
     pub fn conn(&self) -> &Connection {
         &self.conn
+    }
+
+    pub fn secrets(&self) -> &dyn secret::SecretStore {
+        self.secrets.as_ref()
     }
 
     pub fn paths(&self) -> &Paths {

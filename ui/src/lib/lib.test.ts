@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../api";
-import { excerpt, formatDateTime } from "./format";
+import { formatDateTime } from "./format";
 import { externalHref, markdownToHtml } from "./markdown";
 import { isLightColor } from "./theme";
 
@@ -35,11 +35,6 @@ describe("markdown", () => {
 });
 
 describe("Anzeige", () => {
-  it("nimmt die erste Textzeile ohne Markdown-Zeichen", () => {
-    expect(excerpt("\n# Überschrift\nText")).toBe("Überschrift");
-    expect(excerpt("x".repeat(100), 10)).toBe(`${"x".repeat(9)}…`);
-  });
-
   it("zeigt einen unlesbaren Zeitstempel unverändert statt 'Invalid Date'", () => {
     expect(formatDateTime("kaputt")).toBe("kaputt");
     expect(formatDateTime("2026-09-15T06:39:51Z")).toMatch(/15\.09\.2026/);

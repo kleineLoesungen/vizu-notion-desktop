@@ -6,77 +6,140 @@
 //!
 //! Regeln für die JSON-Fassung:
 //!
-//! * Listen sind ein Array, kein Objekt mit Zähler — `jq '.[] | .title'`
+//! * Listen sind ein Array, kein Objekt mit Zähler — `jq '.[] | .source.name'`
 //!   soll ohne Umweg gehen.
 //! * Zeitstempel in UTC als RFC-3339-Text (macht `vizu_notion_core` schon).
 //! * Für Menschen wird in Ortszeit umgerechnet, für Maschinen nie.
+//! * Der Notion-Token erscheint in keiner Fassung — höchstens sein Hinweis.
+
+use std::time::Duration;
 
 use time::macros::format_description;
-use vizu_notion_core::note::{self, Note};
-use vizu_notion_core::{Config, Paths, timestamp};
+use vizu_notion_core::fetch::{FetchStatus, SourceOverview};
+use vizu_notion_core::secret::{TokenOrigin, TokenStatus};
+use vizu_notion_core::source::Source;
+use vizu_notion_core::{Config, Paths, ids, timestamp};
 
 pub struct Out {
     pub json: bool,
 }
 
 impl Out {
-    /// Kurzform der Kennung, wie `vizu-notion note show <KURZ>` sie wieder
-    /// entgegennimmt. Die Begründung für „hinten statt vorn" steht in
-    /// [`vizu_notion_core::note::short_id`].
-    pub fn short_id(note: &Note) -> String {
-        note::short_id(note.id)
-    }
-
-    fn local(note_time: time::OffsetDateTime) -> String {
+    fn local(t: time::OffsetDateTime) -> String {
         let fmt = format_description!("[day].[month].[year] [hour]:[minute]");
-        timestamp::to_local(note_time)
+        timestamp::to_local(t)
             .format(fmt)
-            .unwrap_or_else(|_| timestamp::to_text(note_time))
+            .unwrap_or_else(|_| timestamp::to_text(t))
     }
 
-    pub fn notes(&self, notes: &[Note]) {
+    pub fn sources(&self, sources: &[SourceOverview]) {
         if self.json {
-            self.print(notes);
+            self.print(sources);
             return;
         }
-        if notes.is_empty() {
-            println!("Keine Notizen. Anlegen mit:  vizu-notion note add \"Titel\"");
+        if sources.is_empty() {
+            println!("Keine Quellen. Anlegen mit:");
+            println!("  vizu-notion source add Projekte --database <ID> --map title=Name");
+            println!("  vizu-notion source import sources.json");
             return;
         }
-        // Die Spaltenbreite richtet sich nach dem längsten Titel, gedeckelt,
+        // Die Spaltenbreite richtet sich nach dem längsten Namen, gedeckelt,
         // damit ein Ausreißer die Tabelle nicht sprengt.
-        let width = notes
+        let width = sources
             .iter()
-            .map(|n| n.title.chars().count())
+            .map(|s| s.source.name.chars().count())
             .max()
-            .unwrap_or(5)
-            .clamp(5, 50);
+            .unwrap_or(4)
+            .clamp(4, 40);
 
-        println!("{:<8}  {:<width$}  GEÄNDERT", "ID", "TITEL");
-        for note in notes {
+        println!(
+            "{:<8}  {:<width$}  {:>6}  ABGERUFEN",
+            "ID", "NAME", "SEITEN"
+        );
+        for s in sources {
+            let (pages, at) = match &s.fetch {
+                Some(f) => (f.page_count.to_string(), Self::local(f.fetched_at)),
+                None => ("—".to_string(), "noch nie".to_string()),
+            };
             println!(
-                "{:<8}  {:<width$}  {}",
-                Self::short_id(note),
-                truncate(&note.title, width),
-                Self::local(note.updated_at)
+                "{:<8}  {:<width$}  {:>6}  {}",
+                ids::short_id(s.source.id),
+                truncate(&s.source.name, width),
+                pages,
+                at
             );
         }
     }
 
-    pub fn note(&self, note: &Note) {
+    pub fn source(&self, source: &Source, fetch: Option<&FetchStatus>) {
         if self.json {
-            self.print(note);
+            self.print(&serde_json::json!({ "source": source, "fetch": fetch }));
             return;
         }
-        println!("{}", note.title);
-        println!("{}", "─".repeat(note.title.chars().count().max(3)));
-        if !note.body.is_empty() {
-            println!("{}", note.body);
-            println!();
+        println!("{}", source.name);
+        println!("{}", "─".repeat(source.name.chars().count().max(3)));
+        println!("Datenbank:  {}", source.database_id);
+        if source.mappings.is_empty() {
+            println!("Zuordnung:  keine");
+        } else {
+            let width = source
+                .mappings
+                .iter()
+                .map(|m| m.role.chars().count())
+                .max()
+                .unwrap_or(0);
+            println!("Zuordnung:");
+            for m in &source.mappings {
+                println!("  {:<width$}  →  {}", m.role, m.property);
+            }
         }
-        println!("Kennung:   {}", note.id);
-        println!("Angelegt:  {}", Self::local(note.created_at));
-        println!("Geändert:  {}", Self::local(note.updated_at));
+        match fetch {
+            Some(f) => {
+                println!(
+                    "Abgerufen:  {}, {} Seiten aus „{}\u{201c}",
+                    Self::local(f.fetched_at),
+                    f.page_count,
+                    f.database_title
+                );
+                println!("In Notion:  {}", f.database_url);
+            }
+            None => println!("Abgerufen:  noch nie"),
+        }
+        println!("Kennung:    {}", source.id);
+    }
+
+    pub fn fetched_one(&self, name: &str, status: &FetchStatus, took: Duration) {
+        println!(
+            "{name}: {} Seiten aus „{}\u{201c} ({} Anfragen, {:.1} s)",
+            status.page_count,
+            status.database_title,
+            status.request_count,
+            took.as_secs_f32()
+        );
+    }
+
+    pub fn fetched(&self, statuses: &[FetchStatus]) {
+        self.print(statuses);
+    }
+
+    pub fn token_status(&self, status: &TokenStatus) {
+        if self.json {
+            self.print(status);
+            return;
+        }
+        match (status.origin, &status.hint) {
+            (Some(TokenOrigin::Environment), Some(hint)) => {
+                println!("Token:     {hint}  (aus VIZU_NOTION_TOKEN)");
+            }
+            (Some(TokenOrigin::Store), Some(hint)) => {
+                println!("Token:     {hint}  (gespeichert)");
+            }
+            _ => println!("Token:     keiner — speichern mit  vizu-notion token set"),
+        }
+        println!("Speicher:  {}", status.store);
+        if let Some(err) = &status.store_error {
+            println!("Problem:   {err}");
+        }
     }
 
     pub fn config(&self, config: &Config) {

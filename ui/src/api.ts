@@ -10,8 +10,8 @@
 //   3. hier                               call<…>("name", { … })
 // crates/desktop/tests/ipc_contract.rs prüft, dass keine fehlt.
 //
-// Argumentnamen: Tauri macht aus einem Rust-Argument `note_id` in JavaScript
-// `noteId`. Die Befehle hier haben deshalb nur einwortige Argumente.
+// Argumentnamen: Tauri macht aus einem Rust-Argument `source_id` in JavaScript
+// `sourceId`. Die Befehle hier haben deshalb nur einwortige Argumente.
 
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -21,10 +21,11 @@ import type {
   AppInfo,
   Config,
   ErrorCode,
+  FetchStatus,
   FieldError,
-  Note,
-  NoteInput,
-  Order,
+  Source,
+  SourceOverview,
+  TokenStatus,
 } from "./bindings";
 
 /** Ein abgelehnter Befehl. Dieselbe Form wie `error` im JSON der CLI. */
@@ -73,13 +74,15 @@ async function call<T>(cmd: string, args?: Record<string, unknown>): Promise<T> 
 }
 
 export const api = {
-  notes: {
-    list: (order: Order) => call<Note[]>("note_list", { order }),
-    get: (id: string) => call<Note>("note_get", { id }),
-    create: (input: NoteInput) => call<Note>("note_create", { input }),
-    update: (id: string, input: NoteInput) => call<Note>("note_update", { id, input }),
-    remove: (id: string) => call<null>("note_delete", { id }),
+  sources: {
+    list: () => call<SourceOverview[]>("source_list"),
+    get: (id: string) => call<Source>("source_get", { id }),
+    /** Dauert Sekunden: Rust holt die Daten von Notion und speichert sie. */
+    fetch: (id: string) => call<FetchStatus>("source_fetch", { id }),
   },
+
+  /** Ob ein Token hinterlegt ist — der Token selbst kommt nie ins Webview. */
+  tokenStatus: () => call<TokenStatus>("token_status"),
 
   config: {
     get: () => call<Config>("config_get"),

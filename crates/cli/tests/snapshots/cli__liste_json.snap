@@ -4,17 +4,39 @@ expression: text
 ---
 [
   {
-    "id": "[uuid]",
-    "title": "Bauplan",
-    "body": "Regal",
-    "created_at": "[zeit]",
-    "updated_at": "[zeit]"
+    "source": {
+      "id": "[uuid]",
+      "name": "Aufgaben",
+      "database_id": "[uuid]",
+      "mappings": [
+        {
+          "role": "title",
+          "property": "Name"
+        }
+      ],
+      "created_at": "[zeit]",
+      "updated_at": "[zeit]"
+    },
+    "fetch": null
   },
   {
-    "id": "[uuid]",
-    "title": "Einkauf",
-    "body": "Milch, Brot",
-    "created_at": "[zeit]",
-    "updated_at": "[zeit]"
+    "source": {
+      "id": "[uuid]",
+      "name": "Projekte",
+      "database_id": "[uuid]",
+      "mappings": [
+        {
+          "role": "next",
+          "property": "Nächstes"
+        },
+        {
+          "role": "title",
+          "property": "Name"
+        }
+      ],
+      "created_at": "[zeit]",
+      "updated_at": "[zeit]"
+    },
+    "fetch": null
   }
 ]

@@ -35,19 +35,18 @@ just setup    # npm-Pakete, Werkzeuge, einmal durchbauen
 just dev      # Desktop-Anwendung starten, lädt bei Änderungen neu
 ```
 
-Im leeren Fenster **„Beispiel mit Diagramm anlegen"** klicken — die Notiz
-enthält zwei Mermaid-Diagramme.
-
-Und dieselbe Anwendung auf der Kommandozeile:
+Das Fenster zeigt die eingerichteten Quellen. Angelegt werden sie vorerst auf
+der Kommandozeile — sie ist dieselbe Anwendung:
 
 ```bash
-just cli note list
-just cli note add "Einkauf" --body "Milch, Brot"
-just cli note list --json | jq '.[].title'
+just cli token set
+just cli source add Projekte --database <ID> --map title=Name
+just cli fetch
+just cli source list --json | jq -r '.[].source.name'
 ```
 
 Beides arbeitet auf **derselben** Datenbank. Wo die liegt, sagt `just cli paths`.
-Ohne die echten Daten anzufassen: `just dev-sandbox` und `just sandbox note list`.
+Ohne die echten Daten anzufassen: `just dev-sandbox` und `just sandbox source list`.
 
 ---
 
@@ -122,7 +121,10 @@ Ein `merge` wäre der falsche Griff — er zöge die ganze Kit-Geschichte herein
 crates/
 ├── core/                    ← FACHLOGIK. Kennt weder clap noch tauri noch stdout.
 │   ├── migrations/            Nummerierte SQL-Dateien, ins Binary einkompiliert
-│   ├── src/note.rs            Beispielressource zum Kopieren
+│   ├── src/source.rs          Quellen: Notion-Datenbank unter einem Namen
+│   ├── src/notion/           Notion-API: Transport, Takt, Modelle
+│   ├── src/fetch.rs          Abrufen und zwischenspeichern
+│   ├── src/secret.rs         Der Notion-Token
 │   ├── src/config.rs          Einstellungen, TOML
 │   ├── src/paths.rs           Die einzige Stelle mit macOS/Linux-Unterschieden
 │   └── tests/layering.rs      Der Wächter über die Schichtregel (Rust + TypeScript)

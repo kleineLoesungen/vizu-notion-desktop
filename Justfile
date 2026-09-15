@@ -20,7 +20,7 @@ setup:
     npm run build:ui
     cargo build
     @echo ""
-    @echo "Fertig. Weiter mit:  just dev   oder   just cli note list"
+    @echo "Fertig. Weiter mit:  just dev   oder   just cli source list"
 
 # --- Entwicklung -----------------------------------------------------------
 
@@ -33,7 +33,7 @@ dev:
 dev-sandbox:
     VIZU_NOTION_DATA_DIR={{local}}/data VIZU_NOTION_CONFIG_DIR={{local}}/config npm run tauri dev
 
-# Die Kommandozeile aufrufen:  just cli note add "Titel"
+# Die Kommandozeile aufrufen:  just cli source list
 cli *ARGS:
     cargo run -q -p vizu-notion-cli -- {{ARGS}}
 

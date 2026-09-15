@@ -2,6 +2,6 @@
 source: crates/cli/tests/cli.rs
 expression: text
 ---
-ID        TITEL    GEÄNDERT
-[id]  Bauplan  [datum]
-[id]  Einkauf  [datum]
+ID        NAME      SEITEN  ABGERUFEN
+[id]  Aufgaben       —  noch nie
+[id]  Projekte       —  noch nie

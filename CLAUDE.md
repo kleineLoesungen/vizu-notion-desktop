@@ -83,8 +83,8 @@ und wird zur Laufzeit verweigert.
    zurückgeben, sonst meldet der Compiler einen schwer lesbaren
    Lebensdauerfehler.
 
-3. **Argumentnamen werden zu camelCase.** Rust `fn note_update(note_id: Uuid)`
-   heißt in JavaScript `invoke("note_update", { noteId })`. Ein falscher Name
+3. **Argumentnamen werden zu camelCase.** Rust `fn source_fetch(source_id: Uuid)`
+   hieße in JavaScript `invoke("source_fetch", { sourceId })`. Ein falscher Name
    ergibt zur Laufzeit „missing required key". Die Befehle hier haben deshalb
    einwortige Argumente (`id`, `input`, `order`, `config`). Befehlsnamen
    selbst bleiben snake_case.
@@ -142,8 +142,8 @@ ls crates/desktop/gen/schemas/          # alle Berechtigungen, nach dem ersten B
 ## Sprache im Code
 
 * **Bezeichner englisch** — Typen, Funktionen, Felder, Tabellen, Befehle,
-  Komponenten, CSS-Klassen: `NoteInput`, `note_update`, `NoteEditor`,
-  `.note-item`.
+  Komponenten, CSS-Klassen: `SourceInput`, `source_fetch`, `SourceList`,
+  `.source-item`.
 * **Kommentare, Doku, Oberflächentexte und Testnamen deutsch.**
   `fn ein_titel_aus_leerzeichen_gilt_als_leer()`,
   `it("zeigt einen Eingabefehler am Feld, nicht oben")`.
@@ -180,8 +180,8 @@ fehlt der CLI. Genau das ist der Fehler, den dieses Kit verhindern soll.
 ### Prüfung gehört in die Fachlogik — nicht nach TypeScript
 
 ```rust
-// ✅ crates/core/src/note.rs
-pub fn create(conn: &Connection, input: NoteInput) -> Result<Note> {
+// ✅ crates/core/src/source.rs
+pub fn create(conn: &Connection, input: SourceInput) -> Result<Source> {
     let input = input.clean()?;   // trimmt und prüft, wirft Error::Validation
     …
 }
@@ -189,7 +189,7 @@ pub fn create(conn: &Connection, input: NoteInput) -> Result<Note> {
 
 ```tsx
 // ❌ in einer Komponente
-if (draft.title.trim() === "") setError("Titel fehlt");
+if (draft.name.trim() === "") setError("Name fehlt");
 ```
 
 Die Oberfläche schickt ab und zeigt an, was zurückkommt. Eine *zusätzliche*
@@ -201,9 +201,9 @@ Vorabprüfung für schnellere Rückmeldung ist erlaubt, ersetzt aber nie die in
 ## Die IPC-Grenze
 
 ```
-Komponente ──onSave()──▶ App.tsx ──api.notes.update(id, draft)──▶ invoke("note_update", {id, input})
+Komponente ──onFetch()──▶ App.tsx ──api.sources.fetch(id)──▶ invoke("source_fetch", {id})
                                                                           │
-     ◀── Note  oder  ApiError { code, message, fields? } ◀── commands.rs ─┴─▶ vizu_notion_core
+  ◀── FetchStatus oder ApiError { code, message, fields? } ◀── commands.rs ┴─▶ vizu_notion_core
 ```
 
 **Typen werden nicht doppelt geschrieben.** Rust-Typen, die über IPC gehen,
@@ -261,10 +261,11 @@ Namen werden nie umbenannt, nur ergänzt.
 
 ## Kurzkennungen: hinten, nicht vorn
 
-Die Kennungen sind UUIDv7. Die **beginnt mit dem Zeitstempel** — zwei Notizen
+Die Kennungen sind UUIDv7. Die **beginnt mit dem Zeitstempel** — zwei Quellen
 aus derselben Sekunde teilen sich die ersten zwölf Zeichen. Darum zeigt
-`vizu-notion note list` die **letzten** acht Zeichen, und `note::resolve_id` sucht
-per Endstück. Ist ein Endstück nicht eindeutig, gibt es `Error::Ambiguous` —
+`vizu-notion source list` die **letzten** acht Zeichen, und `ids::resolve_suffix`
+sucht per Endstück. Eine Quelle spricht man aber vor allem über ihren **Namen**
+an — so heißt sie auch in Vorlagen. Ist ein Endstück nicht eindeutig, gibt es `Error::Ambiguous` —
 nie einen zufälligen Treffer.
 
 ---
@@ -310,7 +311,10 @@ Bitte nicht „nachrüsten":
 
 | Wo | Was |
 |---|---|
-| `crates/core/tests/note.rs` | Die fachlichen Regeln. **Hier liegt der Schwerpunkt.** |
+| `crates/core/tests/source.rs` | Quellen: Prüfung, Namen, Import. **Hier liegt der Schwerpunkt.** |
+| `crates/core/tests/fetch.rs` | Abruf und Zwischenspeicher, gegen festgehaltene Notion-Antworten |
+| `crates/core/tests/notion.rs` | Takt, Wiederholung bei 429, Deutung der Fehler |
+| `crates/core/tests/secret.rs` | Token: Herkunft, Prüfung, Speicher |
 | `crates/core/tests/config.rs` | Einstellungen lesen, schreiben, ablehnen |
 | `crates/core/tests/layering.rs` | Der Schichtwächter — Rust **und** TypeScript |
 | `crates/cli/tests/cli.rs` | Ausgabeformat, Rückgabewerte, Schnappschüsse |
@@ -340,11 +344,11 @@ Vitest-Tests, `cargo deny` und `npm audit`. Warnungen sind Fehler.
 
 ## Eine neue Ressource anlegen
 
-`note` ist die Vorlage. Der Weg von der Tabelle bis in beide Schalen:
+`source` ist die Vorlage. Der Weg von der Tabelle bis in beide Schalen:
 
 1. `crates/core/migrations/000X_….sql` — neue Datei, `STRICT`.
 2. `crates/core/src/db.rs` — in `MIGRATIONS` eintragen.
-3. `crates/core/src/note.rs` kopieren, umbenennen; `#[derive(TS)]` an die
+3. `crates/core/src/source.rs` kopieren, umbenennen; `#[derive(TS)]` an die
    Typen, die über IPC gehen.
 4. `crates/core/src/lib.rs` — Modul veröffentlichen.
 5. Tests in `crates/core/tests/` — **zuerst**.

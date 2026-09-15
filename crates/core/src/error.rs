@@ -55,6 +55,46 @@ pub enum Error {
         prefix: String,
         matches: Vec<String>,
     },
+
+    /// Weder `VIZU_NOTION_TOKEN` noch ein Eintrag im Schlüsselbund.
+    #[error("kein Notion-Token hinterlegt — mit `vizu-notion token set` speichern{}", detail_suffix(.0))]
+    NoToken(Option<String>),
+
+    /// Der Schlüsselbund des Systems ist nicht erreichbar oder verweigert.
+    #[error("Schlüsselbund: {0}")]
+    SecretStore(String),
+
+    /// Notion hat geantwortet, aber mit einem Fehler.
+    #[error("Notion: {message}")]
+    Notion {
+        kind: NotionErrorKind,
+        status: u16,
+        message: String,
+    },
+
+    /// Keine Antwort von Notion: kein Netz, Zeitüberschreitung, TLS.
+    #[error("Notion nicht erreichbar: {0}")]
+    Unreachable(String),
+}
+
+fn detail_suffix(detail: &Option<String>) -> String {
+    detail
+        .as_ref()
+        .map(|d| format!(" ({d})"))
+        .unwrap_or_default()
+}
+
+/// Wie ein Fehler von Notion zu behandeln ist.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NotionErrorKind {
+    /// 401 — Token falsch, widerrufen oder abgelaufen.
+    Unauthorized,
+    /// 404 oder 403 — gibt es nicht, oder nicht mit der Integration geteilt.
+    NotShared,
+    /// 429 auch nach allen Wiederholungen.
+    RateLimited,
+    /// Alles andere, auch eine unerwartete Antwort.
+    Other,
 }
 
 /// Maschinenlesbare Fehlerart.
@@ -70,6 +110,12 @@ pub enum ErrorCode {
     AmbiguousId,
     ConfigInvalid,
     InternalError,
+    TokenMissing,
+    NotionUnauthorized,
+    NotionNotShared,
+    NotionUnreachable,
+    NotionError,
+    SecretStoreUnavailable,
 }
 
 impl ErrorCode {
@@ -80,6 +126,12 @@ impl ErrorCode {
             ErrorCode::AmbiguousId => "ambiguous_id",
             ErrorCode::ConfigInvalid => "config_invalid",
             ErrorCode::InternalError => "internal_error",
+            ErrorCode::TokenMissing => "token_missing",
+            ErrorCode::NotionUnauthorized => "notion_unauthorized",
+            ErrorCode::NotionNotShared => "notion_not_shared",
+            ErrorCode::NotionUnreachable => "notion_unreachable",
+            ErrorCode::NotionError => "notion_error",
+            ErrorCode::SecretStoreUnavailable => "secret_store_unavailable",
         }
     }
 }
@@ -91,6 +143,14 @@ impl Error {
             Error::Validation(_) => ErrorCode::ValidationFailed,
             Error::Ambiguous { .. } => ErrorCode::AmbiguousId,
             Error::ConfigParse { .. } => ErrorCode::ConfigInvalid,
+            Error::NoToken(_) => ErrorCode::TokenMissing,
+            Error::SecretStore(_) => ErrorCode::SecretStoreUnavailable,
+            Error::Unreachable(_) => ErrorCode::NotionUnreachable,
+            Error::Notion { kind, .. } => match kind {
+                NotionErrorKind::Unauthorized => ErrorCode::NotionUnauthorized,
+                NotionErrorKind::NotShared => ErrorCode::NotionNotShared,
+                NotionErrorKind::RateLimited | NotionErrorKind::Other => ErrorCode::NotionError,
+            },
             _ => ErrorCode::InternalError,
         }
     }
@@ -108,11 +168,13 @@ impl Error {
 
 /// Eine Meldung, die zu genau einem Eingabefeld gehört.
 ///
-/// `field` ist englisch und entspricht dem Feldnamen im Modell (`title`,
-/// `body`). `message` ist deutsch und für Menschen.
+/// `field` ist englisch und entspricht dem Feldnamen im Modell (`name`,
+/// `database_id`). Bei Listen steht der Eintrag dabei: `mappings.next` für
+/// die Rolle `next`, `sources[2].name` beim Import. `message` ist deutsch und
+/// für Menschen.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, ts_rs::TS)]
 pub struct FieldError {
-    pub field: &'static str,
+    pub field: String,
     pub message: String,
 }
 
@@ -151,18 +213,36 @@ impl Validator {
         Self::default()
     }
 
-    pub fn add(&mut self, field: &'static str, message: impl Into<String>) {
+    pub fn add(&mut self, field: impl Into<String>, message: impl Into<String>) {
         self.fields.push(FieldError {
-            field,
+            field: field.into(),
             message: message.into(),
         });
     }
 
     /// Fügt den Fehler nur hinzu, wenn `ok` falsch ist.
-    pub fn require(&mut self, ok: bool, field: &'static str, message: impl Into<String>) {
+    pub fn require(&mut self, ok: bool, field: impl Into<String>, message: impl Into<String>) {
         if !ok {
             self.add(field, message);
         }
+    }
+
+    /// Übernimmt die Feldfehler eines anderen Eingabefehlers, jedem Feld wird
+    /// `prefix` vorangestellt — beim Import `sources[2].`.
+    pub fn absorb(&mut self, prefix: &str, err: Error) -> Result<()> {
+        match err {
+            Error::Validation(v) => {
+                for f in v.fields {
+                    self.add(format!("{prefix}{}", f.field), f.message);
+                }
+                Ok(())
+            }
+            other => Err(other),
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.fields.is_empty()
     }
 
     pub fn finish(self) -> Result<()> {

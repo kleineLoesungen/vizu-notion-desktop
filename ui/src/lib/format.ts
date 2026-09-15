@@ -16,13 +16,3 @@ export function formatDateTime(rfc3339: string): string {
   const date = new Date(rfc3339);
   return Number.isNaN(date.getTime()) ? rfc3339 : dateTime.format(date);
 }
-
-/** Erste nicht leere Zeile des Textes, ohne Markdown-Zeichen am Anfang. */
-export function excerpt(body: string, max = 80): string {
-  const line =
-    body
-      .split("\n")
-      .map((l) => l.replace(/^[#>*\-\s`]+/, "").trim())
-      .find((l) => l.length > 0) ?? "";
-  return line.length > max ? `${line.slice(0, max - 1)}…` : line;
-}

@@ -1,27 +1,33 @@
-// Was rechts steht, solange keine Notiz ausgewählt ist.
+// Was rechts steht, solange keine Quelle ausgewählt ist.
 
 type Props = {
-  hasNotes: boolean;
-  onCreate: () => void;
-  onCreateExample: () => void;
+  hasSources: boolean;
 };
 
-export function EmptyState({ hasNotes, onCreate, onCreateExample }: Props) {
+export function EmptyState({ hasSources }: Props) {
   return (
     <section className="empty">
-      <h1>{hasNotes ? "Keine Notiz ausgewählt" : "Willkommen"}</h1>
-      <p className="muted">
-        Notizen in Markdown, mit Diagrammen aus <code>```mermaid</code>-Blöcken. Dieselben Daten
-        sieht die Kommandozeile: <code>just cli note list</code>
-      </p>
-      <div className="actions">
-        <button type="button" className="primary" onClick={onCreate}>
-          Neue Notiz
-        </button>
-        <button type="button" className="ghost" onClick={onCreateExample}>
-          Beispiel mit Diagramm anlegen
-        </button>
-      </div>
+      <h1>{hasSources ? "Keine Quelle ausgewählt" : "Willkommen"}</h1>
+      {hasSources ? (
+        <p className="muted">Links eine Quelle wählen, um Zuordnung und Abrufstand zu sehen.</p>
+      ) : (
+        <>
+          <p className="muted">
+            Eine Quelle ist eine Notion-Datenbank unter einem Namen. Angelegt werden sie vorerst auf
+            der Kommandozeile:
+          </p>
+          <pre className="hint">
+            <code>
+              vizu-notion token set{"\n"}
+              vizu-notion source add Projekte --database &lt;ID&gt; --map title=Name{"\n"}
+              vizu-notion fetch
+            </code>
+          </pre>
+          <p className="muted">
+            Vorhandene Konfiguration der Webapp: <code>vizu-notion source import sources.json</code>
+          </p>
+        </>
+      )}
     </section>
   );
 }

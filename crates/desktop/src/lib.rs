@@ -54,11 +54,10 @@ pub fn configure<R: Runtime>(builder: tauri::Builder<R>, state: AppState) -> tau
         // NEUER BEFEHL? Hier eintragen UND in ui/src/api.ts.
         // tests/ipc_contract.rs vergleicht beide Listen.
         .invoke_handler(tauri::generate_handler![
-            commands::note_list,
-            commands::note_get,
-            commands::note_create,
-            commands::note_update,
-            commands::note_delete,
+            commands::source_list,
+            commands::source_get,
+            commands::source_fetch,
+            commands::token_status,
             commands::config_get,
             commands::config_set,
             commands::app_info,

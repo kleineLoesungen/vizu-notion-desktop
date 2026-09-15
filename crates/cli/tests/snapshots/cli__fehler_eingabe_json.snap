@@ -7,10 +7,14 @@ expression: text
     "code": "validation_failed",
     "fields": [
       {
-        "field": "title",
+        "field": "name",
         "message": "darf nicht leer sein"
+      },
+      {
+        "field": "database_id",
+        "message": "keine Notion-Kennung — die 32 Zeichen aus der Adresse der Datenbank einfügen"
       }
     ],
-    "message": "title: darf nicht leer sein"
+    "message": "name: darf nicht leer sein; database_id: keine Notion-Kennung — die 32 Zeichen aus der Adresse der Datenbank einfügen"
   }
 }

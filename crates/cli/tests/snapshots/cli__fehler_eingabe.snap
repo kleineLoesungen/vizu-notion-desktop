@@ -2,4 +2,4 @@
 source: crates/cli/tests/cli.rs
 expression: text
 ---
-Fehler: title: darf nicht leer sein
+Fehler: name: darf nicht leer sein; database_id: keine Notion-Kennung — die 32 Zeichen aus der Adresse der Datenbank einfügen; mappings.title: Spaltenname fehlt
