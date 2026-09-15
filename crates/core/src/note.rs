@@ -5,12 +5,13 @@
 //!
 //! * **Die Prüfung der Eingabe gehört hierher**, nicht in die CLI und nicht in
 //!   die Oberfläche. Sonst gibt es sie zweimal, leicht verschieden.
-//! * **Kein `println!`, kein `clap`, kein `egui`.** Dieses Modul weiß nicht,
+//! * **Kein `println!`, kein `clap`, kein `tauri`.** Dieses Modul weiß nicht,
 //!   wer es aufruft. `crates/core/tests/layering.rs` besteht darauf.
 
 use rusqlite::{Connection, OptionalExtension, Row};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use time::OffsetDateTime;
+use ts_rs::TS;
 use uuid::Uuid;
 
 use crate::error::{Error, Result, Validator};
@@ -21,14 +22,17 @@ pub const TITLE_MAX: usize = 120;
 /// Längster erlaubter Text. Eine Notiz ist keine Datei.
 pub const BODY_MAX: usize = 10_000;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
 pub struct Note {
     pub id: Uuid,
     pub title: String,
     pub body: String,
+    // In TypeScript ein RFC-3339-Text in UTC — so, wie serde ihn schreibt.
     #[serde(with = "crate::timestamp::serde_rfc3339")]
+    #[ts(type = "string")]
     pub created_at: OffsetDateTime,
     #[serde(with = "crate::timestamp::serde_rfc3339")]
+    #[ts(type = "string")]
     pub updated_at: OffsetDateTime,
 }
 
@@ -36,7 +40,9 @@ pub struct Note {
 ///
 /// Der Typ ist absichtlich ein anderer als [`Note`]: so lässt sich nichts
 /// speichern, ohne vorher durch [`NoteInput::clean`] gegangen zu sein.
-#[derive(Debug, Clone, Default)]
+///
+/// `Deserialize`, weil die Oberfläche genau diesen Typ über IPC schickt.
+#[derive(Debug, Clone, Default, Deserialize, TS)]
 pub struct NoteInput {
     pub title: String,
     pub body: String,
@@ -77,7 +83,8 @@ impl NoteInput {
 }
 
 /// Wonach die Liste sortiert wird.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Deserialize, TS)]
+#[serde(rename_all = "lowercase")]
 pub enum Order {
     /// Zuletzt geändert zuerst. Das, was man auf einem Schreibtisch erwartet.
     #[default]

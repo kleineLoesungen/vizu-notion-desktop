@@ -1,47 +1,53 @@
-# Starter — Desktop-Anwendungen und Kommandozeile in Rust
+# Vizu Notion — Desktop-Anwendungen mit Tauri, Weboberfläche und Kommandozeile
 
-Startpunkt für kleine Desktop-Werkzeuge auf **macOS und Linux**: eine
-grafische Oberfläche mit **egui**, ein Kommandozeilenwerkzeug mit **clap**, und
-dazwischen **eine** Fachlogik, die beide benutzen. Daten in einer
-**eingebetteten SQLite**.
+Startpunkt für Desktop-Werkzeuge auf **macOS und Linux**, deren Oberfläche aus
+dem Web kommt: **React und TypeScript** im Webview des Betriebssystems, damit
+Browserpakete wie **mermaid.js**, marked oder Chart-Bibliotheken einfach über
+npm benutzbar sind. Dahinter **Tauri 2** und **eine** Fachlogik in Rust, die
+auch ein Kommandozeilenwerkzeug bedient. Daten in einer **eingebetteten
+SQLite**.
 
-Ein Binary je Schale, keine Systemabhängigkeit, kein Node, kein Webview, kein
-Datenbankserver. Gemacht für die Arbeit mit KI-Assistenten: klare Regeln in
-[CLAUDE.md](CLAUDE.md), fertige Rezepte, ein strenges `just check` — und ein
-Test, der die Architektur bewacht.
+Gemacht für die Arbeit mit KI-Assistenten: klare Regeln in
+[CLAUDE.md](CLAUDE.md) (inklusive der Tauri-1-Fallen, in die Sprachmodelle
+tappen), aus Rust erzeugte TypeScript-Typen, fertige Rezepte, ein strenges
+`just check` — und Tests, die die Architektur und die IPC-Grenze bewachen.
 
-Die Gegenstücke fürs Web: [starter-rust](https://github.com/kleineLoesungen/starter-rust)
-und [starter-php](https://github.com/kleineLoesungen/starter-php).
+Das Gegenstück ohne Webview, in reinem Rust mit egui:
+[vibe-starter-desktop](https://github.com/kleineLoesungen/vibe-starter-desktop).
 
 ---
 
 ## In fünf Minuten laufen
 
-Voraussetzungen: [rustup](https://rustup.rs),
-[just](https://github.com/casey/just) (`cargo install just`).
+Voraussetzungen: [rustup](https://rustup.rs), [Node.js 22](https://nodejs.org),
+[just](https://github.com/casey/just) (`brew install just` oder
+`cargo install just`). Unter **Linux** zusätzlich die WebKitGTK-Pakete:
 
 ```bash
-just setup    # Werkzeuge nachinstallieren, einmal durchbauen
-just gui      # Oberfläche starten
+sudo apt install libwebkit2gtk-4.1-dev libxdo-dev libssl-dev \
+    libayatana-appindicator3-dev librsvg2-dev build-essential
 ```
+
+(Fedora, Arch und andere: [Tauri-Voraussetzungen](https://v2.tauri.app/start/prerequisites/).)
+
+```bash
+just setup    # npm-Pakete, Werkzeuge, einmal durchbauen
+just dev      # Desktop-Anwendung starten, lädt bei Änderungen neu
+```
+
+Im leeren Fenster **„Beispiel mit Diagramm anlegen"** klicken — die Notiz
+enthält zwei Mermaid-Diagramme.
 
 Und dieselbe Anwendung auf der Kommandozeile:
 
 ```bash
-just cli note add "Einkauf" --body "Milch, Brot"
 just cli note list
+just cli note add "Einkauf" --body "Milch, Brot"
 just cli note list --json | jq '.[].title'
 ```
 
-Beides arbeitet auf **derselben** Datenbank. Wo die liegt, sagt
-`just cli paths`.
-
-Ohne `just` geht es auch von Hand:
-
-```bash
-cargo run -p starter-gui
-cargo run -p starter-cli -- note list
-```
+Beides arbeitet auf **derselben** Datenbank. Wo die liegt, sagt `just cli paths`.
+Ohne die echten Daten anzufassen: `just dev-sandbox` und `just sandbox note list`.
 
 ---
 
@@ -56,21 +62,22 @@ Repository mit frischer Historie an. Danach klonen und umbenennen:
 git clone git@github.com:<du>/notizbuch.git
 cd notizbuch
 ./scripts/new-project.sh notizbuch "Notizbuch"
-just check
+just setup && just check
 ```
 
 **Lokal**, ohne Umweg über GitHub:
 
 ```bash
-git clone <pfad-oder-url-zum-kit> notizbuch
+git clone https://github.com/kleineLoesungen/vibe-starter-tauri notizbuch
 cd notizbuch
 ./scripts/new-project.sh notizbuch "Notizbuch"
 git remote remove origin        # zeigt sonst noch auf das Kit
-just check
+just setup && just check
 ```
 
-Das Template benennt **nichts** um — das tut erst `new-project.sh`: Kistennamen,
-Binaries, Bündelkennung, Umgebungsvariablen, Datenverzeichnis, Fenstertitel.
+`new-project.sh` benennt um: Kistennamen, Binaries, Bündelkennung,
+Umgebungsvariablen, Datenverzeichnis, Fenstertitel, `package.json`,
+`tauri.conf.json`.
 
 **Das Skript direkt nach dem Klonen ausführen.** Bis dahin heißt das Projekt
 noch „starter" und benutzt dasselbe Datenverzeichnis wie das Kit — zwei
@@ -78,10 +85,8 @@ Projekte mit demselben Namen teilen sich unbemerkt eine Datenbank.
 
 ### Spätere Verbesserungen aus dem Kit holen
 
-Die Historien sind getrennt, `cherry-pick` arbeitet trotzdem darüber hinweg:
-
 ```bash
-git remote add kit https://github.com/kleineLoesungen/starter-desktop-cli
+git remote add kit https://github.com/kleineLoesungen/vibe-starter-tauri
 git fetch kit
 git log --oneline kit/main
 git cherry-pick <sha>
@@ -95,22 +100,19 @@ Ein `merge` wäre der falsche Griff — er zöge die ganze Kit-Geschichte herein
 
 | Bereich | Umsetzung |
 |---|---|
-| Aufbau | Arbeitsbereich mit `core` · `cli` · `gui`, bewacht von einem Test |
-| Oberfläche | egui/eframe 0.36 — reines Rust, keine Systembibliothek außer OpenGL |
-| Kommandozeile | clap 4, Unterbefehle, Shell-Vervollständigungen, Handbuchseiten |
-| Maschinenlesbar | `--json` bei **jedem** Befehl, auch bei Fehlern; eigene Rückgabewerte |
-| Daten | SQLite eingebettet, `STRICT`-Tabellen, WAL, nummerierte SQL-Migrationen |
-| Kennungen | UUIDv7, in der Bedienung als achtstelliges Endstück |
-| Einstellungen | TOML zum Anfassen, von Oberfläche und CLI gemeinsam benutzt |
-| Aussehen | Gestaltungsmarken an einer Stelle, hell/dunkel/Systemeinstellung, freie Akzentfarbe |
-| Prüfung | Feldgenaue Fehler, in der Oberfläche am Feld, in der API als `error.fields` |
-| Zeit | in UTC gespeichert, in Ortszeit angezeigt |
-| Protokoll | `tracing` — CLI auf stderr, Oberfläche in eine Datei |
-| macOS | `.app`-Bündel von Hand, universal (arm64 + x86_64), Symbol, ad-hoc signiert |
-| Linux | Tarball mit `.desktop`, Symbolen, Handbuch, Vervollständigungen, `install.sh` |
-| CI | GitHub Actions auf macOS **und** Linux, Release auf Tag |
-| Qualität | `cargo fmt`, Clippy als Fehler, `cargo deny`, `unsafe` verboten |
-| Tests | 51 Tests: Fachlogik, Schichtwächter, CLI-Schnappschüsse, Oberfläche ohne Fenster |
+| Aufbau | Arbeitsbereich `core` · `cli` · `desktop` + `ui/`, bewacht von einem Test |
+| Desktop | Tauri 2.11 — Webview des Systems (WebKit), Fenster in wenigen MB statt Chromium |
+| Oberfläche | React 19, TypeScript 7, Vite 8 — kein CSS-Framework, keine Zustandsbibliothek |
+| Browserpakete | mermaid 12 (nachgeladen), marked, DOMPurify — alles über npm, läuft offline |
+| IPC | Befehle als `async fn`, eine Fehlerhülle wie im CLI-JSON, TS-Typen aus Rust (ts-rs) |
+| Sicherheit | CSP ohne fremde Quellen, Capabilities, bereinigtes Markdown, Verweise im Standardbrowser |
+| Kommandozeile | clap 4, `--json` bei jedem Befehl, eigene Rückgabewerte, Handbuch, Vervollständigung |
+| Daten | SQLite eingebettet, `STRICT`, WAL, nummerierte Migrationen |
+| Einstellungen | TOML, von Oberfläche und CLI gemeinsam benutzt; hell/dunkel/System, Akzentfarbe |
+| Prüfung | Feldgenaue Fehler aus Rust — in der Oberfläche am Feld, in der CLI als `error.fields` |
+| Ausliefern | `.app` + `.dmg` (auch universal), `.deb` + `.AppImage`, CLI-Tarball |
+| Qualität | rustfmt, Clippy, Biome, `tsc`, `cargo deny`, `npm audit` — Warnungen sind Fehler |
+| Tests | Fachlogik, Schichtwächter, CLI-Schnappschüsse, IPC ohne Fenster, Oberfläche mit `mockIPC` |
 
 ---
 
@@ -118,34 +120,38 @@ Ein `merge` wäre der falsche Griff — er zöge die ganze Kit-Geschichte herein
 
 ```
 crates/
-├── core/                  ← FACHLOGIK. Kennt weder clap noch egui noch stdout.
-│   ├── migrations/          Nummerierte SQL-Dateien, ins Binary einkompiliert
-│   ├── src/note.rs          Beispielressource zum Kopieren
-│   ├── src/config.rs        Einstellungen, TOML
-│   ├── src/paths.rs         Die einzige Stelle mit macOS/Linux-Unterschieden
-│   ├── src/db.rs            Verbindung, Pragmas, Migrationen
-│   ├── src/error.rs         Zwei Fehlersorten, Validator
-│   └── tests/layering.rs    Der Wächter über die Schichtregel
+├── core/                    ← FACHLOGIK. Kennt weder clap noch tauri noch stdout.
+│   ├── migrations/            Nummerierte SQL-Dateien, ins Binary einkompiliert
+│   ├── src/note.rs            Beispielressource zum Kopieren
+│   ├── src/config.rs          Einstellungen, TOML
+│   ├── src/paths.rs           Die einzige Stelle mit macOS/Linux-Unterschieden
+│   └── tests/layering.rs      Der Wächter über die Schichtregel (Rust + TypeScript)
 │
-├── cli/                   ← Kommandozeile. Dünn.
-│   ├── src/args.rs          Nur die Befehlsstruktur
-│   ├── src/commands/        Was die Unterbefehle tun
-│   ├── src/output.rs        Mensch oder JSON — jeder Befehl kann beides
-│   ├── src/exit.rs          Rückgabewerte und Fehlerausgabe
-│   └── tests/snapshots/     Erwartete Ausgabe, verwaltet mit `just snapshots`
+├── cli/                     ← Kommandozeile `vizu-notion`. Dünn.
 │
-└── gui/                   ← Oberfläche. Dünn.
-    ├── src/model.rs         Zustand und Action — kennt die Anwendung nicht
-    ├── src/views/           Zeichnet nur, gibt Action zurück
-    ├── src/app.rs           Die einzige Stelle, an der Model auf core trifft
-    ├── src/theme.rs         Alle Farben und Abstände
-    └── src/widgets.rs       Wiederkehrende Bedienelemente
+└── desktop/                 ← Tauri-Schale. Dünn.
+    ├── tauri.conf.json        Fenster, CSP, Bündel
+    ├── capabilities/          Was das Fenster darf
+    ├── src/commands.rs        Die IPC-Befehle
+    ├── src/error.rs           ApiError — die Fehlerhülle
+    ├── tests/ipc_contract.rs  Befehle ohne Fenster aufrufen; Rust ↔ api.ts
+    └── tests/bindings.rs      Erzeugt ui/src/bindings.ts
+
+ui/
+├── index.html
+└── src/
+    ├── api.ts                 ← Die EINZIGE Stelle, die mit Rust spricht
+    ├── bindings.ts            Erzeugt aus Rust — nicht von Hand ändern
+    ├── App.tsx                Zustand, ruft api
+    ├── components/            Zeichnen nur
+    ├── lib/markdown.ts        Markdown → bereinigtes HTML
+    ├── lib/mermaid.ts         Diagramme, nachgeladen
+    ├── theme.css              Die EINZIGE Datei mit Farben
+    └── app.css                Aufbau und Abstände
 
 scripts/
-├── new-project.sh         Kit zu eigenem Projekt umbenennen
-├── bundle-macos.sh        dist/Starter.app
-├── package-linux.sh       dist/starter-<version>-<arch>-linux.tar.gz
-└── icons.sh               Symbole aus assets/icon.svg (nur macOS)
+├── new-project.sh           Kit zu eigenem Projekt umbenennen
+└── package-cli.sh           dist/vizu-notion-cli-<version>-<os>-<arch>.tar.gz
 ```
 
 ---
@@ -153,13 +159,13 @@ scripts/
 ## Ausliefern
 
 ```bash
-just bundle-macos      # dist/Starter.app, universal
-just package-linux     # dist/starter-0.1.0-x86_64-linux.tar.gz
+just bundle                   # macOS: .app + .dmg   Linux: .deb + .AppImage
+just bundle-macos-universal   # Apple Silicon + Intel in einem Bündel
+just package-cli              # die Kommandozeile als Tarball
 ```
 
-Signieren und Notarisieren für die Weitergabe: [docs/RELEASE.md](docs/RELEASE.md).
-
-Ein Tag `v*` löst beides in der CI aus und hängt die Ergebnisse an das Release.
+Ergebnisse unter `target/release/bundle/` bzw. `dist/`. Signieren und
+Notarisieren: [docs/RELEASE.md](docs/RELEASE.md).
 
 ---
 
@@ -167,9 +173,9 @@ Ein Tag `v*` löst beides in der CI aus und hängt die Ergebnisse an das Release
 
 | Datei | Inhalt |
 |---|---|
-| [CLAUDE.md](CLAUDE.md) | Die Regeln. Fallstricke, festgenagelte Versionen, egui-Eigenheiten |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Warum die Schichten so geschnitten sind |
+| [CLAUDE.md](CLAUDE.md) | Die Regeln. Tauri-2-Fallstricke, festgenagelte Versionen, Schichtregel |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Warum die Schichten so geschnitten sind, wie die IPC-Grenze aussieht |
+| [docs/RECIPES.md](docs/RECIPES.md) | npm-Paket einbinden, neuer Befehl, neue Ressource, Plugin, Hintergrundarbeit |
+| [docs/DESIGN.md](docs/DESIGN.md) | Aussehen ändern, Farbmarken, Symbole |
 | [docs/CLI.md](docs/CLI.md) | Befehle, Rückgabewerte, JSON-Format |
-| [docs/DESIGN.md](docs/DESIGN.md) | Aussehen ändern, Gestaltungsmarken, Symbole |
-| [docs/RECIPES.md](docs/RECIPES.md) | Neue Ressource, neuer Befehl, neue Ansicht, neue Migration |
 | [docs/RELEASE.md](docs/RELEASE.md) | Bündeln, signieren, notarisieren, veröffentlichen |

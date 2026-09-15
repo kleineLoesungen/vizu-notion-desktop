@@ -10,10 +10,11 @@
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 use crate::error::{Error, Result, Validator};
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[serde(default, deny_unknown_fields)]
 pub struct Config {
     /// Fenstertitel und Name in der Oberfläche.
@@ -27,14 +28,14 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            app_name: "Starter".to_string(),
+            app_name: "Vizu Notion".to_string(),
             theme: Theme::System,
             accent: "#3b6ea5".to_string(),
         }
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default, TS)]
 #[serde(rename_all = "lowercase")]
 pub enum Theme {
     #[default]

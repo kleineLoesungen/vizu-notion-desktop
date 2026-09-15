@@ -3,11 +3,12 @@
 #
 #   ./scripts/new-project.sh notizbuch "Notizbuch"
 #
-# Ersetzt überall "starter" durch den neuen Namen: Kistennamen, Binaries,
-# Umgebungsvariablen, Datenverzeichnis, Bündelkennung, Fenstertitel, Doku.
+# Ersetzt überall "vizu-notion" durch den neuen Namen: Kistennamen, Binaries,
+# Umgebungsvariablen, Datenverzeichnis, Bündelkennung, Fenstertitel,
+# package.json, tauri.conf.json, Doku.
 #
 # DIREKT NACH DEM KLONEN AUSFÜHREN, vor jedem `just`-Befehl. Bis dahin heißt
-# der Klon noch "starter" und benutzt DASSELBE Datenverzeichnis wie das Kit —
+# der Klon noch "vizu-notion" und benutzt DASSELBE Datenverzeichnis wie das Kit —
 # zwei Projekte mit demselben Namen teilen sich unbemerkt eine Datenbank.
 #
 # Der ganze Ablauf steht in einer Funktion, die erst am Dateiende gerufen wird.
@@ -42,8 +43,8 @@ USAGE
         exit 2
     fi
 
-    if [ "$slug" = "starter" ]; then
-        echo "Fehler: 'starter' ist der Name des Kits selbst." >&2
+    if [ "$slug" = "vizu-notion" ]; then
+        echo "Fehler: 'vizu-notion' ist der Name des Kits selbst." >&2
         exit 2
     fi
 
@@ -72,6 +73,9 @@ USAGE
     fi
 
     local file tmp count=0
+    # Platzhalter zusammengesetzt, damit er in dieser Datei nie wörtlich
+    # steht — das Skript schreibt sich beim Lauf ja selbst mit um.
+    local park="@@SCHWESTER""KIT@@"
     tmp=$(mktemp)
     for file in $files; do
         case "$file" in
@@ -79,18 +83,22 @@ USAGE
         esac
 
         # Reihenfolge ist wichtig: spezifische Schreibweisen zuerst, damit das
-        # allgemeine "starter" am Schluss nichts zerlegt, was schon ersetzt ist.
+        # allgemeine "vizu-notion" am Schluss nichts zerlegt, was schon ersetzt ist.
+        # Der Verweis auf das Schwester-Kit wird vorher geparkt und am Ende
+        # zurückgestellt — der Name eines fremden Repositorys bleibt, wie er ist.
         #
         # Umweg über eine Zwischendatei statt `sed -i`: BSD-sed (macOS) verlangt
         # dort ein Argument, GNU-sed (Linux) verbietet es.
         LC_ALL=C sed \
-            -e "s/STARTER_/${upper}_/g" \
-            -e "s/starter_/${underscore}_/g" \
-            -e "s/starter-desktop-cli/${slug}/g" \
-            -e "s/starter-/${slug}-/g" \
-            -e "s/de\.kleineloesungen\.starter/de.example.${underscore}/g" \
-            -e "s/Starter/${display}/g" \
-            -e "s/starter/${slug}/g" \
+            -e "s/vibe-starter-desktop/${park}/g" \
+            -e "s/VIZU_NOTION_/${upper}_/g" \
+            -e "s/vizu_notion_/${underscore}_/g" \
+            -e "s/vizu-notion/${slug}/g" \
+            -e "s/vizu-notion-/${slug}-/g" \
+            -e "s/de\.kleineloesungen\.vizu-notion/de.example.${underscore}/g" \
+            -e "s/Vizu Notion/${display}/g" \
+            -e "s/vizu-notion/${slug}/g" \
+            -e "s/${park}/vibe-starter-desktop/g" \
             "$file" > "$tmp"
         # Nur schreiben, wenn sich etwas geändert hat — sonst wird bei jedem
         # Lauf die Änderungszeit jeder Datei neu gesetzt.
@@ -101,18 +109,15 @@ USAGE
     done
     rm -f "$tmp"
 
-    # Das Symbol heißt nach dem Projekt.
-    if [ -f assets/icons/starter.icns ]; then
-        mv assets/icons/starter.icns "assets/icons/${slug}.icns"
-    fi
-
     # Die Umbenennung verschiebt die alphabetische Reihenfolge der `use`-Zeilen:
-    # "starter_core" sortiert vor "time" und "uuid", ein Name wie
+    # "vizu_notion_core" sortiert vor "time" und "uuid", ein Name wie
     # "vorlagentest_core" danach. Ohne diesen Lauf scheitert `just check` beim
     # allerersten Mal an einem reinen Formatierungsunterschied — der denkbar
     # schlechteste erste Eindruck für ein frisches Projekt.
     if command -v cargo >/dev/null 2>&1; then
         cargo fmt --all
+        # package-lock.json trägt den Namen aus package.json mit.
+        if [ -d node_modules ]; then npm install --package-lock-only >/dev/null 2>&1 || true; fi
         echo "$count Dateien geändert, Importe neu sortiert."
     else
         echo "$count Dateien geändert."
@@ -136,11 +141,12 @@ USAGE
         echo "  git remote remove origin        # der Klon zeigt noch auf das Kit"
     fi
 
+    echo "  just setup                      # npm-Pakete, einmal durchbauen"
     echo "  just check                      # muss grün sein"
-    echo "  just gui"
+    echo "  just dev"
     echo ""
-    echo "assets/icon.svg ist noch das Symbol des Kits — anpassen und danach"
-    echo "'just icons' laufen lassen."
+    echo "assets/icon.png ist noch das Symbol des Kits — ersetzen (1024×1024) und"
+    echo "danach 'just icons' laufen lassen."
 }
 
 # `exit 0` MUSS auf dieselbe Zeile: Bash liest den Rest der Datei erst nach der

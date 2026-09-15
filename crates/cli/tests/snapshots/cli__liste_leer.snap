@@ -2,4 +2,4 @@
 source: crates/cli/tests/cli.rs
 expression: text
 ---
-Keine Notizen. Anlegen mit:  starter note add "Titel"
+Keine Notizen. Anlegen mit:  vizu-notion note add "Titel"

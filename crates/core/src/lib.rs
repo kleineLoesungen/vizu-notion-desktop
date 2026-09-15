@@ -4,7 +4,7 @@
 //!
 //! Diese Kiste kennt **weder Kommandozeile noch Oberfläche noch stdout**.
 //! Sie nimmt Werte entgegen, gibt Werte oder [`Error`] zurück und schreibt
-//! nichts auf den Bildschirm. Wer hier `clap`, `egui`, `println!` oder
+//! nichts auf den Bildschirm. Wer hier `clap`, `tauri`, `println!` oder
 //! `std::process::exit` einbaut, bringt `crates/core/tests/layering.rs` zum
 //! Fehlschlagen — und das ist der Zweck dieses Tests.
 //!
@@ -15,12 +15,12 @@
 //! # Einstieg
 //!
 //! ```no_run
-//! use starter_core::{App, Paths, note::{self, NoteInput, Order}};
+//! use vizu_notion_core::{App, Paths, note::{self, NoteInput, Order}};
 //!
 //! let app = App::open(Paths::resolve()?)?;
 //! let created = note::create(app.conn(), NoteInput::new("Titel", "Text"))?;
 //! let all = note::list(app.conn(), Order::Recent)?;
-//! # Ok::<(), starter_core::Error>(())
+//! # Ok::<(), vizu_notion_core::Error>(())
 //! ```
 
 pub mod config;
@@ -31,7 +31,7 @@ pub mod paths;
 pub mod timestamp;
 
 pub use config::{Config, Theme};
-pub use error::{Error, FieldError, Result, ValidationError};
+pub use error::{Error, ErrorCode, FieldError, Result, ValidationError};
 pub use paths::Paths;
 
 use rusqlite::Connection;
@@ -64,7 +64,7 @@ impl App {
     /// [`App::open`] mit [`Paths::under`] auf einem `tempfile::TempDir`.
     pub fn in_memory() -> Result<Self> {
         Ok(Self {
-            paths: Paths::under(std::env::temp_dir().join("starter-in-memory")),
+            paths: Paths::under(std::env::temp_dir().join("vizu-notion-in-memory")),
             config: Config::default(),
             conn: db::open_in_memory()?,
         })

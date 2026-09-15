@@ -1,8 +1,8 @@
 use std::io::{IsTerminal, Read, Write};
 
 use anyhow::{Context, Result, bail};
-use starter_core::App;
-use starter_core::note::{self, NoteInput};
+use vizu_notion_core::App;
+use vizu_notion_core::note::{self, NoteInput};
 
 use crate::args::NoteCommand;
 use crate::output::Out;
@@ -70,7 +70,7 @@ pub fn run(cmd: NoteCommand, app: &App, out: &Out) -> Result<()> {
 
 /// `-` bedeutet: den Text von stdin lesen.
 ///
-/// Damit geht `cat notiz.md | starter note add "Titel" --body -` und die
+/// Damit geht `cat notiz.md | vizu-notion note add "Titel" --body -` und die
 /// Anwendung bleibt in Pipelines brauchbar.
 fn read_body(arg: &str) -> Result<String> {
     if arg != "-" {

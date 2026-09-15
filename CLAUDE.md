@@ -8,116 +8,216 @@ diesem Projekt gilt und wo die Fallstricke liegen.
 
 ## Der Stack in einem Satz
 
-Rust mit drei Kisten in einem Arbeitsbereich: `core` (Fachlogik, SQLite
-eingebettet), `cli` (clap) und `gui` (egui/eframe). Ein Binary je Schale, keine
-Systemabhängigkeit, kein Datenbankserver. **Kein Node, kein Webview, kein
-Electron, kein Tauri.**
+Rust mit drei Kisten in einem Arbeitsbereich — `core` (Fachlogik, SQLite
+eingebettet), `cli` (clap) und `desktop` (**Tauri 2**) — plus eine
+Weboberfläche in `ui/` (**React 19, TypeScript, Vite**), die im Webview des
+Betriebssystems läuft. Ziel: **macOS und Linux**. Browserpakete wie
+**mermaid**, marked oder DOMPurify kommen über npm ins Bündel.
+
+---
+
+## Wo was liegt
+
+```
+crates/core/       Fachlogik und Prüfung. SQLite. Kennt weder clap noch tauri.
+crates/cli/        Kommandozeile `vizu-notion`. Dünn.
+crates/desktop/    Tauri-Schale. Dünn. tauri.conf.json, capabilities/, icons/.
+ui/src/api.ts      Die EINZIGE Stelle, die mit Rust spricht.
+ui/src/App.tsx     Zustand der Oberfläche. Die einzige Komponente, die api benutzt.
+ui/src/components/ Zeichnen nur. Props rein, Rückrufe raus.
+ui/src/lib/        Reine Hilfsfunktionen: Markdown, Mermaid, Datum, Farbschema.
+ui/src/bindings.ts ERZEUGT aus Rust-Typen. Nie von Hand ändern → `just bindings`.
+ui/src/theme.css   Die EINZIGE Datei mit Farben.
+```
+
+Es gibt **kein `src-tauri/`**. Die Tauri-Schale liegt in `crates/desktop`,
+neben den anderen Kisten; die Tauri-CLI findet `tauri.conf.json` dort von
+selbst. `npm run tauri …` immer aus der Wurzel aufrufen.
 
 ---
 
 ## Festgenagelte Versionen — bitte nicht „aktualisieren"
 
-Alle Versionen stehen in `[workspace.dependencies]` der obersten `Cargo.toml`.
-Nur dort. Eine Kiste schreibt `foo.workspace = true`, nie eine eigene Nummer.
+Rust-Versionen stehen in `[workspace.dependencies]` der obersten `Cargo.toml`.
+Nur dort. npm-Versionen stehen **exakt** (ohne `^`) in `package.json`.
 
 | Paket | Version | Grund |
 |---|---|---|
-| **egui / eframe / egui_kittest** | **0.36.2** | Müssen im Gleichschritt bleiben — `egui_kittest` bindet an genau diese egui-Fassung. Zwischen 0.3x-Ausgaben gibt es Umbenennungen, siehe den nächsten Abschnitt. |
-| **rusqlite** | **0.40** mit `bundled` | `bundled` kompiliert SQLite mit ins Binary. **Nicht** auf die Systembibliothek umstellen: dann braucht die ausgelieferte Anwendung `libsqlite3` in passender Fassung auf dem fremden Rechner. |
-| **clap** | **4.6** mit `derive`, `env`, `string` | `env` für `--data-dir` aus der Umgebung, `string` weil `clap_mangen` einen zur Laufzeit gebauten Namen braucht. Ohne die beiden Merkmale kompiliert `crates/cli` nicht. |
-| **Rust** | **1.98.1** | In `rust-toolchain.toml`. Ein Upgrade ist eine bewusste Entscheidung, damit CI und Arbeitsplatz nie auseinanderlaufen. |
+| **tauri** / **@tauri-apps/api** / **@tauri-apps/cli** | **2.11** | Rust-Kiste und npm-Pakete müssen in derselben Nebenversion bleiben, sonst meldet `tauri dev` „version mismatch". Plugins (`tauri-plugin-opener` ↔ `@tauri-apps/plugin-opener`) ebenso paarweise. |
+| **ts-rs** | **12** | Erzeugt `ui/src/bindings.ts`. Die API hat sich zwischen 10, 11 und 12 geändert (`Config`-Argument). |
+| **mermaid** | **12** | Lädt nach (`import("mermaid")`). Die alte `mermaid.init()`/`contentLoaded`-API existiert nicht mehr — `parse` und `render` benutzen. |
+| **lodash-es** (overrides) | **4.18.1** | Mermaid 12 zieht über chevrotain eine verwundbare Fassung herein. Der Eintrag unter `overrides` in `package.json` hebt sie an. Erst entfernen, wenn `npm audit` ohne ihn sauber ist. |
+| **React** | **19** | `ReactDOM.render` gibt es nicht mehr — `createRoot`. |
+| **TypeScript** | **7** | Der native Compiler. `tsc --noEmit` prüft nur, gebaut wird von Vite. |
+| **Vite** / **Vitest** | **8** / **5** | Test-Einstellungen stehen in `vite.config.ts` unter `test`. |
+| **Biome** | **2.5** | Formatierer und Linter in einem. Kein ESLint, kein Prettier. |
+| **rusqlite** | **0.40** mit `bundled` | SQLite ins Binary. **Nicht** auf die Systembibliothek umstellen. |
+| **Rust** | **1.98.1** | In `rust-toolchain.toml`. |
 
-Wer eine Version anheben will: erst `just dupes` prüfen, dann `just check`.
+Wer eine Version anheben will: erst `just dupes` und `npm outdated`, dann
+`just check`.
 
 ---
 
-## egui 0.36 — vier Eigenheiten
+## Tauri 2 — die Fallstricke
 
 Das ist der Teil, bei dem Sprachmodelle am zuverlässigsten danebenliegen: Die
-allermeisten Beispiele im Netz stammen aus egui 0.2x bis 0.31, und dort hießen
-die Dinge anders. Was aus dem Gedächtnis kommt, kompiliert hier oft nicht.
+meisten Beispiele im Netz stammen aus **Tauri 1**, und dort hieß fast alles
+anders. Was aus dem Gedächtnis kommt, kompiliert oft nicht — oder kompiliert
+und wird zur Laufzeit verweigert.
 
-1. **`App::ui`, nicht `App::update`.** Die Zeichenfunktion bekommt ein `Ui`,
-   keinen `Context`:
-   ```rust
-   impl eframe::App for Gui {
-       fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) { … }   // ✅
-       fn update(&mut self, ctx: &egui::Context, …) { … }                      // ❌ existiert nicht
-   }
-   ```
-   Wer vor dem Zeichnen etwas erledigen muss, nimmt das voreingestellte
-   `App::logic(&mut self, ctx, frame)`.
+1. **Tauri 1 ist vorbei.** Die häufigsten Verwechslungen:
 
-2. **`Panel`, nicht `SidePanel`/`TopBottomPanel`.** Die vier Panel-Typen sind zu
-   einem zusammengefasst, und alle `show`-Methoden nehmen `&mut Ui`:
-   ```rust
-   egui::Panel::left("liste").default_size(260.0).show(ui, |ui| …);   // ✅
-   egui::SidePanel::left("liste").default_width(260.0).show(ctx, …);  // ❌
-   ```
-   Die Breite heißt `default_size`, nicht `default_width`.
+   | Tauri 1 ❌ | Tauri 2 ✅ |
+   |---|---|
+   | `import { invoke } from "@tauri-apps/api/tauri"` | `import { invoke } from "@tauri-apps/api/core"` |
+   | `"allowlist": { … }` in tauri.conf.json | `crates/desktop/capabilities/*.json` |
+   | `import { open } from "@tauri-apps/api/shell"` | Plugin: `@tauri-apps/plugin-opener` + `tauri-plugin-opener` |
+   | `import { appWindow } from "@tauri-apps/api/window"` | `getCurrentWindow()` |
+   | `"distDir"`, `"devPath"` | `"frontendDist"`, `"devUrl"` |
+   | `window.__TAURI__` | nur mit `withGlobalTauri` — hier absichtlich aus; importieren |
 
-3. **Stile gibt es zweimal — hell und dunkel.** `ctx.style()` und
-   `ctx.style_mut()` existieren nicht mehr; es gibt `style_of(theme)` und
-   `style_mut_of(theme)`. Wer eine Einstellung nur für die gerade sichtbare
-   Fassung setzt, bekommt beim Umschalten der Systemeinstellung das alte
-   Aussehen zurück. Für Farben beim Zeichnen ist `ui.visuals()` richtig — das
-   `Ui` weiß, in welcher Fassung es gerade zeichnet, der `Context` nicht.
+2. **Befehle sind `async fn`.** Ein synchroner `#[tauri::command] fn` läuft
+   auf dem Hauptfaden und friert das Fenster ein, solange er arbeitet. Ein
+   `async`-Befehl mit geliehenem Argument (`State<'_, …>`) **muss** `Result`
+   zurückgeben, sonst meldet der Compiler einen schwer lesbaren
+   Lebensdauerfehler.
 
-4. **Schriftzeichen prüfen.** Die mitgelieferte Schrift kennt nicht jedes
-   Symbol. `✕` (U+2715) wird als leeres Kästchen gezeichnet, `×` (U+00D7) nicht.
-   Nach dem Einbau eines Symbols einmal hinsehen.
+3. **Argumentnamen werden zu camelCase.** Rust `fn note_update(note_id: Uuid)`
+   heißt in JavaScript `invoke("note_update", { noteId })`. Ein falscher Name
+   ergibt zur Laufzeit „missing required key". Die Befehle hier haben deshalb
+   einwortige Argumente (`id`, `input`, `order`, `config`). Befehlsnamen
+   selbst bleiben snake_case.
 
-Im Zweifel nicht raten, sondern nachlesen — die Quelle liegt lokal:
+4. **Neuer Befehl = drei Stellen.** `commands.rs` (Funktion),
+   `lib.rs` (`generate_handler![…]`), `ui/src/api.ts` (`call<…>("name", …)`).
+   `crates/desktop/tests/ipc_contract.rs` schlägt fehl, wenn eine fehlt.
+
+5. **Plugins und Fenster-API brauchen eine Berechtigung.** Was nicht in
+   `crates/desktop/capabilities/default.json` steht, wird zur Laufzeit mit
+   „… not allowed" abgelehnt — obwohl alles kompiliert. Beispiel: Den
+   Fenstertitel setzen braucht `core:window:allow-set-title`. Eigene Befehle
+   aus `commands.rs` sind ohne Eintrag erlaubt.
+
+6. **Der Fehlertyp muss `Serialize` sein.** `vizu_notion_core::Error` ist es
+   absichtlich nicht. Befehle geben `ApiResult<T>` zurück; `ApiError` hat
+   dieselbe Form wie `error` im JSON der CLI (`code`, `message`, `fields`).
+
+7. **Kein Netz, kein CDN.** Die CSP in `tauri.conf.json` erlaubt nur eigene
+   Dateien. `<script src="https://cdn…">` lädt nicht — ohne sichtbaren Fehler.
+   Pakete über npm installieren und importieren.
+
+   **Inline-Stile und die Nonce.** Mermaid (und viele Diagramm-, Editor- und
+   Chart-Pakete) setzen Stile inline. Dafür steht `'unsafe-inline'` in
+   `style-src`. Tauri hängt beim Bündeln aber eine Nonce an `style-src` — und
+   sobald eine Nonce da ist, **ignoriert der Browser `'unsafe-inline'`**. Im
+   Entwicklungsbetrieb sieht alles richtig aus, im fertigen Bündel sind die
+   Diagramme schwarze Flächen. Deshalb steht in `tauri.conf.json`
+   `"dangerousDisableAssetCspModification": ["style-src"]`. Nicht entfernen.
+   Für `script-src` bleibt die Nonce an — dort ist sie ein Schutz.
+
+8. **Verweise öffnen nicht von selbst im Browser.** Ein `<a href>` im Webview
+   navigiert das Anwendungsfenster weg. `MarkdownView` fängt Klicks ab,
+   `api.openExternal` öffnet im Standardbrowser.
+
+9. **Pfade kommen aus `core`, nicht aus Tauri.** `app.path().app_data_dir()`
+   liefert `~/Library/Application Support/de.example.vizu_notion` — die
+   CLI sucht in `…/vizu-notion`. Beide Schalen benutzen `vizu_notion_core::Paths`,
+   sonst sehen sie verschiedene Datenbanken.
+
+10. **`ui/dist` muss existieren, bevor Rust kompiliert.** `generate_context!`
+    bettet es ein. Nach `just clean` erst `npm run build:ui`. `just test` tut
+    das von selbst.
+
+Im Zweifel nicht raten, sondern nachlesen — die Quellen liegen lokal:
 
 ```bash
-grep -rn "pub fn show" ~/.cargo/registry/src/*/egui-0.36.2/src/containers/panel.rs
+grep -rn "pub fn get_ipc_response" ~/.cargo/registry/src/*/tauri-2.11.*/src/test/
+ls node_modules/@tauri-apps/api/*.d.ts
+ls crates/desktop/gen/schemas/          # alle Berechtigungen, nach dem ersten Bau
 ```
 
 ---
 
 ## Sprache im Code
 
-* **Bezeichner englisch** — Typen, Funktionen, Felder, Tabellen und Spalten,
-  Optionsnamen, Aktionen: `NoteInput::clean()`, `notes.updated_at`,
-  `--data-dir`, `Action::SaveDraft`. So heißen sie auch in Rust, und so rät man
-  sie.
+* **Bezeichner englisch** — Typen, Funktionen, Felder, Tabellen, Befehle,
+  Komponenten, CSS-Klassen: `NoteInput`, `note_update`, `NoteEditor`,
+  `.note-item`.
 * **Kommentare, Doku, Oberflächentexte und Testnamen deutsch.**
-  `fn ein_titel_aus_leerzeichen_gilt_als_leer()`.
+  `fn ein_titel_aus_leerzeichen_gilt_als_leer()`,
+  `it("zeigt einen Eingabefehler am Feld, nicht oben")`.
 
 ---
 
 ## Die eine wichtige Schichtregel
 
 ```
-crates/core/       →  FACHLOGIK UND PRÜFUNG. Kennt WEDER clap NOCH egui NOCH stdout.
-crates/cli/        →  dünn. Argumente parsen, core rufen, Ausgabe formatieren.
-crates/gui/        →  dünn. Zustand zeichnen, Aktionen an core schicken.
-crates/gui/views/  →  zeichnet nur. Sieht nicht einmal die Anwendung.
+crates/core/        →  FACHLOGIK UND PRÜFUNG. Kennt WEDER clap NOCH tauri NOCH stdout.
+crates/cli/         →  dünn. Argumente parsen, core rufen, Ausgabe formatieren.
+crates/desktop/     →  dünn. IPC annehmen, core rufen, JSON zurück. Kein SQL.
+ui/src/api.ts       →  die einzige Brücke nach Rust.
+ui/src/App.tsx      →  Zustand. Wünsche der Komponenten → api.
+ui/src/components/  →  zeichnet nur. Sieht api nicht.
 ```
 
-**`crates/core/tests/layering.rs` schlägt fehl**, sobald in `core` ein
-`println!`, ein `clap`, ein `egui` oder ein `std::process::exit` auftaucht —
-und ebenso, sobald eine Ansicht `starter_core::App`, `note::create` oder
-`conn()` berührt. Den Code verschieben, nicht den Test lockern.
+**`crates/core/tests/layering.rs` schlägt fehl**, sobald
+
+* in `core` ein `println!`, `clap`, `tauri` oder `std::process::exit` steht,
+* in `desktop` ein `execute(`, `query_row`, `prepare(` oder `Validator` steht,
+* außerhalb von `api.ts` `@tauri-apps/api/…`, `@tauri-apps/plugin-…` oder
+  `invoke(` steht,
+* eine Komponente `api` importiert oder `innerHTML` setzt,
+* irgendwo `dangerouslySetInnerHTML` oder ein CDN auftaucht,
+* außerhalb von `theme.css` eine Hexfarbe oder `rgb(` steht.
+
+Den Code verschieben, nicht den Test lockern.
 
 Der Grund ist nicht Sauberkeit: **Alles, was in `core` steht, gilt für die
-Kommandozeile und die Oberfläche gleichermaßen.** Eine Prüfung, die in einer
-Schale steht, fehlt der anderen. Genau das ist der Fehler, den dieses Kit
-verhindern soll.
+Kommandozeile und die Oberfläche gleichermaßen.** Eine Prüfung in TypeScript
+fehlt der CLI. Genau das ist der Fehler, den dieses Kit verhindern soll.
 
-### Prüfung gehört in die Fachlogik
+### Prüfung gehört in die Fachlogik — nicht nach TypeScript
 
 ```rust
-// ✅ in crates/core/src/note.rs
+// ✅ crates/core/src/note.rs
 pub fn create(conn: &Connection, input: NoteInput) -> Result<Note> {
     let input = input.clean()?;   // trimmt und prüft, wirft Error::Validation
     …
 }
 ```
 
-`Validator` sammelt **alle** fehlerhaften Felder und bricht erst am Ende ab.
-Wer beim ersten Fehler zurückkehrt, zwingt den Benutzer, dieselbe Maske
-mehrfach abzuschicken.
+```tsx
+// ❌ in einer Komponente
+if (draft.title.trim() === "") setError("Titel fehlt");
+```
+
+Die Oberfläche schickt ab und zeigt an, was zurückkommt. Eine *zusätzliche*
+Vorabprüfung für schnellere Rückmeldung ist erlaubt, ersetzt aber nie die in
+`core` — und die Meldung kommt trotzdem aus Rust.
+
+---
+
+## Die IPC-Grenze
+
+```
+Komponente ──onSave()──▶ App.tsx ──api.notes.update(id, draft)──▶ invoke("note_update", {id, input})
+                                                                          │
+     ◀── Note  oder  ApiError { code, message, fields? } ◀── commands.rs ─┴─▶ vizu_notion_core
+```
+
+**Typen werden nicht doppelt geschrieben.** Rust-Typen, die über IPC gehen,
+tragen `#[derive(TS)]`. Daraus entsteht `ui/src/bindings.ts`:
+
+```bash
+just bindings        # nach jeder Änderung an einem solchen Rust-Typ
+```
+
+`crates/desktop/tests/bindings.rs` schlägt fehl, wenn die Datei veraltet ist.
+Ein neuer Typ wird dort in `generate()` eingetragen.
+
+Zeitstempel sind in TypeScript `string` (RFC 3339, UTC). Umgerechnet wird nur
+zur Anzeige (`lib/format.ts`).
 
 ---
 
@@ -125,83 +225,61 @@ mehrfach abzuschicken.
 
 | Sorte | Woran erkennbar | Wohin damit |
 |---|---|---|
-| Eingabefehler | `err.fields()` ist `Some(...)` | CLI: Rückgabewert 4 und `error.fields` im JSON. Oberfläche: Meldung **am Feld**, nicht oben am Fenster. |
-| Alles andere | `err.fields()` ist `None` | CLI: Rückgabewert 1. Oberfläche: Meldung oben. |
+| Eingabefehler | Rust: `err.fields()` ist `Some`. TS: `apiError.isValidation` | CLI: Rückgabewert 4. Oberfläche: **am Feld** (`fieldMessage("title")`). |
+| Alles andere | sonst | CLI: Rückgabewert 1. Oberfläche: Leiste oben (`banner`). |
 
-Deshalb gibt `core` niemals `anyhow::Error` zurück — sonst lässt sich das nicht
-mehr unterscheiden. `anyhow` ist für die Schalen.
-
-Die Rückgabewerte der Kommandozeile stehen in `crates/cli/src/exit.rs` und in
-`docs/CLI.md`. `2` vergibt clap selbst für einen falschen Aufruf; den bitte
-nicht überschreiben.
+`ErrorCode` (`not_found`, `validation_failed`, …) steht in
+`crates/core/src/error.rs` und gilt für CLI-JSON und Oberfläche gleich.
+Namen werden nie umbenannt, nur ergänzt.
 
 ---
 
-## Der Weg durch die Oberfläche
+## Die Oberfläche
 
-Eine Ansicht **wünscht**, `app.rs` **tut**:
-
-```
-views::show(ui, &mut model)  →  Option<Action>  →  Gui::apply  →  starter_core
-```
-
-`ui()` läuft viele Male pro Sekunde. Ein `note::create(…)` in einer
-Zeichenfunktion liefe genauso oft. Deshalb sehen die Ansichten nur `&mut Model`
-— sie *können* gar nicht speichern.
-
-Eine neue Möglichkeit in der Oberfläche heißt also:
-
-1. Variante zu `Action` in `crates/gui/src/model.rs` hinzufügen,
-2. in der Ansicht bei Klick zurückgeben,
-3. in `Gui::dispatch` behandeln.
-
-Fachliche Regeln kommen in keinen dieser drei Schritte. Die stehen in `core`.
+* **Komponenten zeichnen nur.** Sie bekommen Daten als Props und melden
+  Wünsche über Rückrufe (`onSave`, `onDelete`). `App.tsx` ruft `api`.
+* **Kein globaler Zustandsspeicher** (Redux, Zustand, …). Ein `useState` in
+  `App.tsx` reicht für ein Werkzeug dieser Größe. Wird es mehr, zuerst
+  Hilfsfunktionen in `lib/` auslagern.
+* **Kein CSS-Framework.** Farben und Abstände als Variablen in `theme.css`,
+  Aufbau in `app.css`. Tailwind bräuchte einen eigenen Build-Schritt und
+  verteilt Farben über jede Komponente — das Gegenteil der Farbregel.
+* **HTML aus Benutzertext nur über `lib/markdown.ts`.** Dort bereinigt
+  DOMPurify. Ein Skript im Webview hätte Zugriff auf jeden IPC-Befehl.
+* **Große Pakete nachladen.** `import("mermaid")` statt `import mermaid` —
+  sonst startet die Anwendung mit mehreren Megabyte JavaScript, die sie
+  vielleicht nie braucht. Siehe `lib/mermaid.ts`.
+* **Bedienelemente brauchen Namen** (`aria-label` oder sichtbarer Text). Die
+  Tests suchen danach (`getByRole("button", { name: "Speichern" })`), und ein
+  Bildschirmleser ebenso. Zwei gleichnamige Knöpfe gleichzeitig sind für
+  beide mehrdeutig — deshalb „Endgültig löschen" in der Rückfrage.
+* **Zielbrowser ist WebKit** — Safari auf macOS, WebKitGTK auf Linux. Kein
+  Chrome. APIs, die nur Chromium kann (File System Access, Web Serial, …),
+  gibt es nicht. Im Zweifel auf caniuse.com unter „Safari" nachsehen.
 
 ---
 
 ## Kurzkennungen: hinten, nicht vorn
 
 Die Kennungen sind UUIDv7. Die **beginnt mit dem Zeitstempel** — zwei Notizen
-aus derselben Sekunde teilen sich die ersten zwölf Zeichen. Zufällig ist erst
-das Ende.
-
-Darum zeigt `starter note list` die **letzten** acht Zeichen, und
-`note::resolve_id` sucht per Endstück (`LIKE '%…'`). Wer auf ein Präfix
-umstellt, bekommt Kennungen, die alle gleich aussehen.
-
-Ist ein Endstück nicht eindeutig, gibt es `Error::Ambiguous` — nie einen
-zufälligen Treffer. Bei `rm` wäre „irgendeine davon" die falsche Antwort.
+aus derselben Sekunde teilen sich die ersten zwölf Zeichen. Darum zeigt
+`vizu-notion note list` die **letzten** acht Zeichen, und `note::resolve_id` sucht
+per Endstück. Ist ein Endstück nicht eindeutig, gibt es `Error::Ambiguous` —
+nie einen zufälligen Treffer.
 
 ---
 
 ## Pfade, Zeit, Daten
 
 * **Die Fallunterscheidung macOS/Linux steht nur in `crates/core/src/paths.rs`.**
-  Wer anderswo `#[cfg(target_os = …)]` für einen Pfad schreibt, hat sich
-  verlaufen.
-* `STARTER_DATA_DIR` und `STARTER_CONFIG_DIR` überschreiben die Verzeichnisse.
-  In Tests wird stattdessen `Paths::under(tempdir)` benutzt — Umgebungsvariablen
-  gelten für den ganzen Prozess, und `cargo test` läuft nebenläufig.
-* **Gespeichert wird in UTC**, als RFC-3339-Text. Umgerechnet wird erst bei der
-  Anzeige (`timestamp::to_local`).
-* **Eine veröffentlichte Migration wird nie geändert.** Sie ist auf fremden
-  Rechnern schon gelaufen. Änderungen kommen als neue Datei mit der nächsten
-  Nummer in `crates/core/migrations/`.
-* Die Tabellen sind `STRICT`. Ohne das nimmt SQLite in einer `TEXT`-Spalte
-  klaglos eine Zahl entgegen.
-
----
-
-## macOS-Bündel: Groß- und Kleinschreibung
-
-Das Dateisystem unterscheidet in der Voreinstellung **nicht** zwischen groß und
-klein. Hieße die Oberfläche im Bündel `Starter`, wäre sie dieselbe Datei wie die
-Kommandozeile `starter` — die zweite Kopie überschriebe die erste, und ein
-Doppelklick startete die CLI.
-
-Deshalb behalten beide Binaries im Bündel ihren gebauten Namen, und
-`CFBundleExecutable` zeigt auf `starter-gui`. Der Anzeigename kommt aus
-`CFBundleName`. Siehe `scripts/bundle-macos.sh`.
+* `VIZU_NOTION_DATA_DIR` und `VIZU_NOTION_CONFIG_DIR` überschreiben die Verzeichnisse
+  — für CLI **und** Desktop (`just dev-sandbox`, `just sandbox`). In
+  Rust-Tests stattdessen `Paths::under(tempdir)`.
+* **Gespeichert wird in UTC**, als RFC-3339-Text.
+* **Eine veröffentlichte Migration wird nie geändert.** Neue Datei, nächste
+  Nummer, in `crates/core/src/db.rs` eintragen.
+* Die Tabellen sind `STRICT`.
+* **WAL** — Desktop-Anwendung und CLI dürfen gleichzeitig laufen.
 
 ---
 
@@ -211,13 +289,20 @@ Bitte nicht „nachrüsten":
 
 | Nicht | Stattdessen | Warum |
 |---|---|---|
-| Tauri, Electron, Webview | egui | Zweite Sprache, zweiter Build, auf Linux `webkit2gtk` als Systemabhängigkeit |
-| iced, Slint, GTK4 | egui | iced bricht die API zwischen Ausgaben, Slint ist eine eigene Sprache mit dünner Datenlage, GTK4 ist auf macOS eine Zumutung |
-| Ein Datenbankserver | SQLite `bundled` | Eine Desktop-Anwendung darf kein Docker voraussetzen |
-| `cargo-bundle` | `scripts/bundle-macos.sh` | Halb verwaist, und es versteckt genau die Schritte, die man zum Signieren braucht |
-| Auto-Update-Framework | Release auf GitHub | Braucht Signaturschlüssel und Serverinfrastruktur |
+| `src-tauri/` | `crates/desktop/` | Eine Kiste unter vielen, dieselben Regeln |
+| Electron | Tauri | 150 MB Chromium je Anwendung |
+| Tauri 1-APIs, `allowlist` | Tauri 2, capabilities | siehe oben |
+| SQL-Plugin (`tauri-plugin-sql`) | `vizu_notion_core` | SQL aus dem Webview umgeht die Prüfung in core — und die CLI sähe es nie |
+| `tauri-plugin-store` für Einstellungen | `config.toml` über `core` | Die CLI muss dieselben Einstellungen lesen |
+| Next.js, Remix, SSR | Vite + React | Es gibt keinen Server |
+| Redux, Zustand, MobX | `useState` in `App.tsx` | Zu klein dafür |
+| Tailwind, styled-components | `theme.css` + `app.css` | Farben an einer Stelle |
+| ESLint + Prettier | Biome | Ein Werkzeug, keine Plugin-Versionskonflikte |
+| Jest | Vitest | Teilt die Vite-Konfiguration |
+| Pakete von einem CDN | npm | Die Anwendung muss ohne Netz starten |
+| `dangerouslySetInnerHTML` | `lib/markdown.ts` | Bereinigung an einer Stelle |
+| Auto-Update-Plugin | Release auf GitHub | Braucht Signaturschlüssel und Server |
 | `unsafe` | — | `unsafe_code = "forbid"` im Arbeitsbereich |
-| Bildvergleichstests der Oberfläche | `egui_kittest` über den Barrierefreiheitsbaum | Bildvergleiche brauchen einen Grafiktreiber und schlagen bei jeder Schriftänderung fehl |
 
 ---
 
@@ -227,20 +312,18 @@ Bitte nicht „nachrüsten":
 |---|---|
 | `crates/core/tests/note.rs` | Die fachlichen Regeln. **Hier liegt der Schwerpunkt.** |
 | `crates/core/tests/config.rs` | Einstellungen lesen, schreiben, ablehnen |
-| `crates/core/tests/layering.rs` | Der Schichtwächter |
-| `crates/cli/tests/cli.rs` | Ausgabeformat, Rückgabewerte, Verhalten ohne Terminal |
-| `crates/gui/tests/gui.rs` | Durchklicken ohne Fenster |
+| `crates/core/tests/layering.rs` | Der Schichtwächter — Rust **und** TypeScript |
+| `crates/cli/tests/cli.rs` | Ausgabeformat, Rückgabewerte, Schnappschüsse |
+| `crates/desktop/tests/ipc_contract.rs` | Befehle über `tauri::test` ohne Fenster; Befehlsliste Rust ↔ api.ts |
+| `crates/desktop/tests/bindings.rs` | `ui/src/bindings.ts` ist aktuell |
+| `ui/src/App.test.tsx` | Oberfläche durchklicken, Rust durch `mockIPC` ersetzt |
+| `ui/src/lib/lib.test.ts` | Markdown-Bereinigung, Verweise, Farben, Fehlerhülle |
 
-**Eine Regel wird einmal geprüft — in `core`.** Die Schalenprüfungen halten
-fest, dass richtig durchgereicht wird, nicht was richtig ist.
+**Eine Regel wird einmal geprüft — in `core`.** Die Attrappe in
+`App.test.tsx` hat keine eigenen Regeln; sie lehnt nur ab, was der Test ihr
+sagt.
 
-Ändert sich ein Ausgabeformat absichtlich, wird der Schnappschuss nicht von Hand
-nachgezogen, sondern mit `just snapshots` (`cargo insta review`) angesehen und
-angenommen.
-
-Ein Bedienelement in der Oberfläche braucht einen Namen, sonst findet es weder
-ein Bildschirmleser noch der Test. Für Symbolknöpfe gibt es
-`widgets::labelled(response, "Löschen")`.
+Ändert sich ein CLI-Ausgabeformat absichtlich: `just snapshots`.
 
 ---
 
@@ -250,9 +333,8 @@ ein Bildschirmleser noch der Test. Für Symbolknöpfe gibt es
 just check
 ```
 
-Das ist `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test` und
-`cargo deny` — genau das, was auch die CI ausführt. Warnungen sind Fehler;
-sonst sammeln sie sich an.
+Das ist `cargo fmt --check`, Clippy, Biome, `tsc`, alle Rust- und
+Vitest-Tests, `cargo deny` und `npm audit`. Warnungen sind Fehler.
 
 ---
 
@@ -260,14 +342,16 @@ sonst sammeln sie sich an.
 
 `note` ist die Vorlage. Der Weg von der Tabelle bis in beide Schalen:
 
-1. `crates/core/migrations/000X_….sql` — neue Datei, nächste Nummer, `STRICT`.
-2. `crates/core/src/db.rs` — die Datei in die `MIGRATIONS`-Liste eintragen.
-3. `crates/core/src/note.rs` kopieren, umbenennen, Felder und Regeln anpassen.
+1. `crates/core/migrations/000X_….sql` — neue Datei, `STRICT`.
+2. `crates/core/src/db.rs` — in `MIGRATIONS` eintragen.
+3. `crates/core/src/note.rs` kopieren, umbenennen; `#[derive(TS)]` an die
+   Typen, die über IPC gehen.
 4. `crates/core/src/lib.rs` — Modul veröffentlichen.
-5. `crates/cli/src/args.rs` und `crates/cli/src/commands/` — Unterbefehl,
-   **beide** Ausgabefassungen (Mensch und `--json`).
-6. `crates/gui/src/model.rs` — `Action`-Varianten; `views/` — Ansicht;
-   `app.rs` — `dispatch`.
-7. Tests in `crates/core/tests/` zuerst, dann die Schalen.
+5. Tests in `crates/core/tests/` — **zuerst**.
+6. CLI: `crates/cli/src/args.rs` und `commands/` — beide Ausgabefassungen.
+7. Desktop: `commands.rs` → `lib.rs` (`generate_handler!`) →
+   `tests/bindings.rs` (Typ eintragen) → `just bindings`.
+8. Oberfläche: `api.ts` → Komponente in `components/` → Zustand und Aufruf in
+   `App.tsx`.
 
-Ausführlicher mit Codebeispielen: `docs/RECIPES.md`.
+Ausführlich mit Code: `docs/RECIPES.md`.

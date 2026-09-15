@@ -1,4 +1,4 @@
-# Festgenagelt, damit alle Beteiligten — Mensch, KI und CI — denselben Compiler
+# Festgenagelt, damit alle Beteiligten — Mensch und KI — denselben Compiler
 # benutzen. Ein Upgrade ist eine bewusste Entscheidung, kein Nebeneffekt.
 [toolchain]
 channel = "1.98.1"

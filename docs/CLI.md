@@ -1,14 +1,14 @@
 # Die Kommandozeile
 
-`starter` ist die zweite Schale über derselben Fachlogik wie die Oberfläche.
+`vizu-notion` ist die zweite Schale über derselben Fachlogik wie die Desktop-Anwendung.
 Beide arbeiten auf derselben Datenbank.
 
 ```bash
-starter note add "Einkauf" --body "Milch, Brot"
-starter note list
-starter note show 8a551a8d
-starter note edit 8a551a8d --title "Großeinkauf"
-starter note rm 8a551a8d --yes
+vizu-notion note add "Einkauf" --body "Milch, Brot"
+vizu-notion note list
+vizu-notion note show 8a551a8d
+vizu-notion note edit 8a551a8d --title "Großeinkauf"
+vizu-notion note rm 8a551a8d --yes
 ```
 
 ## Kennungen
@@ -34,10 +34,10 @@ zeigt die Treffer — nie wird einfach einer davon genommen.
 |---|---|---|
 | 0 | in Ordnung | |
 | 1 | allgemeiner Fehler | Platte voll, Datenbank nicht lesbar |
-| 2 | falscher Aufruf | `starter note gibtsnicht` — vergibt clap selbst |
-| 3 | nicht gefunden | `starter note show ffffffff` |
+| 2 | falscher Aufruf | `vizu-notion note gibtsnicht` — vergibt clap selbst |
+| 3 | nicht gefunden | `vizu-notion note show ffffffff` |
 | 4 | Eingabe ungültig | leerer Titel, `accent = "blau"` |
-| 5 | Kennung nicht eindeutig | `starter note show a` bei mehreren Treffern |
+| 5 | Kennung nicht eindeutig | `vizu-notion note show a` bei mehreren Treffern |
 
 Festgelegt in `crates/cli/src/exit.rs`, geprüft in `crates/cli/tests/cli.rs`.
 
@@ -47,7 +47,7 @@ Festgelegt in `crates/cli/src/exit.rs`, geprüft in `crates/cli/tests/cli.rs`.
 funktioniert:
 
 ```bash
-starter note list --json | jq -r '.[] | "\(.id)\t\(.title)"'
+vizu-notion note list --json | jq -r '.[] | "\(.id)\t\(.title)"'
 ```
 
 Zeitstempel stehen in UTC als RFC-3339-Text. Für Menschen rechnet die Ausgabe in
@@ -94,13 +94,13 @@ eine Fehlermeldung als Nutzdaten liest:
 
 ```bash
 # Text aus einer Datei
-cat notiz.md | starter note add "Aus der Datei" --body -
+cat notiz.md | vizu-notion note add "Aus der Datei" --body -
 
 # Ohne Terminal gibt es keine Rückfrage, sondern einen Fehler.
-starter note rm 8a551a8d --yes
+vizu-notion note rm 8a551a8d --yes
 
 # Eigene Verzeichnisse — der saubere Weg für Tests und CI
-STARTER_DATA_DIR=/tmp/t/data STARTER_CONFIG_DIR=/tmp/t/config starter note list
+VIZU_NOTION_DATA_DIR=/tmp/t/data VIZU_NOTION_CONFIG_DIR=/tmp/t/config vizu-notion note list
 ```
 
 `note rm` fragt nach, wenn stdin ein Terminal ist. Ist es keins, bricht der
@@ -112,11 +112,11 @@ antworten kann, wäre die falsche Voreinstellung.
 Dieselbe Datei, die auch die Oberfläche liest und schreibt.
 
 ```bash
-starter config show
-starter config set theme dark          # system | light | dark
-starter config set accent "#aa3344"    # #rrggbb
-starter config set app_name "Notizbuch"
-starter config reset
+vizu-notion config show
+vizu-notion config set theme dark          # system | light | dark
+vizu-notion config set accent "#aa3344"    # #rrggbb
+vizu-notion config set app_name "Notizbuch"
+vizu-notion config reset
 ```
 
 Ein ungültiger Wert wird abgelehnt — der alte Stand bleibt unverändert stehen.
@@ -124,38 +124,38 @@ Ein ungültiger Wert wird abgelehnt — der alte Stand bleibt unverändert stehe
 ## Wo liegt was
 
 ```bash
-starter paths
-starter paths --json | jq -r .db_file
+vizu-notion paths
+vizu-notion paths --json | jq -r .db_file
 ```
 
 | | macOS | Linux |
 |---|---|---|
-| Daten | `~/Library/Application Support/starter` | `~/.local/share/starter` |
-| Konfiguration | `~/Library/Application Support/starter` | `~/.config/starter` |
+| Daten | `~/Library/Application Support/vizu-notion` | `~/.local/share/vizu-notion` |
+| Konfiguration | `~/Library/Application Support/vizu-notion` | `~/.config/vizu-notion` |
 
 Überschreiben mit `--data-dir` / `--config-dir` oder den Umgebungsvariablen
-`STARTER_DATA_DIR` / `STARTER_CONFIG_DIR`.
+`VIZU_NOTION_DATA_DIR` / `VIZU_NOTION_CONFIG_DIR`.
 
 ## Protokoll
 
 Geht auf stderr, nie auf stdout.
 
 ```bash
-starter -v note list          # info
-starter -vv note list         # debug
-STARTER_LOG=starter=trace starter note list
+vizu-notion -v note list          # info
+vizu-notion -vv note list         # debug
+VIZU_NOTION_LOG=vizu-notion=trace vizu-notion note list
 ```
 
 ## Vervollständigung und Handbuch
 
 ```bash
-starter completions zsh  > ~/.zfunc/_starter
-starter completions bash > /etc/bash_completion.d/starter
-starter man --out ~/.local/share/man/man1
+vizu-notion completions zsh  > ~/.zfunc/_vizu-notion
+vizu-notion completions bash > /etc/bash_completion.d/vizu-notion
+vizu-notion man --out ~/.local/share/man/man1
 ```
 
 Beides erzeugt die Anwendung aus ihrer eigenen Befehlsstruktur — es kann also
-nicht veralten. Die Linux-Pakete aus `just package-linux` enthalten es fertig.
+nicht veralten. Der Tarball aus `just package-cli` enthält beides fertig.
 
 Diese beiden Befehle brauchen **keine** Datenbank; sie laufen auch dort, wo das
 Datenverzeichnis nicht beschreibbar ist.

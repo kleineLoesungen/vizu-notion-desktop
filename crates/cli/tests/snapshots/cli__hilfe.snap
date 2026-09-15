@@ -2,9 +2,9 @@
 source: crates/cli/tests/cli.rs
 expression: text
 ---
-Verwaltet Notizen. Dieselbe Fachlogik bedient die Oberfläche `starter-gui`.
+Verwaltet Notizen. Dieselbe Fachlogik bedient die Oberfläche `vizu-notion-desktop`.
 
-Usage: starter [OPTIONS] <COMMAND>
+Usage: vizu-notion [OPTIONS] <COMMAND>
 
 Commands:
   note         Notizen verwalten
@@ -26,12 +26,12 @@ Options:
       --data-dir <VERZEICHNIS>
           Datenverzeichnis überschreiben (sonst der Ort der Plattform)
           
-          [env: STARTER_DATA_DIR=]
+          [env: VIZU_NOTION_DATA_DIR=]
 
       --config-dir <VERZEICHNIS>
           Konfigurationsverzeichnis überschreiben
           
-          [env: STARTER_CONFIG_DIR=]
+          [env: VIZU_NOTION_CONFIG_DIR=]
 
   -h, --help
           Print help (see a summary with '-h')

@@ -1,5 +1,5 @@
 [package]
-name = "starter-cli"
+name = "vizu-notion-cli"
 description = "Kommandozeilenschale. Dünn — parst Argumente, ruft core, formatiert Ausgabe."
 version.workspace = true
 edition.workspace = true
@@ -7,16 +7,16 @@ license.workspace = true
 repository.workspace = true
 publish.workspace = true
 
-# Der Befehl heißt `starter`, nicht `starter-cli`.
+# Der Befehl heißt `vizu-notion`, nicht `vizu-notion-cli`.
 [[bin]]
-name = "starter"
+name = "vizu-notion"
 path = "src/main.rs"
 
 [lints]
 workspace = true
 
 [dependencies]
-starter-core = { path = "../core" }
+vizu-notion-core = { path = "../core" }
 anyhow.workspace = true
 clap.workspace = true
 clap_complete.workspace = true

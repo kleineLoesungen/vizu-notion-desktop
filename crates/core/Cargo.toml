@@ -1,5 +1,5 @@
 [package]
-name = "starter-core"
+name = "vizu-notion-core"
 description = "Fachlogik des Kits. Kennt weder Kommandozeile noch Oberfläche."
 version.workspace = true
 edition.workspace = true
@@ -20,6 +20,7 @@ rusqlite_migration.workspace = true
 uuid.workspace = true
 time.workspace = true
 tracing.workspace = true
+ts-rs.workspace = true
 
 [dev-dependencies]
 serde_json.workspace = true

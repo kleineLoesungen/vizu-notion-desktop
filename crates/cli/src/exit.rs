@@ -15,23 +15,12 @@
 
 use std::process::ExitCode;
 
-use starter_core::Error as CoreError;
+use vizu_notion_core::Error as CoreError;
 
 pub const FAILURE: u8 = 1;
 pub const NOT_FOUND: u8 = 3;
 pub const INVALID_INPUT: u8 = 4;
 pub const AMBIGUOUS: u8 = 5;
-
-/// Kurzname des Fehlers für die JSON-Ausgabe.
-fn code_name(err: &CoreError) -> &'static str {
-    match err {
-        CoreError::NotFound => "not_found",
-        CoreError::Validation(_) => "validation_failed",
-        CoreError::Ambiguous { .. } => "ambiguous_id",
-        CoreError::ConfigParse { .. } => "config_invalid",
-        _ => "internal_error",
-    }
-}
 
 fn exit_code(err: &CoreError) -> u8 {
     match err {
@@ -50,7 +39,7 @@ pub fn report(err: &anyhow::Error, json: bool) -> ExitCode {
 
     if json {
         let mut obj = serde_json::json!({
-            "code": core.map_or("internal_error", code_name),
+            "code": core.map_or("internal_error", |e| e.code().as_str()),
             "message": err.to_string(),
         });
         if let Some(fields) = core.and_then(CoreError::fields) {

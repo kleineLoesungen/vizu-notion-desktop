@@ -6,7 +6,7 @@
 //!   Meldung, die eine Oberfläche direkt neben das Eingabefeld schreiben kann.
 //! * Alles andere ist die Schuld des Programms oder der Umgebung.
 //!
-//! In den Schalen (`cli`, `gui`) wird daraus `anyhow::Error`. Fachlogik gibt
+//! In den Schalen (`cli`, `desktop`) wird daraus `anyhow::Error`. Fachlogik gibt
 //! niemals `anyhow` zurück — sonst kann der Aufrufer die beiden Sorten nicht
 //! mehr auseinanderhalten.
 
@@ -57,7 +57,44 @@ pub enum Error {
     },
 }
 
+/// Maschinenlesbare Fehlerart.
+///
+/// Dieselben Namen stehen im JSON der Kommandozeile (`error.code`) und in der
+/// Fehlerhülle der Desktop-Schale. Ein Skript und die Oberfläche können sich
+/// darauf verlassen — ein Name wird deshalb nie umbenannt, nur ergänzt.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, ts_rs::TS)]
+#[serde(rename_all = "snake_case")]
+pub enum ErrorCode {
+    NotFound,
+    ValidationFailed,
+    AmbiguousId,
+    ConfigInvalid,
+    InternalError,
+}
+
+impl ErrorCode {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ErrorCode::NotFound => "not_found",
+            ErrorCode::ValidationFailed => "validation_failed",
+            ErrorCode::AmbiguousId => "ambiguous_id",
+            ErrorCode::ConfigInvalid => "config_invalid",
+            ErrorCode::InternalError => "internal_error",
+        }
+    }
+}
+
 impl Error {
+    pub fn code(&self) -> ErrorCode {
+        match self {
+            Error::NotFound => ErrorCode::NotFound,
+            Error::Validation(_) => ErrorCode::ValidationFailed,
+            Error::Ambiguous { .. } => ErrorCode::AmbiguousId,
+            Error::ConfigParse { .. } => ErrorCode::ConfigInvalid,
+            _ => ErrorCode::InternalError,
+        }
+    }
+
     /// Die Feldfehler, falls es ein Eingabefehler war. Sonst `None`.
     ///
     /// Damit muss keine Schale `match` auf die Variante schreiben.
@@ -73,7 +110,7 @@ impl Error {
 ///
 /// `field` ist englisch und entspricht dem Feldnamen im Modell (`title`,
 /// `body`). `message` ist deutsch und für Menschen.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, ts_rs::TS)]
 pub struct FieldError {
     pub field: &'static str,
     pub message: String,

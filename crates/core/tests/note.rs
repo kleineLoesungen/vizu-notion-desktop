@@ -4,8 +4,8 @@
 //! noch daraufhin geprüft, dass sie richtig durchreichen — die Regeln selbst
 //! sind hier festgehalten, einmal für beide.
 
-use starter_core::App;
-use starter_core::note::{self, NoteInput, Order, TITLE_MAX};
+use vizu_notion_core::App;
+use vizu_notion_core::note::{self, NoteInput, Order, TITLE_MAX};
 
 fn app() -> App {
     App::in_memory().expect("Datenbank im Arbeitsspeicher")
@@ -78,7 +78,7 @@ fn meldet_alle_fehlerhaften_felder_auf_einmal() {
 fn unbekannte_id_ist_nicht_gefunden() {
     let app = app();
     let err = note::get(app.conn(), uuid::Uuid::now_v7()).unwrap_err();
-    assert!(matches!(err, starter_core::Error::NotFound));
+    assert!(matches!(err, vizu_notion_core::Error::NotFound));
 }
 
 #[test]
@@ -99,7 +99,7 @@ fn aendern_setzt_den_aenderungszeitpunkt_neu() {
 fn aendern_einer_unbekannten_id_legt_nichts_an() {
     let app = app();
     let err = note::update(app.conn(), uuid::Uuid::now_v7(), NoteInput::new("x", "")).unwrap_err();
-    assert!(matches!(err, starter_core::Error::NotFound));
+    assert!(matches!(err, vizu_notion_core::Error::NotFound));
     assert_eq!(note::count(app.conn()).unwrap(), 0);
 }
 
@@ -119,7 +119,7 @@ fn loescht_und_meldet_das_zweite_loeschen_als_nicht_gefunden() {
     assert_eq!(note::count(app.conn()).unwrap(), 0);
     assert!(matches!(
         note::delete(app.conn(), created.id).unwrap_err(),
-        starter_core::Error::NotFound
+        vizu_notion_core::Error::NotFound
     ));
 }
 

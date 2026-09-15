@@ -13,11 +13,11 @@ use clap::{Args as ClapArgs, Parser, Subcommand, ValueEnum};
 
 #[derive(Debug, Parser)]
 #[command(
-    name = "starter",
+    name = "vizu-notion",
     version,
-    about = "Beispielanwendung des Starter-Kits",
+    about = "Beispielanwendung des Vizu Notion-Kits",
     long_about = "Verwaltet Notizen. Dieselbe Fachlogik bedient die Oberfläche \
-                  `starter-gui`.",
+                  `vizu-notion-desktop`.",
     propagate_version = true
 )]
 pub struct Cli {
@@ -37,7 +37,7 @@ pub struct Cli {
         long,
         global = true,
         value_name = "VERZEICHNIS",
-        env = "STARTER_DATA_DIR"
+        env = "VIZU_NOTION_DATA_DIR"
     )]
     pub data_dir: Option<PathBuf>,
 
@@ -46,7 +46,7 @@ pub struct Cli {
         long,
         global = true,
         value_name = "VERZEICHNIS",
-        env = "STARTER_CONFIG_DIR"
+        env = "VIZU_NOTION_CONFIG_DIR"
     )]
     pub config_dir: Option<PathBuf>,
 
@@ -69,7 +69,7 @@ pub enum Command {
 
     /// Vervollständigung für die Shell ausgeben.
     ///
-    /// Beispiel: `starter completions zsh > ~/.zfunc/_starter`
+    /// Beispiel: `vizu-notion completions zsh > ~/.zfunc/_vizu-notion`
     Completions {
         #[arg(value_enum)]
         shell: Shell,
@@ -157,11 +157,11 @@ pub enum Order {
     Title,
 }
 
-impl From<Order> for starter_core::note::Order {
+impl From<Order> for vizu_notion_core::note::Order {
     fn from(o: Order) -> Self {
         match o {
-            Order::Recent => starter_core::note::Order::Recent,
-            Order::Title => starter_core::note::Order::Title,
+            Order::Recent => vizu_notion_core::note::Order::Recent,
+            Order::Title => vizu_notion_core::note::Order::Title,
         }
     }
 }

@@ -4,283 +4,324 @@ Konkrete Handgriffe mit Code zum Abschauen. `note` ist überall die Vorlage.
 
 ---
 
-## Eine neue Ressource anlegen
+## Ein Browserpaket einbinden
 
-Beispiel: `task` mit Titel, Erledigt-Kennzeichen und Fälligkeitsdatum.
+Der Grund, warum es dieses Kit gibt. Beispiel: Syntaxhervorhebung mit
+highlight.js in der Markdown-Vorschau.
 
-### 1. Migration
+### 1. Installieren — exakt, nicht von einem CDN
 
-`crates/core/migrations/0002_tasks.sql` — neue Datei, **nächste Nummer**, nie
-eine bestehende ändern:
-
-```sql
-CREATE TABLE tasks (
-    id         TEXT    NOT NULL PRIMARY KEY,
-    title      TEXT    NOT NULL,
-    done       INTEGER NOT NULL DEFAULT 0,
-    due_on     TEXT,
-    created_at TEXT    NOT NULL,
-    updated_at TEXT    NOT NULL
-) STRICT;
-
-CREATE INDEX tasks_due_on ON tasks (due_on);
+```bash
+npm install --save-exact highlight.js
 ```
 
-`STRICT` nicht weglassen. Ohne das nimmt SQLite in `due_on` klaglos eine Zahl
-entgegen.
+`<script src="https://cdn…">` in `index.html` lädt nicht: Die CSP in
+`crates/desktop/tauri.conf.json` erlaubt nur eigene Dateien, und eine
+Desktop-Anwendung muss ohne Netz starten. Der Schichtwächter weist darauf hin.
 
-### 2. Migration eintragen
+### 2. In `ui/src/lib/` kapseln
 
-`crates/core/src/db.rs`:
+Eine Datei je Paket. Komponenten importieren die Hilfsfunktion, nicht das
+Paket — so gibt es genau eine Stelle, an der Einstellungen und Eigenheiten
+stehen.
 
-```rust
-static MIGRATIONS: LazyLock<Migrations<'static>> = LazyLock::new(|| {
-    Migrations::new(vec![
-        M::up(include_str!("../migrations/0001_init.sql")),
-        M::up(include_str!("../migrations/0002_tasks.sql")),   // ← neu
-    ])
-});
-```
+```ts
+// ui/src/lib/highlight.ts
+// Nachgeladen wie Mermaid: nur wer Code in einer Notiz hat, bezahlt dafür.
+type Hljs = (typeof import("highlight.js"))["default"];
+let loading: Promise<Hljs> | undefined;
 
-Reihenfolge = Ausführungsreihenfolge. Der Test `migrationen_sind_gueltig` läuft
-bei jedem `just check` mit.
-
-### 3. Modul
-
-`crates/core/src/note.rs` kopieren nach `task.rs`, umbenennen, Regeln anpassen:
-
-```rust
-impl TaskInput {
-    pub fn clean(self) -> Result<TaskInput> {
-        let title = self.title.trim().to_string();
-
-        let mut v = Validator::new();
-        v.require(!title.is_empty(), "title", "darf nicht leer sein");
-        v.require(
-            title.chars().count() <= TITLE_MAX,
-            "title",
-            format!("darf höchstens {TITLE_MAX} Zeichen lang sein"),
-        );
-        v.finish()?;      // sammelt ALLE Felder, bricht erst hier ab
-
-        Ok(TaskInput { title, .. })
-    }
+export async function highlightCode(root: HTMLElement): Promise<void> {
+  const blocks = root.querySelectorAll<HTMLElement>("pre > code:not(.language-mermaid)");
+  if (blocks.length === 0) return;
+  loading ??= import("highlight.js").then((m) => m.default);
+  const hljs = await loading;
+  for (const block of blocks) hljs.highlightElement(block);
 }
 ```
 
-Zeichen zählen, nicht Bytes: `"ä"` sind zwei Bytes. `crates/core/src/lib.rs`
-ergänzen: `pub mod task;`.
+**Nachladen oder nicht?** Faustregel: Alles über ~100 kB, das nicht auf dem
+ersten Bildschirm gebraucht wird, per `import()`. `npm run build:ui` zeigt die
+Größen.
 
-### 4. Tests zuerst
+### 3. Aufrufen, wo gezeichnet wird
 
-`crates/core/tests/task.rs` — hier liegt der Schwerpunkt, nicht in den Schalen:
-
-```rust
-#[test]
-fn ein_titel_aus_leerzeichen_gilt_als_leer() {
-    let app = App::in_memory().unwrap();
-    let err = task::create(app.conn(), TaskInput::new("   ")).unwrap_err();
-    assert_eq!(err.fields().unwrap()[0].field, "title");
-}
+```tsx
+// ui/src/components/MarkdownView.tsx, im useEffect nach renderMarkdownInto
+void highlightCode(element);
 ```
 
-### 5. Kommandozeile
+### 4. Farben des Pakets
 
-`crates/cli/src/args.rs`:
+Pakete bringen oft eigenes CSS mit Farben mit. Das CSS importieren ist
+erlaubt (`import "highlight.js/styles/github.css"` in `main.tsx`) — der
+Farbwächter prüft nur `ui/src`, nicht `node_modules`. Wer es an hell/dunkel
+anpassen will, überschreibt die Farben in `theme.css` mit Variablen.
 
-```rust
-#[derive(Debug, Subcommand)]
-pub enum Command {
-    #[command(subcommand)]
-    Note(NoteCommand),
-    #[command(subcommand)]
-    Task(TaskCommand),      // ← neu
-    …
-}
-```
+### 5. Wenn das Paket etwas Ungewöhnliches braucht
 
-`crates/cli/src/commands/task.rs` — dünn, **beide** Ausgabefassungen:
+| Meldung / Verhalten | Ursache | Abhilfe |
+|---|---|---|
+| Leere Fläche, in der Konsole „Refused to load" | CSP | Quelle in `tauri.conf.json` unter `security.csp` ergänzen — **nie** `*` |
+| „Refused to evaluate a string as JavaScript" | Paket benutzt `eval` / `new Function` | Anderes Paket suchen. `'unsafe-eval'` öffnet die Tür für eingeschleusten Code |
+| Web Worker startet nicht | Worker-URL | `new Worker(new URL("./x.ts", import.meta.url), { type: "module" })` — Vite bündelt ihn dann mit; ggf. `worker-src 'self' blob:` |
+| Funktioniert in Chrome, nicht in der App | WebKit | caniuse.com unter „Safari" prüfen |
+| Test scheitert: „… is not a function" in jsdom | jsdom ist kein Browser (kein Canvas, kein `getBBox`) | Die Funktion in `lib/` im Test mit `vi.mock` ersetzen |
 
-```rust
-TaskCommand::Add(fields) => {
-    let created = task::create(app.conn(), TaskInput::new(fields.title))?;
-    out.done(format!("Angelegt: {}", short_id(created.id)), &created);
-    Ok(())
-}
-```
-
-`out.done` gibt für Menschen den Satz aus, für `--json` das Objekt.
-
-### 6. Oberfläche
-
-`crates/gui/src/model.rs` — Aktionen ergänzen:
-
-```rust
-pub enum Action {
-    …
-    ToggleTask(Uuid),
-}
-```
-
-`crates/gui/src/views/tasks.rs` — nur zeichnen, Aktion zurückgeben:
-
-```rust
-if ui.checkbox(&mut done, &task.title).changed() {
-    action = Some(Action::ToggleTask(task.id));
-}
-```
-
-`crates/gui/src/app.rs` — anwenden:
-
-```rust
-Action::ToggleTask(id) => {
-    task::toggle(self.core.conn(), id)?;
-    self.dispatch(Action::Reload)
-}
-```
-
-Fachliche Regeln in keinem dieser drei Schritte. Die stehen in `core`.
+Die Konsole des Webviews: in `just dev` Rechtsklick → **Element untersuchen**.
 
 ---
 
-## Einen Befehl hinzufügen
+## Einen IPC-Befehl hinzufügen
+
+Beispiel: Notizen nach einem Wort durchsuchen.
+
+### 1. Die Logik nach `core` — mit Test
 
 ```rust
-// crates/cli/src/args.rs
-pub enum NoteCommand {
+// crates/core/src/note.rs
+pub fn search(conn: &Connection, query: &str) -> Result<Vec<Note>> {
+    let pattern = format!("%{}%", query.trim());
+    let mut stmt = conn.prepare(
+        "SELECT id, title, body, created_at, updated_at FROM notes \
+         WHERE title LIKE ?1 OR body LIKE ?1 ORDER BY updated_at DESC",
+    )?;
+    let rows = stmt.query_map([pattern], from_row)?;
+    rows.collect::<std::result::Result<Vec<_>, _>>()?.into_iter().collect()
+}
+```
+
+Die Suche gehört nach `core` — sonst findet die Oberfläche anders als die
+Kommandozeile.
+
+### 2. Der Befehl — dünn, `async`, einwortige Argumente
+
+```rust
+// crates/desktop/src/commands.rs
+#[tauri::command]
+pub async fn note_search(state: State<'_, AppState>, query: String) -> ApiResult<Vec<Note>> {
+    state.with(|app| note::search(app.conn(), &query))
+}
+```
+
+### 3. Eintragen
+
+```rust
+// crates/desktop/src/lib.rs
+.invoke_handler(tauri::generate_handler![
     …
-    /// Notizen nach einem Wort durchsuchen.
-    Search {
-        /// Suchwort.
-        query: String,
-    },
-}
+    commands::note_search,
+])
 ```
+
+### 4. Im Frontend
+
+```ts
+// ui/src/api.ts
+notes: {
+  …
+  search: (query: string) => call<Note[]>("note_search", { query }),
+},
+```
+
+### 5. Prüfen
+
+```bash
+just check
+```
+
+`jeder_befehl_steht_auf_beiden_seiten` meldet, wenn Schritt 3 oder 4 fehlt.
+Einen Aufruf in `tests/ipc_contract.rs` ergänzen, der das JSON so schickt wie
+das Webview:
 
 ```rust
-// crates/cli/src/commands/note.rs
-NoteCommand::Search { query } => {
-    let found = note::search(app.conn(), &query)?;
-    out.notes(&found);
-    Ok(())
-}
+let found = ctx.invoke("note_search", json!({ "query": "Milch" })).unwrap();
 ```
-
-Die Suche selbst gehört nach `core` — sonst findet die Oberfläche anders als die
-Kommandozeile. Danach `just check`: `befehlsstruktur_ist_gueltig` prüft, dass
-clap die Struktur annimmt.
 
 ---
 
-## Ein Feld zu den Einstellungen hinzufügen
+## Ein Argument mit zwei Wörtern
 
-Vier Stellen, in dieser Reihenfolge:
+Wenn es sich nicht vermeiden lässt:
 
 ```rust
-// 1. crates/core/src/config.rs
-pub struct Config {
-    …
-    pub font_size: f32,
-}
+pub async fn note_move(state: State<'_, AppState>, id: Uuid, target_folder: Uuid) -> …
+```
 
-impl Default for Config {
-    fn default() -> Self {
-        Self { …, font_size: 14.0 }
-    }
-}
+```ts
+call<Note>("note_move", { id, targetFolder })   // camelCase!
+```
 
-pub fn validate(&self) -> Result<()> {
-    let mut v = Validator::new();
-    …
-    v.require(
-        (10.0..=24.0).contains(&self.font_size),
-        "font_size",
-        "muss zwischen 10 und 24 liegen",
-    );
-    v.finish()
+Oder in Rust die Übersetzung abschalten — dann gilt snake_case auch im JSON:
+
+```rust
+#[tauri::command(rename_all = "snake_case")]
+```
+
+---
+
+## Einen Rust-Typ über IPC schicken
+
+```rust
+#[derive(Debug, Clone, Serialize, ts_rs::TS)]
+pub struct Stats {
+    pub notes: i64,
+    #[ts(type = "string")]                  // OffsetDateTime → RFC-3339-Text
+    #[serde(with = "crate::timestamp::serde_rfc3339")]
+    pub last_change: OffsetDateTime,
 }
 ```
 
-```rust
-// 2. crates/cli/src/commands/config.rs, fn apply
-"font_size" => {
-    config.font_size = value
-        .parse()
-        .map_err(|_| anyhow!("font_size erwartet eine Zahl, nicht {value:?}"))?
-}
+In `crates/desktop/tests/bindings.rs` unter `generate()` eintragen, dann:
+
+```bash
+just bindings
 ```
 
-3. `crates/gui/src/views/settings.rs` — Eingabefeld.
-4. `crates/gui/src/theme.rs` — anwenden.
+`i64` wird in TypeScript zu `bigint`. Serde schickt aber eine JSON-Zahl. Für
+Zähler, die nie über 2⁵³ gehen: `#[ts(type = "number")]`.
 
-Der Test `config_kennt_alle_felder` schlägt fehl, wenn Schritt 2 vergessen wird.
+---
+
+## Ein Tauri-Plugin benutzen
+
+Beispiel: ein Dialog zum Speichern einer Datei (`tauri-plugin-dialog`).
+
+```bash
+npm install --save-exact @tauri-apps/plugin-dialog
+```
+
+```toml
+# Cargo.toml, [workspace.dependencies] — dieselbe Nebenversion wie das npm-Paket
+tauri-plugin-dialog = "2.x.y"
+# crates/desktop/Cargo.toml
+tauri-plugin-dialog.workspace = true
+```
+
+```rust
+// crates/desktop/src/lib.rs
+.plugin(tauri_plugin_dialog::init())
+```
+
+```json
+// crates/desktop/capabilities/default.json → permissions
+"dialog:allow-save"
+```
+
+```ts
+// ui/src/api.ts — und NUR dort
+import { save } from "@tauri-apps/plugin-dialog";
+…
+chooseExportPath: () => save({ filters: [{ name: "Markdown", extensions: ["md"] }] }),
+```
+
+Das **Schreiben** der Datei gehört dann in einen eigenen Befehl mit der Logik
+in `core` — nicht in `tauri-plugin-fs` aus dem Webview. Sonst kann die
+Kommandozeile nicht exportieren.
+
+Fehlt Schritt „capabilities", kompiliert alles, und der Aufruf scheitert zur
+Laufzeit mit „dialog.save not allowed". Die möglichen Namen stehen nach dem
+ersten Bau in `crates/desktop/gen/schemas/desktop-schema.json`.
 
 ---
 
 ## Etwas im Hintergrund erledigen
 
-Die Oberfläche darf nie blockieren. Eine lange Aufgabe läuft in einem Faden und
-meldet sich über einen Kanal zurück:
+Ein Befehl ist `async`, aber die Datenbankarbeit darin ist es nicht. Für
+etwas, das Sekunden dauert (Import, Export, Neuberechnung), die Sperre nicht
+den ganzen Weg halten, sondern auf einen Blockierfaden ausweichen:
 
 ```rust
-// in Gui
-rx: std::sync::mpsc::Receiver<Meldung>,
-
-// Aufgabe starten
-let tx = self.tx.clone();
-let ctx = ui.ctx().clone();
-std::thread::spawn(move || {
-    let ergebnis = etwas_langes();
-    let _ = tx.send(Meldung::Fertig(ergebnis));
-    // OHNE DIESE ZEILE passiert nichts, bis der Benutzer die Maus bewegt:
-    // egui zeichnet nur bei Bedarf neu.
-    ctx.request_repaint();
-});
-
-// in draw(), vor dem Zeichnen
-while let Ok(meldung) = self.rx.try_recv() {
-    self.apply(Action::from(meldung));
+#[tauri::command]
+pub async fn import_folder(state: State<'_, AppState>, path: String) -> ApiResult<usize> {
+    // Einlesen ohne Sperre …
+    let files = tauri::async_runtime::spawn_blocking(move || vizu_notion_core::import::read(&path))
+        .await
+        .map_err(|e| ApiError::internal(e.to_string()))??;
+    // … schreiben mit Sperre, kurz.
+    state.with(|app| vizu_notion_core::import::store(app.conn(), files))
 }
 ```
 
-`try_recv`, nicht `recv` — `recv` würde die Oberfläche anhalten.
-
-`ctx.request_repaint()` ist die Zeile, die am häufigsten fehlt. Der Fehler sieht
-aus wie „das Ergebnis kommt nicht an", ist aber nur ein ausgebliebenes Neuzeichnen.
-
----
-
-## Ein Ausgabeformat ändern
-
-Nicht den Schnappschuss von Hand nachziehen:
-
-```bash
-just snapshots     # cargo insta review
-```
-
-`a` nimmt an, `r` verwirft, `d` zeigt den Unterschied. Die Datei unter
-`crates/cli/tests/snapshots/` kommt mit in den Commit — sie ist die Zusage an
-die Benutzer, wie die Ausgabe aussieht.
-
-Kennungen und Zeitstempel werden vor dem Vergleich ersetzt (siehe `FILTERS` in
-`crates/cli/tests/cli.rs`), sonst schlüge jeder Lauf fehl.
+Fortschritt meldet man mit einem Kanal (`tauri::ipc::Channel<T>`) als
+Argument; im Frontend `new Channel<T>()` aus `@tauri-apps/api/core` — in
+`api.ts`.
 
 ---
 
-## Eine egui-API nachschlagen
+## Eine neue Ressource anlegen
 
-Nicht raten — die Quelle liegt lokal:
+Beispiel: `task` mit Titel und Erledigt-Kennzeichen.
 
-```bash
-R=$(echo ~/.cargo/registry/src/*/egui-0.36.2)
-grep -rn "pub fn show" $R/src/containers/panel.rs
-grep -rn "pub fn set_theme\|pub fn style_of" $R/src/context.rs
-grep -rn "pub fn text_edit_singleline" $R/src/ui.rs
+1. **Migration** `crates/core/migrations/0002_tasks.sql`, `STRICT`, eintragen
+   in `crates/core/src/db.rs`.
+2. **Modul** `note.rs` → `task.rs` kopieren, `#[derive(TS)]` an `Task` und
+   `TaskInput`, `pub mod task;` in `lib.rs`.
+3. **Tests** `crates/core/tests/task.rs` — zuerst.
+4. **CLI** `args.rs` + `commands/task.rs`, beide Ausgabefassungen.
+5. **Befehle** `task_list`, `task_create`, `task_toggle` in `commands.rs`,
+   `generate_handler!`, Typen in `tests/bindings.rs`, `just bindings`.
+6. **Frontend** `api.tasks.*` in `api.ts`, `components/TaskList.tsx` (nur
+   zeichnen, `onToggle` nach oben), Zustand und Aufruf in `App.tsx`.
+
+```tsx
+// components/TaskList.tsx
+<input type="checkbox" checked={task.done} onChange={() => onToggle(task.id)} />
+
+// App.tsx
+async function toggle(id: string) {
+  try {
+    await api.tasks.toggle(id);
+    setTasks(await api.tasks.list());
+  } catch (raw) {
+    fail(raw);
+  }
+}
 ```
 
-Der häufigste Grund für Code, der nicht kompiliert: Die Beispiele im Netz
-stammen aus einer älteren Ausgabe. Siehe CLAUDE.md, Abschnitt „egui 0.36 — vier
-Eigenheiten".
+---
+
+## Ein Feld zu den Einstellungen hinzufügen
+
+1. `crates/core/src/config.rs` — Feld, Voreinstellung, `validate`.
+2. `crates/cli/src/commands/config.rs`, `apply` — sonst kennt `config set` es
+   nicht (`config_kennt_alle_felder` erinnert daran).
+3. `just bindings` — `Config` in TypeScript bekommt das Feld.
+4. `ui/src/components/SettingsDialog.tsx` — Eingabefeld, `FieldMessage`.
+5. Anwenden: `ui/src/lib/theme.ts` oder wo es wirkt.
+
+`tsc` meldet nach Schritt 3 jede Stelle, an der ein `Config`-Objekt von Hand
+gebaut wird.
+
+---
+
+## Die Oberfläche testen
+
+```ts
+// ui/src/App.test.tsx
+mockIPC((cmd, args) => { … })            // ersetzt Rust
+render(<App previewDelayMs={0} />);
+await user.click(screen.getByRole("button", { name: "Speichern" }));
+expect(commands("note_create")[0]?.args).toEqual({ input: { … } });
+```
+
+* Nach **Rolle und Namen** suchen, nicht nach CSS-Klassen.
+* Die Attrappe hat **keine eigenen Regeln** — sie lehnt nur ab, was der Test
+  vorgibt. Sonst testet man eine zweite, erfundene Fachlogik.
+* `npx vitest` (ohne `run`) läuft im Beobachtungsmodus.
+
+---
+
+## Auf einem Wegwerfverzeichnis arbeiten
+
+```bash
+just dev-sandbox
+just sandbox note list
+rm -rf .local
+```
+
+In Rust-Tests **nicht** über Umgebungsvariablen, sondern
+`App::open(Paths::under(tempdir))` oder `App::in_memory()`.
 
 ---
 
@@ -288,32 +329,7 @@ Eigenheiten".
 
 Sollte durch WAL und `busy_timeout` nicht vorkommen. Wenn doch:
 
-* Läuft noch eine zweite Ausgabe der Anwendung? `pgrep -l starter`
-* Liegt das Datenverzeichnis auf einem Netzlaufwerk? SQLite und NFS vertragen
-  sich nicht. Dann `STARTER_DATA_DIR` auf eine lokale Platte legen.
-* Eine Schreiboperation, die eine offene Leseoperation überdauert? Ergebnisse
-  von `query_map` vor dem Schreiben mit `collect()` einsammeln.
-
----
-
-## Auf einem Wegwerfverzeichnis arbeiten
-
-Ohne die echten Daten anzufassen:
-
-```bash
-just sandbox note add "Versuch"
-just sandbox note list
-rm -rf .local
-```
-
-In Tests **nicht** über Umgebungsvariablen, sondern:
-
-```rust
-let dir = tempfile::tempdir().unwrap();
-let app = App::open(Paths::under(dir.path())).unwrap();
-```
-
-`cargo test` läuft nebenläufig, und `std::env::set_var` gilt für den ganzen
-Prozess — zwei Tests würden sich das Verzeichnis gegenseitig umstellen.
-
-Für reine Fachlogik genügt `App::in_memory()`: keine Datei, kein Aufräumen.
+* Läuft noch eine zweite Ausgabe? `pgrep -l vizu-notion`
+* Liegt das Datenverzeichnis auf einem Netzlaufwerk? Dann `VIZU_NOTION_DATA_DIR`
+  auf eine lokale Platte.
+* Hält ein Befehl die Sperre sehr lange? Siehe „Etwas im Hintergrund".
