@@ -30,6 +30,7 @@ import type {
   SourceInput,
   SourceOverview,
   Template,
+  TemplateHelp,
   TemplateInput,
   TokenStatus,
 } from "./bindings";
@@ -101,6 +102,8 @@ export const api = {
     remove: (id: string) => call<null>("template_delete", { id }),
     /** Zeichnet aus dem Zwischenspeicher — ohne Netz, deshalb schnell. */
     render: (id: string, hidden: string[]) => call<Diagram>("diagram_render", { id, hidden }),
+    /** Beispiele und Spickzettel — sie stehen in core, nicht im Webview. */
+    help: () => call<TemplateHelp>("template_help"),
     /** Dasselbe für einen Text, der noch nicht gespeichert ist. */
     preview: (body: string, hidden: string[]) => call<Diagram>("diagram_preview", { body, hidden }),
   },

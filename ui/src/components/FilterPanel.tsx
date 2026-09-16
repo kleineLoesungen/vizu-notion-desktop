@@ -4,12 +4,16 @@
 // ausgeblendeten), jede Änderung geht als Rückruf nach oben. Gefiltert wird
 // dann wieder in Rust — eine zweite Filterlogik hier wäre die zweite Wahrheit.
 
+import { useState } from "react";
 import type { NodeInfo } from "../bindings";
+import { formatDateTime } from "../lib/format";
 import { bySource, sameTitleCount } from "../lib/graph";
 
 type Props = {
   nodes: NodeInfo[];
   hidden: Set<string>;
+  /** Quellname → Zeitpunkt des letzten Abrufs. */
+  fetched: Record<string, string | null>;
   onToggle: (id: string) => void;
   onOnlyRelated: (id: string) => void;
   onSetSource: (source: string, visible: boolean) => void;
@@ -19,11 +23,14 @@ type Props = {
 export function FilterPanel({
   nodes,
   hidden,
+  fetched,
   onToggle,
   onOnlyRelated,
   onSetSource,
   onReset,
 }: Props) {
+  const [search, setSearch] = useState("");
+  const needle = search.trim().toLowerCase();
   const groups = bySource(nodes);
 
   return (
@@ -35,14 +42,32 @@ export function FilterPanel({
         </button>
       </div>
 
+      <input
+        type="search"
+        aria-label="Knoten suchen"
+        placeholder="Suchen …"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+
       {groups.map(([source, group]) => {
         const shown = group.filter((n) => !hidden.has(n.id)).length;
+        // Die Suche filtert nur die Anzeige im Feld, nicht das Diagramm.
+        const visible = needle
+          ? group.filter((n) => n.title.toLowerCase().includes(needle))
+          : group;
+        const at = fetched[source];
         return (
-          <section key={source} className="filter-group">
-            <header>
+          <details key={source} className="filter-group" open>
+            <summary>
               <span className="filter-source">{source}</span>
               <span className="muted">
                 {shown}/{group.length}
+              </span>
+            </summary>
+            <div className="filter-group-head">
+              <span className="muted">
+                {at ? `abgerufen ${formatDateTime(at)}` : "noch nie abgerufen"}
               </span>
               <button
                 type="button"
@@ -51,9 +76,9 @@ export function FilterPanel({
               >
                 {shown < group.length ? "Alle" : "Keine"}
               </button>
-            </header>
+            </div>
             <ul>
-              {group.map((node) => {
+              {visible.map((node) => {
                 const shared = sameTitleCount(group, node);
                 return (
                   <li key={node.id}>
@@ -85,8 +110,9 @@ export function FilterPanel({
                   </li>
                 );
               })}
+              {visible.length === 0 && <li className="muted">Kein Knoten passt zur Suche.</li>}
             </ul>
-          </section>
+          </details>
         );
       })}
     </aside>

@@ -24,7 +24,7 @@ use vizu_notion_core::fetch::{self, FetchStatus, SourceOverview};
 use vizu_notion_core::notion::Property;
 use vizu_notion_core::secret::{self, TokenStatus};
 use vizu_notion_core::source::{self, Source, SourceInput};
-use vizu_notion_core::template::{self, Diagram, Template, TemplateInput};
+use vizu_notion_core::template::{self, Diagram, Example, Hint, Template, TemplateInput};
 use vizu_notion_core::{Config, Paths, notion};
 
 use crate::error::{ApiError, ApiResult};
@@ -121,6 +121,22 @@ pub async fn template_save(
 #[tauri::command]
 pub async fn template_delete(state: State<'_, AppState>, id: Uuid) -> ApiResult<()> {
     state.with(|app| template::delete(app.conn(), id))
+}
+
+/// Beispiele und Spickzettel zur Vorlagensprache — für den Editor.
+#[tauri::command]
+pub async fn template_help() -> ApiResult<TemplateHelp> {
+    Ok(TemplateHelp {
+        examples: template::examples::examples(),
+        hints: template::examples::cheat_sheet(),
+    })
+}
+
+/// Was der Editor an Hilfe anzeigt.
+#[derive(Debug, Clone, Serialize, TS)]
+pub struct TemplateHelp {
+    pub examples: Vec<Example>,
+    pub hints: Vec<Hint>,
 }
 
 /// Zeichnet einen noch nicht gespeicherten Vorlagentext — die Vorschau des

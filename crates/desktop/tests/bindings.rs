@@ -17,10 +17,10 @@ use vizu_notion_core::notion::Property;
 use vizu_notion_core::rows::NodeInfo;
 use vizu_notion_core::secret::{TokenOrigin, TokenStatus};
 use vizu_notion_core::source::{ColumnMapping, Source, SourceInput};
-use vizu_notion_core::template::{Diagram, Template, TemplateInput};
+use vizu_notion_core::template::{Diagram, Example, Hint, Template, TemplateInput};
 use vizu_notion_core::{Config, ErrorCode, FieldError, Theme};
 use vizu_notion_desktop::ApiError;
-use vizu_notion_desktop::commands::AppInfo;
+use vizu_notion_desktop::commands::{AppInfo, TemplateHelp};
 
 const TARGET: &str = "ui/src/bindings.ts";
 const UPDATE_ENV: &str = "VIZU_NOTION_UPDATE_BINDINGS";
@@ -44,13 +44,16 @@ fn generate() -> String {
         decl::<ErrorCode>(&cfg),
         decl::<FetchStatus>(&cfg),
         decl::<Diagram>(&cfg),
+        decl::<Example>(&cfg),
         decl::<FieldError>(&cfg),
+        decl::<Hint>(&cfg),
         decl::<NodeInfo>(&cfg),
         decl::<Property>(&cfg),
         decl::<Source>(&cfg),
         decl::<SourceInput>(&cfg),
         decl::<SourceOverview>(&cfg),
         decl::<Template>(&cfg),
+        decl::<TemplateHelp>(&cfg),
         decl::<TemplateInput>(&cfg),
         decl::<Theme>(&cfg),
         decl::<TokenOrigin>(&cfg),

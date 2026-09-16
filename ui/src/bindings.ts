@@ -62,6 +62,16 @@ mermaid: string,
 nodes: Array<NodeInfo>, };
 
 /**
+ * Eine Vorlage zum Abschauen. `QUELLE` und `ZWEITE` ersetzt die Schale durch
+ * die Namen der eingerichteten Quellen.
+ */
+export type Example = { name: string, 
+/**
+ * Welche Art Mermaid-Diagramm dabei herauskommt.
+ */
+kind: string, body: string, };
+
+/**
  * Eine Meldung, die zu genau einem Eingabefeld gehört.
  *
  * `field` ist englisch und entspricht dem Feldnamen im Modell (`name`,
@@ -70,6 +80,11 @@ nodes: Array<NodeInfo>, };
  * für Menschen.
  */
 export type FieldError = { field: string, message: string, };
+
+/**
+ * Eine Zeile des Spickzettels.
+ */
+export type Hint = { syntax: string, meaning: string, };
 
 /**
  * Ein Knoten für das Filterfeld — jede Zeile, auch ausgeblendete.
@@ -141,6 +156,11 @@ sources: Array<string>,
  * Der ganze Text, Kopf inbegriffen.
  */
 body: string, created_at: string, updated_at: string, };
+
+/**
+ * Was der Editor an Hilfe anzeigt.
+ */
+export type TemplateHelp = { examples: Array<Example>, hints: Array<Hint>, };
 
 /**
  * Was von außen hereinkommt — ungeprüft.

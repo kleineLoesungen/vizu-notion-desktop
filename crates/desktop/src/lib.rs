@@ -70,6 +70,7 @@ pub fn configure<R: Runtime>(builder: tauri::Builder<R>, state: AppState) -> tau
             commands::template_delete,
             commands::diagram_render,
             commands::diagram_preview,
+            commands::template_help,
             commands::export_svg,
             commands::token_status,
             commands::token_set,

@@ -20,17 +20,20 @@ import type {
   SourceInput,
   SourceOverview,
   Template,
+  TemplateHelp,
   TokenStatus,
 } from "./bindings";
 import { DiagramView } from "./components/DiagramView";
 import { EmptyState } from "./components/EmptyState";
 import { FilterPanel } from "./components/FilterPanel";
+import { GettingStarted } from "./components/GettingStarted";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { SourceDetail } from "./components/SourceDetail";
 import { SourceDialog } from "./components/SourceDialog";
 import { SourceList } from "./components/SourceList";
 import { TemplateEditor } from "./components/TemplateEditor";
 import { TemplateList } from "./components/TemplateList";
+import { formatDateTime } from "./lib/format";
 import { withNeighbours } from "./lib/graph";
 import { applyTheme, useIsDark } from "./lib/theme";
 
@@ -76,6 +79,7 @@ export function App() {
   const [sourceDialog, setSourceDialog] = useState<{ source: Source | null } | null>(null);
   const [properties, setProperties] = useState<Property[]>([]);
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [help, setHelp] = useState<TemplateHelp | null>(null);
 
   // Zwei Sorten Fehler, wie überall im Kit: mit Feldern an die Felder,
   // ohne Felder als Meldung oben.
@@ -126,14 +130,16 @@ export function App() {
   useEffect(() => {
     void (async () => {
       try {
-        const [loadedConfig, appInfo, tokenStatus] = await Promise.all([
+        const [loadedConfig, appInfo, tokenStatus, templateHelp] = await Promise.all([
           api.config.get(),
           api.appInfo(),
           api.token.status(),
+          api.templates.help(),
         ]);
         setConfig(loadedConfig);
         setInfo(appInfo);
         setToken(tokenStatus);
+        setHelp(templateHelp);
       } catch (raw) {
         fail(raw);
       }
@@ -383,25 +389,45 @@ export function App() {
   const selectedTemplate =
     selection.kind === "template" ? templates.find((t) => t.id === selection.id) : undefined;
   const fieldMessage = (field: string) => fieldError?.fieldMessage(field);
+  /** Alle vier Schritte erledigt? Dann führt nichts mehr durch den Einstieg. */
+  const ready = !!token?.origin && sources.some((s) => s.fetch !== null) && templates.length > 0;
+  /** Quellname → Zeitpunkt des letzten Abrufs, für Filterfeld und Kopfzeile. */
+  const fetchedAt: Record<string, string | null> = Object.fromEntries(
+    sources.map(({ source, fetch }) => [source.name, fetch?.fetched_at ?? null]),
+  );
+  /** Der älteste Abruf der beteiligten Quellen — so alt sind die Daten. */
+  const oldestFetch = selectedTemplate?.sources
+    .map((name) => fetchedAt[name] ?? null)
+    .reduce<string | null | undefined>(
+      (oldest, at) =>
+        oldest === null || at === null ? null : !oldest || at < oldest ? at : oldest,
+      undefined,
+    );
 
   return (
     <div className="app">
       <aside className="sidebar">
         <div className="brand">{config?.app_name ?? " "}</div>
-        <SourceList
-          sources={sources}
-          selectedId={selection.kind === "source" ? selection.id : null}
-          busy={fetchingAll}
-          onSelect={selectSource}
-          onFetchAll={() => void fetchAll()}
-          onCreate={() => void openSourceDialog(null)}
-        />
         <TemplateList
           templates={templates}
           selectedId={selection.kind === "template" ? selection.id : null}
           onSelect={selectTemplate}
           onCreate={() => void editTemplate(null)}
         />
+        {/* Quellen richtet man selten ein — eingeklappt, bis sie gebraucht werden. */}
+        <details className="sources-section" open={sources.length === 0}>
+          <summary>
+            Quellen<span className="muted"> {sources.length}</span>
+          </summary>
+          <SourceList
+            sources={sources}
+            selectedId={selection.kind === "source" ? selection.id : null}
+            busy={fetchingAll}
+            onSelect={selectSource}
+            onFetchAll={() => void fetchAll()}
+            onCreate={() => void openSourceDialog(null)}
+          />
+        </details>
         <button
           type="button"
           className="ghost settings-button"
@@ -452,6 +478,8 @@ export function App() {
             dirty={draft.body + draft.slug !== draft.saved}
             isNew={draft.id === null}
             dark={dark}
+            sources={sources.map((s) => s.source.name)}
+            help={help}
             fieldMessage={fieldMessage}
             onSlugChange={(slug) => setDraft({ ...draft, slug })}
             onBodyChange={(body) => setDraft({ ...draft, body })}
@@ -468,9 +496,22 @@ export function App() {
           <section className="diagram-page">
             <header className="detail-head">
               <h1>{selectedTemplate.title}</h1>
-              <span className="muted">
-                {drawing ? "Zeichne …" : `Quellen: ${selectedTemplate.sources.join(", ")}`}
-              </span>
+              <div className="actions">
+                <span className="muted">
+                  {drawing
+                    ? "Zeichne …"
+                    : oldestFetch
+                      ? `Daten vom ${formatDateTime(oldestFetch)}`
+                      : "Quellen noch nicht abgerufen"}
+                </span>
+                <button
+                  type="button"
+                  className="ghost"
+                  onClick={() => void editTemplate(selectedTemplate.id)}
+                >
+                  Bearbeiten
+                </button>
+              </div>
             </header>
             {diagram && (
               <DiagramView
@@ -482,19 +523,32 @@ export function App() {
           </section>
         )}
 
-        {selection.kind === "none" && !draft && (
-          <EmptyState
-            hasSources={sources.length > 0}
-            hasTemplates={templates.length > 0}
-            onCreateSource={() => void openSourceDialog(null)}
-          />
-        )}
+        {selection.kind === "none" &&
+          !draft &&
+          (ready ? (
+            <EmptyState />
+          ) : (
+            <GettingStarted
+              hasToken={!!token?.origin}
+              hasSource={sources.length > 0}
+              hasFetch={sources.some((s) => s.fetch !== null)}
+              hasTemplate={templates.length > 0}
+              onOpenSettings={() => {
+                setFieldError(null);
+                setSettingsOpen(true);
+              }}
+              onCreateSource={() => void openSourceDialog(null)}
+              onFetchAll={() => void fetchAll()}
+              onCreateTemplate={() => void editTemplate(null)}
+            />
+          ))}
       </main>
 
       {selectedTemplate && diagram && (
         <FilterPanel
           nodes={diagram.nodes}
           hidden={hidden}
+          fetched={fetchedAt}
           onToggle={toggleNode}
           onOnlyRelated={onlyRelated}
           onSetSource={setSourceVisible}

@@ -142,6 +142,8 @@ function backend(cmd: string, args: Record<string, unknown> = {}): unknown {
     }
     case "source_properties":
       return [{ name: "Name", id: "title", kind: "title" }];
+    case "template_help":
+      return { examples: [], hints: [] };
     case "template_get":
       return templates[0];
     case "template_save":
@@ -222,17 +224,28 @@ describe("Oberfläche", () => {
     expect(document.documentElement.dataset.theme).toBe("light");
   });
 
-  it("sagt ohne Quellen, wie man eine anlegt", async () => {
+  it("führt durch die vier Schritte bis zum ersten Diagramm", async () => {
+    const user = userEvent.setup();
     render(<App />);
-    expect(await screen.findByText("Willkommen")).toBeTruthy();
-    expect(screen.getByText(/source add Projekte/)).toBeTruthy();
+
+    expect(await screen.findByText("Erste Schritte")).toBeTruthy();
+    // Der Token ist da, die Quelle fehlt — also führt der Weg dorthin.
+    const tokenSchritt = screen.getByRole("heading", { name: /Notion-Token hinterlegen/ });
+    expect(tokenSchritt.closest("li")?.className).toContain("done");
+    const schritte = screen.getByText("Erste Schritte").closest("section") as HTMLElement;
+    await user.click(within(schritte).getByRole("button", { name: "Neue Quelle" }));
+    expect(screen.getByRole("textbox", { name: "Name" })).toBeTruthy();
   });
 
   it("weist auf den fehlenden Token hin", async () => {
+    const user = userEvent.setup();
     token = { origin: null, hint: null, store: "Schlüsselbund", store_error: null };
     render(<App />);
+
     expect(await screen.findByText(/Kein Notion-Token hinterlegt/)).toBeTruthy();
-    expect(screen.getByText("vizu-notion token set")).toBeTruthy();
+    // Der erste Schritt ist offen und führt in die Einstellungen.
+    await user.click(screen.getByRole("button", { name: "Einstellungen öffnen" }));
+    expect(screen.getByLabelText("Neuer Token")).toBeTruthy();
   });
 
   it("ruft eine Quelle ab und zeigt den neuen Stand", async () => {
@@ -378,7 +391,7 @@ describe("Oberfläche", () => {
     render(<App />);
     await user.click(await screen.findByRole("button", { name: /Fahrplan/ }));
     const panel = await screen.findByRole("complementary", { name: "Knoten filtern" });
-    const gruppe = within(panel).getByText("Projekte").closest("section") as HTMLElement;
+    const gruppe = within(panel).getByText("Projekte").closest("details") as HTMLElement;
 
     await user.click(within(gruppe).getByRole("button", { name: "Keine" }));
 

@@ -772,7 +772,9 @@ button.danger {
 
 .editor-panes {
   display: grid;
-  grid-template-columns: minmax(320px, 2fr) 3fr;
+  /* Der Text braucht Platz — die Vorschau kommt mit weniger aus, und zoomen
+     lässt sie sich ohnehin. */
+  grid-template-columns: minmax(420px, 1fr) 1fr;
   gap: var(--space-4);
   flex: 1;
   min-height: 0;
@@ -800,4 +802,144 @@ button.danger {
   font-size: 13px;
   line-height: 1.5;
   tab-size: 2;
+}
+
+/* --- Seitenleiste: Quellen aufklappbar ------------------------------------- */
+
+.sources-section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-top: 1px solid var(--border);
+}
+
+.sources-section > summary {
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.sources-section[open] {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* --- Filterfeld: je Quelle aufklappbar ------------------------------------- */
+
+.filter-group > summary {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  cursor: pointer;
+  padding-bottom: var(--space-1);
+  border-bottom: 1px solid var(--border);
+}
+
+.filter-group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  font-size: 12px;
+}
+
+.filter-panel input[type="search"] {
+  width: 100%;
+}
+
+/* --- Erste Schritte -------------------------------------------------------- */
+
+.getting-started {
+  padding: var(--space-4);
+  overflow-y: auto;
+  max-width: 820px;
+}
+
+.steps {
+  list-style: none;
+  margin: var(--space-4) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.step {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+}
+
+.step.done {
+  border-style: dashed;
+}
+
+.step-mark {
+  font-size: 18px;
+  line-height: 1.2;
+  color: var(--muted);
+}
+
+.step.done .step-mark {
+  color: var(--accent);
+}
+
+.step-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.step-body h2 {
+  font-size: 15px;
+  margin: 0;
+}
+
+.step-command {
+  font-size: 12px;
+  color: var(--muted);
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+/* --- Editor: Kopfzeile und Spickzettel ------------------------------------- */
+
+.editor-row {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.editor-row .grow-x {
+  flex: 1;
+  min-width: 0;
+}
+
+.cheat-sheet dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--space-1) var(--space-3);
+  margin: var(--space-2) 0;
+  font-size: 12px;
+}
+
+.cheat-sheet dl > div {
+  display: contents;
+}
+
+.cheat-sheet dt {
+  white-space: nowrap;
+}
+
+.cheat-sheet dd {
+  margin: 0;
+  color: var(--muted);
 }
