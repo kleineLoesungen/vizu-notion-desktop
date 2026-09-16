@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>Vizu Notion</title>
+  <!--
+    Das Symbol der Anwendung. Quelle für alle Größen:
+        just icons        (npx tauri icon assets/icon.svg)
+
+    Gedanke dahinter: Notions Bildsprache ist Papierweiß, schwarze Haarlinien,
+    strenge Geometrie. Darauf ein Graph aus vier Knoten — dessen Kanten ein N
+    zeichnen. Das Zeichen von Notion selbst wird dabei nicht nachgebaut; es
+    gehört ihnen.
+
+    Ein Knoten trägt die Akzentfarbe der Anwendung (#3b6ea5, siehe
+    ui/src/theme.css und docs/DESIGN.md).
+  -->
+  <defs>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fdfdfc"/>
+      <stop offset="1" stop-color="#eeece7"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Die abgerundete Fläche, wie sie macOS erwartet. -->
+  <rect x="64" y="64" width="896" height="896" rx="208" fill="url(#paper)"/>
+  <rect x="64" y="64" width="896" height="896" rx="208" fill="none"
+        stroke="#1a1a19" stroke-opacity="0.09" stroke-width="8"/>
+
+  <!-- Die Kanten: links hoch, quer hinunter, rechts hoch. -->
+  <g stroke="#1a1a19" stroke-width="34" stroke-linecap="round" fill="none">
+    <path d="M356 676 V 380"/>
+    <path d="M356 348 L 668 660"/>
+    <path d="M668 628 V 332"/>
+  </g>
+
+  <!-- Die Knoten. Weiß gefüllt, damit die Kanten darunter enden. -->
+  <g stroke="#1a1a19" stroke-width="34">
+    <circle cx="356" cy="704" r="46" fill="#fdfdfc"/>
+    <circle cx="356" cy="320" r="46" fill="#fdfdfc"/>
+    <circle cx="668" cy="688" r="46" fill="#fdfdfc"/>
+    <circle cx="668" cy="304" r="46" fill="#3b6ea5"/>
+  </g>
+</svg>

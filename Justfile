@@ -102,9 +102,9 @@ bundle-macos-universal:
 package-cli:
     ./scripts/package-cli.sh
 
-# Symbole aus assets/icon.png neu erzeugen (1024×1024, quadratisch).
+# Symbole aus assets/icon.svg neu erzeugen.
 icons:
-    npx tauri icon assets/icon.png -o crates/desktop/icons
+    npx tauri icon assets/icon.svg -o crates/desktop/icons
     cd crates/desktop/icons && rm -rf android ios Square*.png StoreLogo.png icon.ico 64x64.png
 
 # --- Aufräumen -------------------------------------------------------------

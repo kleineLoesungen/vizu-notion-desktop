@@ -145,7 +145,7 @@ USAGE
     echo "  just check                      # muss grün sein"
     echo "  just dev"
     echo ""
-    echo "assets/icon.png ist noch das Symbol des Kits — ersetzen (1024×1024) und"
+    echo "assets/icon.svg ist noch das Symbol des Kits — ersetzen und"
     echo "danach 'just icons' laufen lassen."
 }
 

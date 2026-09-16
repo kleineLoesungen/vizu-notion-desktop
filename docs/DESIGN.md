@@ -98,16 +98,19 @@ Die CSP sperrt fremde Server, und die Anwendung muss ohne Netz starten.
 
 ## Symbole
 
-Quelle ist `assets/icon.png`, 1024 × 1024, quadratisch, mit transparentem
-Rand, wo das System eine Maske anlegt.
+Quelle ist `assets/icon.svg` — eine Vektordatei, damit jede Größe scharf
+bleibt. Das Motiv: vier Knoten, deren Kanten ein N zeichnen, auf Papierweiß
+mit schwarzen Haarlinien. Das ist eine **Anlehnung** an die Bildsprache von
+Notion, kein Nachbau ihres Zeichens — das gehört ihnen.
 
 ```bash
 just icons
 ```
 
 Das erzeugt `crates/desktop/icons/` (`icon.icns` für macOS, PNGs für Linux).
-**Die Ergebnisse liegen mit im Verwaltungssystem.** Die Farbe im Symbol ist
-dieselbe wie die Voreinstellung von `accent`.
+**Die Ergebnisse liegen mit im Verwaltungssystem.** Der farbige Knoten trägt
+die Voreinstellung von `accent` (`#3b6ea5`) — wer sie ändert, ändert auch die
+eine Zeile in `assets/icon.svg`.
 
 ## Bedienelemente brauchen Namen
 
