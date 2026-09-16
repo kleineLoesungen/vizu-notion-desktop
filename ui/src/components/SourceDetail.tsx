@@ -10,10 +10,11 @@ type Props = {
   entry: SourceOverview;
   busy: boolean;
   onFetch: () => void;
+  onEdit: () => void;
   onOpenLink: (url: string) => void;
 };
 
-export function SourceDetail({ entry, busy, onFetch, onOpenLink }: Props) {
+export function SourceDetail({ entry, busy, onFetch, onEdit, onOpenLink }: Props) {
   const { source, fetch } = entry;
 
   function open(event: MouseEvent, url: string) {
@@ -26,9 +27,14 @@ export function SourceDetail({ entry, busy, onFetch, onOpenLink }: Props) {
     <section className="source-detail">
       <header className="detail-head">
         <h1>{source.name}</h1>
-        <button type="button" className="primary" disabled={busy} onClick={onFetch}>
-          {busy ? "Rufe ab …" : "Von Notion abrufen"}
-        </button>
+        <div className="actions">
+          <button type="button" className="ghost" onClick={onEdit}>
+            Bearbeiten
+          </button>
+          <button type="button" className="primary" disabled={busy} onClick={onFetch}>
+            {busy ? "Rufe ab …" : "Von Notion abrufen"}
+          </button>
+        </div>
       </header>
 
       <dl className="detail-facts">
@@ -55,10 +61,7 @@ export function SourceDetail({ entry, busy, onFetch, onOpenLink }: Props) {
 
       <h2>Zuordnung</h2>
       {source.mappings.length === 0 ? (
-        <p className="muted">
-          Keine Spalte zugeordnet. Auf der Kommandozeile:{" "}
-          <code>vizu-notion source edit {source.name} --map title=Name</code>
-        </p>
+        <p className="muted">Keine Spalte zugeordnet — „Bearbeiten“ legt sie an.</p>
       ) : (
         <table className="mapping-table">
           <thead>

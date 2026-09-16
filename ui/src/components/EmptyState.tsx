@@ -3,9 +3,10 @@
 type Props = {
   hasSources: boolean;
   hasTemplates: boolean;
+  onCreateSource: () => void;
 };
 
-export function EmptyState({ hasSources, hasTemplates }: Props) {
+export function EmptyState({ hasSources, hasTemplates, onCreateSource }: Props) {
   if (hasSources && hasTemplates) {
     return (
       <section className="empty">
@@ -21,25 +22,29 @@ export function EmptyState({ hasSources, hasTemplates }: Props) {
       <p className="muted">
         {hasSources
           ? "Eine Vorlage ist eine .mmd-Datei: ein Kopf mit Titel und Quellen, darunter ein Mermaid-Diagramm mit Feldern aus Notion."
-          : "Eine Quelle ist eine Notion-Datenbank unter einem Namen. Quellen und Vorlagen werden vorerst auf der Kommandozeile angelegt:"}
+          : "Eine Quelle ist eine Notion-Datenbank unter einem Namen. Daraus entstehen die Diagramme."}
       </p>
+      {!hasSources && (
+        <div className="actions">
+          <button type="button" className="primary" onClick={onCreateSource}>
+            Neue Quelle
+          </button>
+        </div>
+      )}
+      <p className="muted">Dasselbe auf der Kommandozeile — sie arbeitet auf denselben Daten:</p>
       <pre className="hint">
         <code>
           {hasSources ? (
             "vizu-notion template import diagramm.mmd"
           ) : (
             <>
-              vizu-notion token set{"\n"}
               vizu-notion source add Projekte --database &lt;ID&gt; --map title=Name{"\n"}
               vizu-notion fetch{"\n"}
-              vizu-notion template import diagramm.mmd
+              vizu-notion source import sources.json
             </>
           )}
         </code>
       </pre>
-      <p className="muted">
-        Vorhandene Konfiguration der Webapp: <code>vizu-notion source import sources.json</code>
-      </p>
     </section>
   );
 }

@@ -80,6 +80,22 @@ export type NodeInfo = { id: string, title: string, source: string,
  */
 relations: Array<string>, };
 
+/**
+ * Eine Spalte aus dem Schema einer Datenquelle.
+ *
+ * Geht auch über die IPC-Grenze: Die Oberfläche bietet beim Zuordnen die
+ * Spalten zur Auswahl an, die der letzte Abruf gesehen hat.
+ */
+export type Property = { name: string, 
+/**
+ * Kurzkennung der Spalte, z. B. `%5EGHx` — bereits für Adressen kodiert.
+ */
+id: string, 
+/**
+ * `title`, `relation`, `multi_select`, …
+ */
+kind: string, };
+
 export type Source = { id: string, name: string, 
 /**
  * Die Notion-Kennung, klein und mit Bindestrichen.

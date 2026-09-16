@@ -21,9 +21,10 @@ use tauri::State;
 use ts_rs::TS;
 use uuid::Uuid;
 use vizu_notion_core::fetch::{self, FetchStatus, SourceOverview};
+use vizu_notion_core::notion::Property;
 use vizu_notion_core::secret::{self, TokenStatus};
-use vizu_notion_core::source::{self, Source};
-use vizu_notion_core::template::{self, Diagram, Template};
+use vizu_notion_core::source::{self, Source, SourceInput};
+use vizu_notion_core::template::{self, Diagram, Template, TemplateInput};
 use vizu_notion_core::{Config, Paths, notion};
 
 use crate::error::{ApiError, ApiResult};
@@ -66,11 +67,73 @@ pub async fn source_fetch(state: State<'_, AppState>, id: Uuid) -> ApiResult<Fet
     state.with(|app| fetch::store(app.conn(), &download))
 }
 
+#[tauri::command]
+pub async fn source_create(state: State<'_, AppState>, input: SourceInput) -> ApiResult<Source> {
+    state.with(|app| source::create(app.conn(), input))
+}
+
+#[tauri::command]
+pub async fn source_update(
+    state: State<'_, AppState>,
+    id: Uuid,
+    input: SourceInput,
+) -> ApiResult<Source> {
+    state.with(|app| source::update(app.conn(), id, input))
+}
+
+#[tauri::command]
+pub async fn source_delete(state: State<'_, AppState>, id: Uuid) -> ApiResult<()> {
+    state.with(|app| source::delete(app.conn(), id))
+}
+
+/// Die Spalten, die der letzte Abruf in Notion gesehen hat — für die Auswahl
+/// beim Zuordnen. Leer, solange nie abgerufen wurde.
+#[tauri::command]
+pub async fn source_properties(state: State<'_, AppState>, id: Uuid) -> ApiResult<Vec<Property>> {
+    state.with(|app| fetch::schema_properties(app.conn(), id))
+}
+
 // --- Vorlagen und Diagramme --------------------------------------------------
 
 #[tauri::command]
 pub async fn template_list(state: State<'_, AppState>) -> ApiResult<Vec<Template>> {
     state.with(|app| template::list(app.conn()))
+}
+
+#[tauri::command]
+pub async fn template_get(state: State<'_, AppState>, id: Uuid) -> ApiResult<Template> {
+    state.with(|app| template::get(app.conn(), id))
+}
+
+/// Legt eine Vorlage an oder ändert sie — je nachdem, ob `id` gesetzt ist.
+#[tauri::command]
+pub async fn template_save(
+    state: State<'_, AppState>,
+    id: Option<Uuid>,
+    input: TemplateInput,
+) -> ApiResult<Template> {
+    state.with(|app| match id {
+        Some(id) => template::update(app.conn(), id, input),
+        None => template::create(app.conn(), input),
+    })
+}
+
+#[tauri::command]
+pub async fn template_delete(state: State<'_, AppState>, id: Uuid) -> ApiResult<()> {
+    state.with(|app| template::delete(app.conn(), id))
+}
+
+/// Zeichnet einen noch nicht gespeicherten Vorlagentext — die Vorschau des
+/// Editors. Dieselbe Rechnung wie beim fertigen Diagramm, damit die Vorschau
+/// nicht davon abweichen kann.
+#[tauri::command]
+pub async fn diagram_preview(
+    state: State<'_, AppState>,
+    body: String,
+    hidden: Vec<String>,
+) -> ApiResult<Diagram> {
+    let hidden: HashSet<String> = hidden.into_iter().collect();
+    state.with(|app| template::render_body(app.conn(), &body, &hidden))
 }
 
 /// Zeichnet eine Vorlage aus dem Zwischenspeicher — ohne Netz.
@@ -93,6 +156,21 @@ pub async fn diagram_render(
 
 // --- Token -----------------------------------------------------------------
 
+/// Speichert den Token. Er kommt aus dem Eingabefeld der Oberfläche und geht
+/// von hier in den Schlüsselbund — protokolliert wird er nirgends.
+#[tauri::command]
+pub async fn token_set(state: State<'_, AppState>, token: String) -> ApiResult<TokenStatus> {
+    state.with(|app| secret::set(app.secrets(), &token))
+}
+
+#[tauri::command]
+pub async fn token_clear(state: State<'_, AppState>) -> ApiResult<TokenStatus> {
+    state.with(|app| {
+        secret::clear(app.secrets())?;
+        Ok(secret::status(app.secrets()))
+    })
+}
+
 /// Ob ein Token da ist und woher — nie der Token selbst.
 #[tauri::command]
 pub async fn token_status(state: State<'_, AppState>) -> ApiResult<TokenStatus> {
@@ -114,6 +192,24 @@ pub async fn config_set(state: State<'_, AppState>, config: Config) -> ApiResult
         app.set_config(config)?;
         Ok(app.config().clone())
     })
+}
+
+// --- Dateien ---------------------------------------------------------------
+
+/// Schreibt das SVG eines Diagramms in eine Datei.
+///
+/// Den Pfad wählt die Oberfläche über den Speichern-Dialog des Systems; ein
+/// Download aus dem Webview heraus ginge nicht.
+#[tauri::command]
+pub async fn export_svg(path: String, svg: String) -> ApiResult<String> {
+    let path = std::path::PathBuf::from(path);
+    tauri::async_runtime::spawn_blocking(move || {
+        std::fs::write(&path, svg)
+            .map(|()| path.display().to_string())
+            .map_err(|e| ApiError::internal(format!("{}: {e}", path.display())))
+    })
+    .await
+    .map_err(|e| ApiError::internal(format!("Speichern abgebrochen: {e}")))?
 }
 
 // --- Über die Anwendung ----------------------------------------------------

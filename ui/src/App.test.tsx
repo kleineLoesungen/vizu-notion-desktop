@@ -19,8 +19,10 @@ import type {
   Config,
   Diagram,
   FetchStatus,
+  SourceInput,
   SourceOverview,
   Template,
+  TemplateInput,
   TokenStatus,
 } from "./bindings";
 
@@ -28,6 +30,12 @@ import type {
 // Zeichnen, sondern darum, dass die Oberfläche den richtigen Text anfordert.
 // Was daraus ein SVG macht, ist Sache von mermaid.
 const drawn: string[] = [];
+const saved: { path: string | null; svg?: string } = { path: null };
+
+// Der Speichern-Dialog des Systems gibt es in jsdom nicht.
+vi.mock("@tauri-apps/plugin-dialog", () => ({
+  save: () => Promise.resolve(saved.path),
+}));
 vi.mock("./lib/mermaid", () => ({
   renderDiagram: (host: HTMLElement, text: string) => {
     drawn.push(text);
@@ -35,6 +43,8 @@ vi.mock("./lib/mermaid", () => ({
     return Promise.resolve({ ok: true });
   },
   renderDiagrams: () => Promise.resolve(),
+  // Die Attrappe zeichnet Text statt SVG; für den Export genügt er.
+  svgFile: (host: HTMLElement) => `<svg>${host.textContent}</svg>`,
   MERMAID_SELECTOR: "",
 }));
 
@@ -116,6 +126,34 @@ function backend(cmd: string, args: Record<string, unknown> = {}): unknown {
     throw new Rejection(error);
   }
   switch (cmd) {
+    case "source_create":
+    case "source_update": {
+      const input = args.input as SourceInput;
+      const created = {
+        id: (args.id as string) ?? "neu",
+        name: input.name,
+        database_id: input.database_id,
+        mappings: input.mappings,
+        created_at: STAMP,
+        updated_at: STAMP,
+      };
+      sources = [{ source: created, fetch: null }];
+      return created;
+    }
+    case "source_properties":
+      return [{ name: "Name", id: "title", kind: "title" }];
+    case "template_get":
+      return templates[0];
+    case "template_save":
+      return { ...template("t1", "Fahrplan"), slug: (args.input as TemplateInput).slug };
+    case "diagram_preview":
+      return diagramFor([]);
+    case "export_svg":
+      saved.svg = args.svg as string;
+      return args.path as string;
+    case "token_set":
+    case "token_clear":
+      return token;
     case "config_get":
       return config;
     case "config_set":
@@ -153,6 +191,8 @@ beforeEach(() => {
   templates = [];
   calls = [];
   drawn.length = 0;
+  saved.path = null;
+  saved.svg = undefined;
   nextError = null;
   config = { app_name: "Vizu Notion", theme: "light", accent: "#3b6ea5" };
   token = { origin: "store", hint: "ntn_…stuv", store: "Schlüsselbund", store_error: null };
@@ -345,5 +385,126 @@ describe("Oberfläche", () => {
     await waitFor(() =>
       expect(commands("diagram_render")[1]?.args).toEqual({ id: "t1", hidden: ["p1", "p2"] }),
     );
+  });
+
+  it("legt eine Quelle im Formular an und schickt Zuordnung als `input`", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(
+      (await screen.findAllByRole("button", { name: "Neue Quelle" }))[0] as HTMLElement,
+    );
+    await user.type(screen.getByRole("textbox", { name: "Name" }), "Projekte");
+    await user.type(
+      screen.getByRole("textbox", { name: "Notion-Datenbank" }),
+      "396f66270f5d8034b55cebc685aa5e50",
+    );
+    // Ein Feld mit Vorschlagsliste ist in ARIA eine combobox, kein textbox.
+    await user.type(screen.getByLabelText("Spalte 1"), "Name");
+    await user.click(screen.getByRole("button", { name: "Speichern" }));
+
+    await waitFor(() => expect(commands("source_create")).toHaveLength(1));
+    expect(commands("source_create")[0]?.args).toEqual({
+      input: {
+        name: "Projekte",
+        database_id: "396f66270f5d8034b55cebc685aa5e50",
+        mappings: [{ role: "title", property: "Name" }],
+      },
+    });
+  });
+
+  it("zeigt einen Fehler an der Rolle, zu der er gehört", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(
+      (await screen.findAllByRole("button", { name: "Neue Quelle" }))[0] as HTMLElement,
+    );
+    nextError = {
+      code: "validation_failed",
+      message: "mappings.title: Spaltenname fehlt",
+      fields: [{ field: "mappings.title", message: "Spaltenname fehlt" }],
+    };
+    await user.click(screen.getByRole("button", { name: "Speichern" }));
+
+    expect(await screen.findByText("Spaltenname fehlt")).toBeTruthy();
+    expect(document.querySelector(".banner")).toBeNull();
+  });
+
+  it("speichert einen Token, ohne ihn je anzuzeigen", async () => {
+    const user = userEvent.setup();
+    token = { origin: null, hint: null, store: "Schlüsselbund", store_error: null };
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Einstellungen" }));
+    const feld = screen.getByLabelText("Neuer Token");
+    await user.type(feld, "ntn_1234567890abcdefghijklmnopqrstuv");
+    await user.click(
+      within(feld.closest("fieldset") as HTMLElement).getByRole("button", { name: "Speichern" }),
+    );
+
+    await waitFor(() => expect(commands("token_set")).toHaveLength(1));
+    expect(commands("token_set")[0]?.args).toEqual({
+      token: "ntn_1234567890abcdefghijklmnopqrstuv",
+    });
+    expect(feld.getAttribute("type")).toBe("password");
+  });
+
+  it("zeichnet im Editor eine Vorschau aus dem ungespeicherten Text", async () => {
+    const user = userEvent.setup();
+    templates = [template("t1", "Fahrplan")];
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Neu" }));
+    const textfeld = await screen.findByRole("textbox", { name: "Vorlage" });
+    await user.clear(textfeld);
+    await user.type(textfeld, "x");
+
+    // Die Vorschau läuft verzögert und über denselben Befehl wie das Diagramm.
+    await waitFor(() => expect(commands("diagram_preview").length).toBeGreaterThan(0), {
+      timeout: 2000,
+    });
+    expect(commands("template_save")).toHaveLength(0);
+  });
+
+  it("speichert eine Vorlage mit Kurznamen", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Neu" }));
+    await user.type(await screen.findByRole("textbox", { name: "Kurzname" }), "fahrplan");
+    await user.click(screen.getByRole("button", { name: "Speichern" }));
+
+    await waitFor(() => expect(commands("template_save")).toHaveLength(1));
+    const args = commands("template_save")[0]?.args as { id: string | null; input: TemplateInput };
+    expect(args.id).toBeNull();
+    expect(args.input.slug).toBe("fahrplan");
+  });
+
+  it("schreibt das SVG in die Datei aus dem Speichern-Dialog", async () => {
+    const user = userEvent.setup();
+    templates = [template("t1", "Fahrplan")];
+    saved.path = "/tmp/fahrplan.svg";
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: /Fahrplan/ }));
+    await user.click(await screen.findByRole("button", { name: "SVG speichern" }));
+
+    await waitFor(() => expect(commands("export_svg")).toHaveLength(1));
+    expect(commands("export_svg")[0]?.args).toMatchObject({ path: "/tmp/fahrplan.svg" });
+    expect(await screen.findByText("Gespeichert: /tmp/fahrplan.svg")).toBeTruthy();
+  });
+
+  it("schreibt nichts, wenn der Dialog abgebrochen wird", async () => {
+    const user = userEvent.setup();
+    templates = [template("t1", "Fahrplan")];
+    saved.path = null;
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: /Fahrplan/ }));
+    await user.click(await screen.findByRole("button", { name: "SVG speichern" }));
+
+    await waitFor(() => expect(commands("diagram_render")).toHaveLength(1));
+    expect(commands("export_svg")).toHaveLength(0);
   });
 });

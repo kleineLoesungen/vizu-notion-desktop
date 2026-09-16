@@ -16,12 +16,14 @@ import {
   useState,
   type WheelEvent,
 } from "react";
-import { renderDiagram } from "../lib/mermaid";
+import { renderDiagram, svgFile } from "../lib/mermaid";
 
 type Props = {
   /** Der Mermaid-Text aus `template::render`. */
   mermaid: string;
   dark: boolean;
+  /** Bekommt das gezeichnete SVG. Ohne den Rückruf gibt es keinen Knopf. */
+  onExport?: (svg: string) => void;
 };
 
 type View = { zoom: number; x: number; y: number };
@@ -43,7 +45,7 @@ function zoomLabel(zoom: number): string {
   return `${percent < 10 ? percent.toFixed(1) : Math.round(percent)} %`;
 }
 
-export function DiagramView({ mermaid, dark }: Props) {
+export function DiagramView({ mermaid, dark, onExport }: Props) {
   const host = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -161,6 +163,19 @@ export function DiagramView({ mermaid, dark }: Props) {
         <button type="button" className="ghost" onClick={() => fitToView()}>
           Einpassen
         </button>
+        {onExport && (
+          <button
+            type="button"
+            className="ghost"
+            disabled={!!error}
+            onClick={() => {
+              const svg = host.current && svgFile(host.current);
+              if (svg) onExport(svg);
+            }}
+          >
+            SVG speichern
+          </button>
+        )}
       </div>
 
       {error && (

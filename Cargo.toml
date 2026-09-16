@@ -73,6 +73,9 @@ clap_mangen = "0.3.3"
 tauri = { version = "2.11.5", features = [] }
 tauri-build = { version = "2.6.3", features = [] }
 tauri-plugin-opener = "2.5.5"
+# Speichern-Dialog des Systems für den SVG-Export. Paarweise mit
+# @tauri-apps/plugin-dialog in package.json.
+tauri-plugin-dialog = "2.7.3"
 
 # Nur für Tests.
 assert_cmd = "2.2.2"

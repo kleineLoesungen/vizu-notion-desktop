@@ -38,7 +38,10 @@ struct RichText {
 }
 
 /// Eine Spalte aus dem Schema einer Datenquelle.
-#[derive(Debug, Clone, PartialEq, Eq)]
+///
+/// Geht auch über die IPC-Grenze: Die Oberfläche bietet beim Zuordnen die
+/// Spalten zur Auswahl an, die der letzte Abruf gesehen hat.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, ts_rs::TS)]
 pub struct Property {
     pub name: String,
     /// Kurzkennung der Spalte, z. B. `%5EGHx` — bereits für Adressen kodiert.

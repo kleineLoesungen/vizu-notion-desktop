@@ -4,15 +4,19 @@
 // von dort als Feldfehler zurückkommt.
 
 import { useState } from "react";
-import type { AppInfo, Config, Theme } from "../bindings";
+import type { AppInfo, Config, Theme, TokenStatus } from "../bindings";
 import { Dialog } from "./Dialog";
 import { FieldMessage } from "./FieldMessage";
 
 type Props = {
   config: Config;
   info: AppInfo | null;
+  /** `null`, solange der Stand noch nicht geladen ist. */
+  token: TokenStatus | null;
   fieldMessage: (field: string) => string | undefined;
   onSave: (config: Config) => void;
+  onTokenSave: (token: string) => void;
+  onTokenClear: () => void;
   onClose: () => void;
 };
 
@@ -22,8 +26,18 @@ const THEMES: [Theme, string][] = [
   ["dark", "Dunkel"],
 ];
 
-export function SettingsDialog({ config, info, fieldMessage, onSave, onClose }: Props) {
+export function SettingsDialog({
+  config,
+  info,
+  token,
+  fieldMessage,
+  onSave,
+  onTokenSave,
+  onTokenClear,
+  onClose,
+}: Props) {
   const [draft, setDraft] = useState<Config>(config);
+  const [newToken, setNewToken] = useState("");
 
   return (
     <Dialog title="Einstellungen" onClose={onClose}>
@@ -79,6 +93,49 @@ export function SettingsDialog({ config, info, fieldMessage, onSave, onClose }: 
           </span>
         </label>
         <FieldMessage id="accent-error" message={fieldMessage("accent")} />
+
+        <fieldset className="token-box">
+          <legend>Notion-Token</legend>
+          <p className="muted">
+            {token?.origin === "environment"
+              ? `Kommt aus VIZU_NOTION_TOKEN (${token.hint}) und hat Vorrang vor dem gespeicherten.`
+              : token?.origin === "store"
+                ? `Gespeichert: ${token.hint} (${token.store})`
+                : `Keiner hinterlegt (${token?.store ?? "…"})`}
+          </p>
+          {token?.store_error && <p className="field-message">{token.store_error}</p>}
+          <span className="row">
+            <input
+              className="grow"
+              type="password"
+              aria-label="Neuer Token"
+              placeholder="ntn_…"
+              value={newToken}
+              onChange={(e) => setNewToken(e.target.value)}
+              aria-describedby="token-error"
+            />
+            <button
+              type="button"
+              className="ghost"
+              disabled={newToken.trim() === ""}
+              onClick={() => {
+                onTokenSave(newToken);
+                setNewToken("");
+              }}
+            >
+              Speichern
+            </button>
+            <button
+              type="button"
+              className="ghost"
+              disabled={token?.origin !== "store"}
+              onClick={onTokenClear}
+            >
+              Löschen
+            </button>
+          </span>
+          <FieldMessage id="token-error" message={fieldMessage("token")} />
+        </fieldset>
 
         {info && (
           <dl className="info">

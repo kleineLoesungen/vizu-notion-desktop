@@ -245,6 +245,26 @@ pub fn status(conn: &Connection, source_id: Uuid) -> Result<Option<FetchStatus>>
     .transpose()
 }
 
+/// Die Spalten, die der letzte Abruf in Notion gesehen hat.
+///
+/// Leer, solange nie abgerufen wurde. Die Oberfläche bietet sie beim Zuordnen
+/// zur Auswahl an, statt den Spaltennamen abtippen zu lassen.
+pub fn schema_properties(conn: &Connection, source_id: Uuid) -> Result<Vec<notion::Property>> {
+    let schema: Option<String> = conn
+        .query_row(
+            "SELECT schema FROM fetches WHERE source_id = ?1",
+            [source_id.to_string()],
+            |r| r.get(0),
+        )
+        .optional()?;
+    let Some(schema) = schema else {
+        return Ok(Vec::new());
+    };
+    let value: Value = serde_json::from_str(&schema)
+        .map_err(|e| Error::Corrupt(format!("Schema der Quelle {source_id} unlesbar: {e}")))?;
+    Ok(notion::property_kinds(&value))
+}
+
 /// Die zwischengespeicherten Seiten einer Quelle, in der Reihenfolge der Abfrage.
 pub fn pages(conn: &Connection, source_id: Uuid) -> Result<Vec<Page>> {
     let mut stmt = conn.prepare(

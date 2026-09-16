@@ -15,6 +15,7 @@
 
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { save } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import type {
   ApiError as ApiErrorData,
@@ -24,9 +25,12 @@ import type {
   ErrorCode,
   FetchStatus,
   FieldError,
+  Property,
   Source,
+  SourceInput,
   SourceOverview,
   Template,
+  TemplateInput,
   TokenStatus,
 } from "./bindings";
 
@@ -81,16 +85,32 @@ export const api = {
     get: (id: string) => call<Source>("source_get", { id }),
     /** Dauert Sekunden: Rust holt die Daten von Notion und speichert sie. */
     fetch: (id: string) => call<FetchStatus>("source_fetch", { id }),
+    create: (input: SourceInput) => call<Source>("source_create", { input }),
+    update: (id: string, input: SourceInput) => call<Source>("source_update", { id, input }),
+    remove: (id: string) => call<null>("source_delete", { id }),
+    /** Die Spalten aus dem letzten Abruf — für die Auswahl beim Zuordnen. */
+    properties: (id: string) => call<Property[]>("source_properties", { id }),
   },
 
   templates: {
     list: () => call<Template[]>("template_list"),
+    get: (id: string) => call<Template>("template_get", { id }),
+    /** `id` leer lassen heißt: neu anlegen. */
+    save: (id: string | null, input: TemplateInput) =>
+      call<Template>("template_save", { id, input }),
+    remove: (id: string) => call<null>("template_delete", { id }),
     /** Zeichnet aus dem Zwischenspeicher — ohne Netz, deshalb schnell. */
     render: (id: string, hidden: string[]) => call<Diagram>("diagram_render", { id, hidden }),
+    /** Dasselbe für einen Text, der noch nicht gespeichert ist. */
+    preview: (body: string, hidden: string[]) => call<Diagram>("diagram_preview", { body, hidden }),
   },
 
-  /** Ob ein Token hinterlegt ist — der Token selbst kommt nie ins Webview. */
-  tokenStatus: () => call<TokenStatus>("token_status"),
+  token: {
+    /** Der Token selbst kommt nie aus Rust zurück, nur sein Hinweis. */
+    status: () => call<TokenStatus>("token_status"),
+    set: (token: string) => call<TokenStatus>("token_set", { token }),
+    clear: () => call<TokenStatus>("token_clear"),
+  },
 
   config: {
     get: () => call<Config>("config_get"),
@@ -98,6 +118,21 @@ export const api = {
   },
 
   appInfo: () => call<AppInfo>("app_info"),
+
+  /**
+   * Fragt nach einem Dateinamen und schreibt das SVG.
+   *
+   * `null`, wenn der Dialog abgebrochen wurde. Ein Download aus dem Webview
+   * heraus ginge nicht — die Datei schreibt Rust.
+   */
+  exportSvg: async (svg: string, suggested: string): Promise<string | null> => {
+    const path = await save({
+      defaultPath: `${suggested}.svg`,
+      filters: [{ name: "SVG", extensions: ["svg"] }],
+    });
+    if (!path) return null;
+    return call<string>("export_svg", { path, svg });
+  },
 
   /** Braucht `core:window:allow-set-title` in crates/desktop/capabilities/. */
   setWindowTitle: async (title: string) => {

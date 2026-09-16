@@ -278,6 +278,144 @@ fn eine_vorlage_mit_fehler_kommt_als_eingabefehler_zurueck() {
 }
 
 #[test]
+fn legt_eine_quelle_an_aendert_sie_und_loescht_sie() {
+    let ctx = Ctx::new();
+
+    let created = ctx
+        .invoke(
+            "source_create",
+            json!({ "input": {
+                "name": "Projekte",
+                "database_id": "https://www.notion.so/team/Projekte-396f66270f5d8034b55cebc685aa5e50",
+                "mappings": [{ "role": "title", "property": "Name" }]
+            }}),
+        )
+        .unwrap();
+    // Die Adresse wird zur Kennung — geprüft wird in core, nicht im Webview.
+    assert_eq!(
+        created["database_id"],
+        "396f6627-0f5d-8034-b55c-ebc685aa5e50"
+    );
+    let id = created["id"].as_str().unwrap().to_string();
+
+    let updated = ctx
+        .invoke(
+            "source_update",
+            json!({ "id": id, "input": {
+                "name": "Projekte 2026",
+                "database_id": "396f66270f5d8034b55cebc685aa5e50",
+                "mappings": []
+            }}),
+        )
+        .unwrap();
+    assert_eq!(updated["name"], "Projekte 2026");
+    assert_eq!(updated["mappings"].as_array().unwrap().len(), 0);
+
+    ctx.invoke("source_delete", json!({ "id": id })).unwrap();
+    assert!(
+        ctx.invoke("source_list", json!({}))
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+}
+
+#[test]
+fn eine_ungueltige_rolle_kommt_mit_ihrem_feldnamen_zurueck() {
+    let ctx = Ctx::new();
+    let err = ctx
+        .invoke(
+            "source_create",
+            json!({ "input": {
+                "name": "Projekte",
+                "database_id": "396f66270f5d8034b55cebc685aa5e50",
+                "mappings": [{ "role": "title", "property": "" }]
+            }}),
+        )
+        .unwrap_err();
+
+    assert_eq!(err["code"], "validation_failed");
+    assert_eq!(err["fields"][0]["field"], "mappings.title");
+}
+
+#[test]
+fn speichert_eine_vorlage_und_zeichnet_sie_vor_dem_speichern() {
+    let ctx = Ctx::new();
+    let source = ctx.source("Projekte");
+    ctx.pages(source, &[("p1", "Website")]);
+    let body = "---\ntitle: \"Fahrplan\"\nsources:\n  - Projekte\n---\nflowchart TD\n\
+                {{#each Projekte}}\n  {{title}}\n{{/each}}\n";
+
+    // Erst die Vorschau — ohne dass etwas gespeichert wäre.
+    let preview = ctx
+        .invoke("diagram_preview", json!({ "body": body, "hidden": [] }))
+        .unwrap();
+    assert!(preview["mermaid"].as_str().unwrap().contains("Website"));
+    assert!(
+        ctx.invoke("template_list", json!({}))
+            .unwrap()
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+
+    let saved = ctx
+        .invoke(
+            "template_save",
+            json!({ "id": null, "input": { "slug": "fahrplan", "body": body } }),
+        )
+        .unwrap();
+    assert_eq!(saved["title"], "Fahrplan");
+    let id = saved["id"].as_str().unwrap().to_string();
+
+    let changed = ctx
+        .invoke(
+            "template_save",
+            json!({ "id": id, "input": { "slug": "fahrplan-2026", "body": body } }),
+        )
+        .unwrap();
+    assert_eq!(changed["slug"], "fahrplan-2026");
+    assert_eq!(changed["id"], id, "dieselbe Vorlage, nicht eine zweite");
+
+    ctx.invoke("template_delete", json!({ "id": id })).unwrap();
+}
+
+#[test]
+fn der_token_geht_hin_aber_nie_zurueck() {
+    let ctx = Ctx::new();
+
+    let status = ctx
+        .invoke(
+            "token_set",
+            json!({ "token": "ntn_1234567890abcdefghijklmnopqrstuv" }),
+        )
+        .unwrap();
+
+    assert_eq!(status["origin"], "store");
+    assert!(!status.to_string().contains("1234567890"), "{status}");
+
+    let cleared = ctx.invoke("token_clear", json!({})).unwrap();
+    assert!(cleared["origin"].is_null());
+}
+
+#[test]
+fn schreibt_das_svg_dahin_wo_der_dialog_hinzeigt() {
+    let ctx = Ctx::new();
+    let path = ctx.dir_path().join("diagramm.svg");
+
+    let written = ctx
+        .invoke(
+            "export_svg",
+            json!({ "path": path.to_str().unwrap(), "svg": "<svg/>" }),
+        )
+        .unwrap();
+
+    assert_eq!(written, path.display().to_string());
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), "<svg/>");
+}
+
+#[test]
 fn unbekannte_kennung_ist_not_found() {
     let ctx = Ctx::new();
     let err = ctx

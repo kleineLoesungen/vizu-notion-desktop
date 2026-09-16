@@ -713,3 +713,91 @@ button.small {
   flex-direction: column;
   min-height: 0;
 }
+
+/* --- Verwalten ------------------------------------------------------------- */
+
+.sidebar-head-inline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-right: var(--space-3);
+}
+
+.mapping-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+}
+
+.mapping-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Die Meldung gehört unter die ganze Zeile, nicht neben ein Feld. */
+.mapping-row .field-message {
+  grid-column: 1 / -1;
+}
+
+.token-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+}
+
+button.danger {
+  color: var(--danger);
+  margin-right: auto;
+}
+
+/* --- Editor ---------------------------------------------------------------- */
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: var(--space-4);
+  gap: var(--space-3);
+}
+
+.editor-panes {
+  display: grid;
+  grid-template-columns: minmax(320px, 2fr) 3fr;
+  gap: var(--space-4);
+  flex: 1;
+  min-height: 0;
+}
+
+.editor-text,
+.editor-preview {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: var(--space-2);
+}
+
+.editor-text label.grow {
+  flex: 1;
+  min-height: 0;
+}
+
+.template-body {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  resize: none;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+  tab-size: 2;
+}

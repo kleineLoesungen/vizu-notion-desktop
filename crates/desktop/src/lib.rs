@@ -50,6 +50,9 @@ pub fn configure<R: Runtime>(builder: tauri::Builder<R>, state: AppState) -> tau
         // Öffnet Verweise im Standardbrowser statt im Webview. Welche
         // Adressen erlaubt sind, steht in capabilities/default.json.
         .plugin(tauri_plugin_opener::init())
+        // Speichern-Dialog für den SVG-Export. Was er darf, steht in
+        // capabilities/default.json.
+        .plugin(tauri_plugin_dialog::init())
         .manage(state)
         // NEUER BEFEHL? Hier eintragen UND in ui/src/api.ts.
         // tests/ipc_contract.rs vergleicht beide Listen.
@@ -57,9 +60,20 @@ pub fn configure<R: Runtime>(builder: tauri::Builder<R>, state: AppState) -> tau
             commands::source_list,
             commands::source_get,
             commands::source_fetch,
+            commands::source_create,
+            commands::source_update,
+            commands::source_delete,
+            commands::source_properties,
             commands::template_list,
+            commands::template_get,
+            commands::template_save,
+            commands::template_delete,
             commands::diagram_render,
+            commands::diagram_preview,
+            commands::export_svg,
             commands::token_status,
+            commands::token_set,
+            commands::token_clear,
             commands::config_get,
             commands::config_set,
             commands::app_info,

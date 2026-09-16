@@ -6,12 +6,18 @@ type Props = {
   templates: Template[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  onCreate: () => void;
 };
 
-export function TemplateList({ templates, selectedId, onSelect }: Props) {
+export function TemplateList({ templates, selectedId, onSelect, onCreate }: Props) {
   return (
     <nav className="template-nav" aria-label="Vorlagen">
-      <h2 className="sidebar-title">Diagramme</h2>
+      <div className="sidebar-head-inline">
+        <h2 className="sidebar-title">Diagramme</h2>
+        <button type="button" className="ghost small" onClick={onCreate}>
+          Neu
+        </button>
+      </div>
       {templates.length === 0 ? (
         <p className="muted sidebar-empty">
           Noch keine Vorlage. Einlesen mit <code>vizu-notion template import</code>

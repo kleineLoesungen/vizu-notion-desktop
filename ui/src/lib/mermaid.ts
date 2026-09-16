@@ -27,6 +27,21 @@ function load(): Promise<Mermaid> {
 
 export const MERMAID_SELECTOR = "pre > code.language-mermaid";
 
+/**
+ * Das gezeichnete Diagramm als eigenständige SVG-Datei.
+ *
+ * `XMLSerializer` statt `innerHTML`: Der Namensraum muss mit in die Datei,
+ * sonst zeigt sie außerhalb eines Browsers nichts an.
+ */
+export function svgFile(host: HTMLElement): string | null {
+  const svg = host.querySelector("svg");
+  if (!svg) return null;
+  const copy = svg.cloneNode(true) as SVGElement;
+  copy.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  copy.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+  return `<?xml version="1.0" encoding="UTF-8"?>\n${new XMLSerializer().serializeToString(copy)}\n`;
+}
+
 /** Was beim Zeichnen herauskam. */
 export type DiagramResult = { ok: true } | { ok: false; message: string };
 

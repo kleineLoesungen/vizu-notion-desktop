@@ -8,16 +8,20 @@ type Props = {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onFetchAll: () => void;
+  onCreate: () => void;
   busy: boolean;
 };
 
-export function SourceList({ sources, selectedId, onSelect, onFetchAll, busy }: Props) {
+export function SourceList({ sources, selectedId, onSelect, onFetchAll, onCreate, busy }: Props) {
   return (
     <nav className="source-nav" aria-label="Quellen">
       <div className="sidebar-head">
+        <button type="button" className="primary" onClick={onCreate}>
+          Neue Quelle
+        </button>
         <button
           type="button"
-          className="primary"
+          className="ghost"
           disabled={busy || sources.length === 0}
           onClick={onFetchAll}
         >

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ApiError } from "../api";
 import { formatDateTime } from "./format";
 import { externalHref, markdownToHtml } from "./markdown";
+import { svgFile } from "./mermaid";
 import { isLightColor } from "./theme";
 
 describe("markdown", () => {
@@ -31,6 +32,23 @@ describe("markdown", () => {
     expect(externalHref("javascript:alert(1)")).toBeUndefined();
     expect(externalHref("/relativ")).toBeUndefined();
     expect(externalHref(null)).toBeUndefined();
+  });
+});
+
+describe("Diagramm speichern", () => {
+  it("macht aus dem gezeichneten SVG eine Datei mit Namensraum", () => {
+    const host = document.createElement("div");
+    // So ähnlich liefert es mermaid.js: ohne xmlns, weil es im HTML steht.
+    host.append(document.createElementNS("http://www.w3.org/2000/svg", "svg"));
+
+    const file = svgFile(host) ?? "";
+
+    expect(file.startsWith("<?xml")).toBe(true);
+    expect(file).toContain('xmlns="http://www.w3.org/2000/svg"');
+  });
+
+  it("gibt nichts zurück, wenn nichts gezeichnet ist", () => {
+    expect(svgFile(document.createElement("div"))).toBeNull();
   });
 });
 

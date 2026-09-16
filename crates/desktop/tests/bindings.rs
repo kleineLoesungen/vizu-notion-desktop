@@ -13,6 +13,7 @@
 
 use ts_rs::TS;
 use vizu_notion_core::fetch::{FetchStatus, SourceOverview};
+use vizu_notion_core::notion::Property;
 use vizu_notion_core::rows::NodeInfo;
 use vizu_notion_core::secret::{TokenOrigin, TokenStatus};
 use vizu_notion_core::source::{ColumnMapping, Source, SourceInput};
@@ -45,6 +46,7 @@ fn generate() -> String {
         decl::<Diagram>(&cfg),
         decl::<FieldError>(&cfg),
         decl::<NodeInfo>(&cfg),
+        decl::<Property>(&cfg),
         decl::<Source>(&cfg),
         decl::<SourceInput>(&cfg),
         decl::<SourceOverview>(&cfg),

@@ -132,6 +132,10 @@ der Oberfläche.
 Mit `--hide` bleiben Seiten aus dem Diagramm draußen, auch als Ziel einer
 Relation. In `nodes` stehen sie weiterhin.
 
+> Dieselben Dinge gehen auch in der Oberfläche: Quellen anlegen und ändern,
+> Token speichern, Vorlagen bearbeiten mit Vorschau und das Diagramm als SVG
+> speichern. Beide Schalen arbeiten auf derselben Datenbank.
+
 ## Kennungen
 
 Quellen werden über ihren **Namen** angesprochen (ohne Rücksicht auf Groß- und
