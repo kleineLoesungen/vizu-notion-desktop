@@ -35,3 +35,16 @@ export function bySource(nodes: NodeInfo[]): [string, NodeInfo[]][] {
   }
   return [...groups];
 }
+
+/**
+ * Wie viele Knoten derselben Quelle denselben Titel tragen.
+ *
+ * Die Knotenkennung im Diagramm entsteht aus dem **Wert**, nicht aus der
+ * Seiten-ID — so war es schon in der Webapp. Gleichnamige Seiten werden im
+ * Diagramm deshalb zu einem Knoten. Wer eine davon ausblendet, sieht zunächst
+ * nichts, weil die anderen den Knoten weiter zeichnen; die Zahl im Filterfeld
+ * sagt, woran das liegt.
+ */
+export function sameTitleCount(group: NodeInfo[], node: NodeInfo): number {
+  return group.filter((other) => other.title === node.title).length;
+}

@@ -5,7 +5,7 @@
 // dann wieder in Rust — eine zweite Filterlogik hier wäre die zweite Wahrheit.
 
 import type { NodeInfo } from "../bindings";
-import { bySource } from "../lib/graph";
+import { bySource, sameTitleCount } from "../lib/graph";
 
 type Props = {
   nodes: NodeInfo[];
@@ -53,27 +53,38 @@ export function FilterPanel({
               </button>
             </header>
             <ul>
-              {group.map((node) => (
-                <li key={node.id}>
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={!hidden.has(node.id)}
-                      onChange={() => onToggle(node.id)}
-                    />
-                    <span className="filter-title">{node.title || "ohne Titel"}</span>
-                  </label>
-                  <button
-                    type="button"
-                    className="ghost small"
-                    title="Nur diesen Knoten und seine direkten Nachbarn zeigen"
-                    aria-label={`Verwandte von ${node.title || "ohne Titel"} zeigen`}
-                    onClick={() => onOnlyRelated(node.id)}
-                  >
-                    ⌖
-                  </button>
-                </li>
-              ))}
+              {group.map((node) => {
+                const shared = sameTitleCount(group, node);
+                return (
+                  <li key={node.id}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={!hidden.has(node.id)}
+                        onChange={() => onToggle(node.id)}
+                      />
+                      <span className="filter-title">{node.title || "ohne Titel"}</span>
+                      {shared > 1 && (
+                        <span
+                          className="filter-shared"
+                          title={`${shared} Seiten heißen gleich und teilen sich einen Knoten im Diagramm`}
+                        >
+                          ×{shared}
+                        </span>
+                      )}
+                    </label>
+                    <button
+                      type="button"
+                      className="ghost small"
+                      title="Nur diesen Knoten und seine direkten Nachbarn zeigen"
+                      aria-label={`Verwandte von ${node.title || "ohne Titel"} zeigen`}
+                      onClick={() => onOnlyRelated(node.id)}
+                    >
+                      ⌖
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           </section>
         );
