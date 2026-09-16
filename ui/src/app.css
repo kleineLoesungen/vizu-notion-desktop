@@ -1028,3 +1028,67 @@ button.destructive {
   gap: var(--space-2);
   color: var(--muted);
 }
+
+/* --- Metro-Karte ----------------------------------------------------------- */
+
+.metro-svg {
+  display: block;
+}
+
+.metro-zone rect {
+  fill: var(--surface-2);
+}
+
+.metro-zone text {
+  fill: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.metro-axis line {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.metro-axis text {
+  fill: var(--muted);
+  font-size: 12px;
+  text-anchor: middle;
+}
+
+.metro-line polyline {
+  fill: none;
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.metro-station circle {
+  fill: var(--surface);
+  stroke-width: 4;
+}
+
+.metro-station text {
+  fill: var(--text);
+  font-size: 13px;
+  text-anchor: middle;
+}
+
+.metro-station text.metro-date {
+  fill: var(--muted);
+  font-size: 11px;
+}
+
+/* Die Art eines Diagramms in der Liste. */
+.kind-badge {
+  margin-left: var(--space-2);
+  padding: 0 var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}

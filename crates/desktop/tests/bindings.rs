@@ -14,6 +14,9 @@
 use ts_rs::TS;
 use vizu_notion_core::fetch::{FetchStatus, SourceOverview, ViewKind};
 use vizu_notion_core::flow::{FlowEdge, FlowGraph, FlowNode};
+use vizu_notion_core::metro::{
+    MetroLine, MetroMap, MetroStation, MetroTick, MetroZone, StationKind,
+};
 use vizu_notion_core::notion::Property;
 use vizu_notion_core::rows::NodeInfo;
 use vizu_notion_core::secret::{TokenOrigin, TokenStatus};
@@ -51,11 +54,17 @@ fn generate() -> String {
         decl::<Example>(&cfg),
         decl::<FieldError>(&cfg),
         decl::<Hint>(&cfg),
+        decl::<MetroLine>(&cfg),
+        decl::<MetroMap>(&cfg),
+        decl::<MetroStation>(&cfg),
+        decl::<MetroTick>(&cfg),
+        decl::<MetroZone>(&cfg),
         decl::<NodeInfo>(&cfg),
         decl::<Property>(&cfg),
         decl::<Source>(&cfg),
         decl::<SourceInput>(&cfg),
         decl::<SourceOverview>(&cfg),
+        decl::<StationKind>(&cfg),
         decl::<Template>(&cfg),
         decl::<TemplateHelp>(&cfg),
         decl::<TemplateInput>(&cfg),

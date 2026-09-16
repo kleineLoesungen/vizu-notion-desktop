@@ -136,7 +136,7 @@ Relation. In `nodes` stehen sie weiterhin.
 > Token speichern, Vorlagen bearbeiten mit Vorschau und das Diagramm als SVG
 > speichern. Beide Schalen arbeiten auf derselben Datenbank.
 
-## Ohne Vorlage: der Fluss
+## Ohne Vorlage: Fluss und Metro-Karte
 
 Hat eine Quelle die Rolle `next`, lässt sich ihr Ablauf ohne Vorlage zeichnen —
 die Kanten entstehen aus der Relation:
@@ -152,9 +152,21 @@ Nachfolgern. Das JSON enthält zusätzlich **x und y in Punkten** — dieselbe
 Anordnung, mit der die Oberfläche zeichnet. Sie steht in `core`, damit beide
 Schalen dasselbe Bild ergeben.
 
-Anders als in einer Vorlage ist hier jede Seite ein eigener Knoten, auch bei
-gleichem Titel: Der Graph kommt aus den Relationen, und die kennen Seiten,
-keine Texte.
+Kommt zur Rolle `next` noch `date` dazu, geht auch eine **Metro-Karte**: Jede
+Kette von Nachfolgern wird eine Linie, das Datum bestimmt die Stelle auf der
+Zeitachse, und `tag` (ersatzweise `parent`) legt Bänder dahinter.
+
+```bash
+vizu-notion metro Projekte
+vizu-notion metro Projekte --json | jq '.lines[].label'
+```
+
+Seiten ohne lesbares Datum stehen in keiner Linie. Sie werden nicht
+verschluckt: Die Ausgabe nennt sie am Ende, und `undated` im JSON führt sie auf.
+
+Anders als in einer Vorlage ist in beiden Ansichten jede Seite ein eigener
+Knoten, auch bei gleichem Titel: Der Graph kommt aus den Relationen, und die
+kennen Seiten, keine Texte.
 
 ## Kennungen
 

@@ -69,6 +69,10 @@ fn run(cli: Cli) -> Result<()> {
             let app = App::open(paths)?;
             commands::flow::run(&source, sub.as_deref(), &hidden, &app, &out)
         }
+        Command::Metro { source, hidden } => {
+            let app = App::open(paths)?;
+            commands::flow::metro(&source, &hidden, &app, &out)
+        }
         Command::Template(cmd) => {
             let app = App::open(paths)?;
             commands::template::run(cmd, &app, &out)

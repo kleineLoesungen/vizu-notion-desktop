@@ -71,6 +71,7 @@ pub fn configure<R: Runtime>(builder: tauri::Builder<R>, state: AppState) -> tau
             commands::diagram_render,
             commands::diagram_preview,
             commands::flow_render,
+            commands::metro_render,
             commands::template_help,
             commands::export_svg,
             commands::token_status,

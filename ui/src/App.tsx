@@ -16,6 +16,7 @@ import type {
   Config,
   Diagram,
   FlowGraph,
+  MetroMap,
   Property,
   Source,
   SourceInput,
@@ -25,17 +26,18 @@ import type {
   TokenStatus,
 } from "./bindings";
 import { ConfirmDialog } from "./components/ConfirmDialog";
+import { type DiagramChoice, DiagramList } from "./components/DiagramList";
 import { DiagramView } from "./components/DiagramView";
 import { EmptyState } from "./components/EmptyState";
 import { FilterPanel } from "./components/FilterPanel";
 import { FlowView } from "./components/FlowView";
 import { GettingStarted } from "./components/GettingStarted";
+import { MetroView } from "./components/MetroView";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { SourceDetail } from "./components/SourceDetail";
 import { SourceDialog } from "./components/SourceDialog";
 import { SourceList } from "./components/SourceList";
 import { TemplateEditor } from "./components/TemplateEditor";
-import { TemplateList } from "./components/TemplateList";
 import { formatDateTime } from "./lib/format";
 import { withNeighbours } from "./lib/graph";
 import { applyTheme, useIsDark } from "./lib/theme";
@@ -44,8 +46,9 @@ type Selection =
   | { kind: "none" }
   | { kind: "source"; id: string }
   | { kind: "template"; id: string }
-  /** Eine Ansicht ohne Vorlage — die Quelle zeichnet aus ihrer Zuordnung. */
-  | { kind: "flow"; id: string };
+  /** Eine Ansicht aus der Zuordnung einer Quelle. */
+  | { kind: "flow"; id: string }
+  | { kind: "metro"; id: string };
 
 /** Die Vorlage im Editor. `id` leer heißt: noch nicht gespeichert. */
 type Draft = { id: string | null; slug: string; body: string; saved: string };
@@ -78,6 +81,7 @@ export function App() {
 
   const [diagram, setDiagram] = useState<Diagram | null>(null);
   const [flow, setFlow] = useState<FlowGraph | null>(null);
+  const [metro, setMetro] = useState<MetroMap | null>(null);
   /** Welche Rolle im Fluss unter dem Titel steht. */
   const [subtitle, setSubtitle] = useState<string | null>(null);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
@@ -202,9 +206,10 @@ export function App() {
     setDraft(null);
     setDiagram(null);
     setFlow(null);
+    setMetro(null);
   }
 
-  /** Die Ansicht ohne Vorlage. Gezeichnet wird wieder in Rust. */
+  /** Die Ansicht aus der Zuordnung. Gezeichnet wird wieder in Rust. */
   const drawFlow = useCallback(
     async (id: string, hide: Set<string>, role: string | null) => {
       try {
@@ -218,22 +223,35 @@ export function App() {
     [fail],
   );
 
-  function selectFlow(id: string) {
-    setSelection({ kind: "flow", id });
+  const drawMetro = useCallback(
+    async (id: string, hide: Set<string>) => {
+      try {
+        setMetro(await api.sources.metro(id, [...hide]));
+        setBanner(null);
+      } catch (raw) {
+        setMetro(null);
+        fail(raw);
+      }
+    },
+    [fail],
+  );
+
+  /** Ein Eintrag aus der Diagrammliste — Vorlage, Fluss oder Metro. */
+  function selectDiagram(choice: DiagramChoice) {
+    setSelection(choice);
     setDraft(null);
     setDiagram(null);
-    setHidden(new Set());
-    setSubtitle(null);
-    void drawFlow(id, new Set(), null);
-  }
-
-  function selectTemplate(id: string) {
-    setSelection({ kind: "template", id });
-    setDraft(null);
     setFlow(null);
-    // Ausgeblendete Knoten gehören zur Vorlage, nicht zur Anwendung.
+    setMetro(null);
     setHidden(new Set());
-    void draw(id, new Set());
+    if (choice.kind === "template") {
+      void draw(choice.id, new Set());
+    } else if (choice.kind === "flow") {
+      setSubtitle(null);
+      void drawFlow(choice.id, new Set(), null);
+    } else {
+      void drawMetro(choice.id, new Set());
+    }
   }
 
   /** Neu zeichnen mit geänderter Auswahl. */
@@ -241,6 +259,7 @@ export function App() {
     setHidden(next);
     if (selection.kind === "template") void draw(selection.id, next);
     if (selection.kind === "flow") void drawFlow(selection.id, next, subtitle);
+    if (selection.kind === "metro") void drawMetro(selection.id, next);
   }
 
   function toggleNode(id: string) {
@@ -250,7 +269,7 @@ export function App() {
   }
 
   /** Die Knotenliste der gerade sichtbaren Ansicht. */
-  const nodes = flow?.all_nodes ?? diagram?.nodes ?? [];
+  const nodes = flow?.all_nodes ?? metro?.all_nodes ?? diagram?.nodes ?? [];
 
   function onlyRelated(id: string) {
     const keep = withNeighbours(nodes, id);
@@ -406,8 +425,8 @@ export function App() {
     const name =
       draft?.slug ||
       selectedTemplate?.slug ||
-      (selection.kind === "flow"
-        ? `fluss-${sources.find((s) => s.source.id === selection.id)?.source.name ?? ""}`
+      (selection.kind === "flow" || selection.kind === "metro"
+        ? `${selection.kind}-${sources.find((s) => s.source.id === selection.id)?.source.name ?? ""}`
         : "diagramm");
     try {
       const path = await api.exportSvg(svg, name);
@@ -457,12 +476,11 @@ export function App() {
     <div className="app">
       <aside className="sidebar">
         <div className="brand">{APP_NAME}</div>
-        <TemplateList
+        <DiagramList
           templates={templates}
           sources={sources}
-          selectedId={selection.kind === "none" ? null : selection.id}
-          onSelect={selectTemplate}
-          onSelectFlow={selectFlow}
+          selected={selection.kind === "none" || selection.kind === "source" ? null : selection}
+          onSelect={selectDiagram}
           onCreate={() => void editTemplate(null)}
         />
         {/* Quellen richtet man selten ein — eingeklappt, bis sie gebraucht werden. */}
@@ -603,6 +621,20 @@ export function App() {
           </section>
         )}
 
+        {selection.kind === "metro" && metro && (
+          <section className="diagram-page">
+            <header className="detail-head">
+              <h1>Metro: {sources.find((s) => s.source.id === selection.id)?.source.name}</h1>
+              {metro.undated.length > 0 && (
+                <span className="muted">
+                  Ohne Datum, deshalb nicht auf der Karte: {metro.undated.join(", ")}
+                </span>
+              )}
+            </header>
+            <MetroView map={metro} onExport={(svg) => void exportSvg(svg)} />
+          </section>
+        )}
+
         {selection.kind === "none" &&
           !draft &&
           (ready ? (
@@ -624,7 +656,7 @@ export function App() {
           ))}
       </main>
 
-      {(selectedTemplate || selection.kind === "flow") && nodes.length > 0 && (
+      {selection.kind !== "none" && selection.kind !== "source" && nodes.length > 0 && (
         <FilterPanel
           nodes={nodes}
           hidden={hidden}

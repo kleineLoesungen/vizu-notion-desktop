@@ -10,6 +10,7 @@ Commands:
   source       Quellen verwalten: welche Notion-Datenbank unter welchem Namen
   fetch        Daten von Notion abrufen und zwischenspeichern
   flow         Den Fluss einer Quelle zeichnen — ohne Vorlage
+  metro        Die Metro-Karte einer Quelle zeichnen — ohne Vorlage
   template     Mermaid-Vorlagen verwalten
   render       Eine Vorlage zeichnen und den Mermaid-Text ausgeben
   token        Den Notion-Token speichern, prüfen oder löschen

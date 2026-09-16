@@ -411,6 +411,18 @@ fn der_fluss_ohne_abruf_ist_leer_aber_kein_fehler() {
     assert_eq!(graph["subtitle_roles"], serde_json::json!([]));
 }
 
+#[test]
+fn eine_quelle_ohne_datum_kann_keine_metro_karte() {
+    let ctx = Ctx::new();
+    ctx.seed();
+    // „Projekte“ hat next, aber kein date.
+    let out = ctx.run(&["metro", "Projekte", "--json"]);
+
+    assert_eq!(out.code, 4);
+    let err: serde_json::Value = serde_json::from_str(&out.stderr).unwrap();
+    assert_eq!(err["error"]["fields"][0]["field"], "mappings.date");
+}
+
 // --- Token -----------------------------------------------------------------
 
 #[test]

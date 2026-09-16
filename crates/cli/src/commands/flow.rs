@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use anyhow::Result;
-use vizu_notion_core::{App, flow, source};
+use vizu_notion_core::{App, flow, metro, source};
 
 use crate::output::Out;
 
@@ -30,5 +30,30 @@ pub fn run(
     }
     let hidden: HashSet<String> = hidden.iter().map(|h| h.trim().to_string()).collect();
     out.flow(&flow::build(app.conn(), id, &hidden, subtitle)?);
+    Ok(())
+}
+
+/// Zeichnet die Metro-Karte einer Quelle aus dem Zwischenspeicher.
+pub fn metro(needle: &str, hidden: &[String], app: &App, out: &Out) -> Result<()> {
+    let id = source::resolve(app.conn(), needle)?;
+    let found = source::get(app.conn(), id)?;
+    if !metro::eligible(&found) {
+        let mut v = vizu_notion_core::error::Validator::new();
+        let missing = if found.property("date").is_none() {
+            "date"
+        } else {
+            "next"
+        };
+        v.add(
+            format!("mappings.{missing}"),
+            format!(
+                "„{}\u{201c} hat keine Rolle `{missing}` — eine Metro-Karte braucht `date` und `next`",
+                found.name
+            ),
+        );
+        v.finish()?;
+    }
+    let hidden: HashSet<String> = hidden.iter().map(|h| h.trim().to_string()).collect();
+    out.metro(&metro::build(app.conn(), id, &hidden)?);
     Ok(())
 }

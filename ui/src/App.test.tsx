@@ -141,6 +141,44 @@ function backend(cmd: string, args: Record<string, unknown> = {}): unknown {
       sources = [{ source: created, fetch: null, views: [] }];
       return created;
     }
+    case "metro_render":
+      return {
+        lines: [
+          {
+            label: "Website",
+            color: "#4e79a7",
+            stations: [
+              {
+                id: "p1",
+                title: "Website",
+                date: "2026-01-12",
+                x: 120,
+                y: 96,
+                kind: "start",
+                label_above: true,
+              },
+              {
+                id: "p2",
+                title: "Launch",
+                date: "2026-04-01",
+                x: 600,
+                y: 96,
+                kind: "terminus",
+                label_above: false,
+              },
+            ],
+          },
+        ],
+        zones: [{ label: "Web", y: 48, height: 96 }],
+        ticks: [{ label: "01/2026", x: 120 }],
+        width: 1440,
+        height: 144,
+        all_nodes: [
+          { id: "p1", title: "Website", source: "Projekte", relations: ["p2"] },
+          { id: "p2", title: "Launch", source: "Projekte", relations: [] },
+        ],
+        undated: ["Ohne Ziel"],
+      };
     case "flow_render":
       return {
         nodes: [
@@ -364,7 +402,7 @@ describe("Oberfläche", () => {
     templates = [template("t1", "Fahrplan")];
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: /Fahrplan/ }));
+    await user.click(await screen.findByRole("button", { name: "Fahrplan — Mermaid" }));
 
     await waitFor(() => expect(commands("diagram_render")).toHaveLength(1));
     expect(commands("diagram_render")[0]?.args).toEqual({ id: "t1", hidden: [] });
@@ -375,7 +413,7 @@ describe("Oberfläche", () => {
     const user = userEvent.setup();
     templates = [template("t1", "Fahrplan")];
     render(<App />);
-    await user.click(await screen.findByRole("button", { name: /Fahrplan/ }));
+    await user.click(await screen.findByRole("button", { name: "Fahrplan — Mermaid" }));
     await screen.findByRole("checkbox", { name: /Website/ });
 
     await user.click(screen.getByRole("checkbox", { name: /Website/ }));
@@ -390,7 +428,7 @@ describe("Oberfläche", () => {
     const user = userEvent.setup();
     templates = [template("t1", "Fahrplan")];
     render(<App />);
-    await user.click(await screen.findByRole("button", { name: /Fahrplan/ }));
+    await user.click(await screen.findByRole("button", { name: "Fahrplan — Mermaid" }));
     await screen.findByRole("checkbox", { name: /Website/ });
 
     await user.click(screen.getByRole("button", { name: "Verwandte von Website zeigen" }));
@@ -408,7 +446,7 @@ describe("Oberfläche", () => {
     const user = userEvent.setup();
     templates = [template("t1", "Fahrplan")];
     render(<App />);
-    await user.click(await screen.findByRole("button", { name: /Fahrplan/ }));
+    await user.click(await screen.findByRole("button", { name: "Fahrplan — Mermaid" }));
     const panel = await screen.findByRole("complementary", { name: "Knoten filtern" });
     const gruppe = within(panel).getByText("Projekte").closest("details") as HTMLElement;
 
@@ -519,7 +557,7 @@ describe("Oberfläche", () => {
     saved.path = "/tmp/fahrplan.svg";
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: /Fahrplan/ }));
+    await user.click(await screen.findByRole("button", { name: "Fahrplan — Mermaid" }));
     await user.click(await screen.findByRole("button", { name: "SVG speichern" }));
 
     await waitFor(() => expect(commands("export_svg")).toHaveLength(1));
@@ -533,7 +571,7 @@ describe("Oberfläche", () => {
     saved.path = null;
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: /Fahrplan/ }));
+    await user.click(await screen.findByRole("button", { name: "Fahrplan — Mermaid" }));
     await user.click(await screen.findByRole("button", { name: "SVG speichern" }));
 
     await waitFor(() => expect(commands("diagram_render")).toHaveLength(1));
@@ -545,7 +583,7 @@ describe("Oberfläche", () => {
     templates = [template("t1", "Fahrplan")];
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: /Fahrplan/ }));
+    await user.click(await screen.findByRole("button", { name: "Fahrplan — Mermaid" }));
     await user.click(await screen.findByRole("button", { name: "Bearbeiten" }));
     await user.click(await screen.findByRole("button", { name: "Löschen" }));
     expect(commands("template_delete")).toHaveLength(0);
@@ -573,7 +611,7 @@ describe("Oberfläche", () => {
     sources = [{ ...overview("a", "Projekte", 12), views: ["flow"] }];
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: /Fluss: Projekte/ }));
+    await user.click(await screen.findByRole("button", { name: "Projekte — Fluss" }));
 
     await waitFor(() => expect(commands("flow_render")).toHaveLength(1));
     expect(commands("flow_render")[0]?.args).toEqual({
@@ -592,11 +630,36 @@ describe("Oberfläche", () => {
     sources = [{ ...overview("a", "Projekte", 12), views: ["flow"] }];
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: /Fluss: Projekte/ }));
+    await user.click(await screen.findByRole("button", { name: "Projekte — Fluss" }));
     await screen.findByRole("img", { name: /Flussdiagramm/ });
     await user.selectOptions(screen.getByLabelText("Zweite Zeile"), "status");
 
     await waitFor(() => expect(commands("flow_render")).toHaveLength(2));
     expect(commands("flow_render")[1]?.args).toMatchObject({ subtitle: "status" });
+  });
+
+  it("zeichnet die Metro-Karte und nennt Seiten ohne Datum", async () => {
+    const user = userEvent.setup();
+    sources = [{ ...overview("a", "Projekte", 12), views: ["flow", "metro"] }];
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Projekte — Metro" }));
+
+    await waitFor(() => expect(commands("metro_render")).toHaveLength(1));
+    expect(commands("metro_render")[0]?.args).toEqual({ id: "a", hidden: [] });
+    expect(await screen.findByRole("img", { name: /Metro-Karte/ })).toBeTruthy();
+    // Was kein Datum hat, steht in keiner Linie — die Karte sagt das.
+    expect(screen.getByText(/Ohne Datum.*Ohne Ziel/)).toBeTruthy();
+  });
+
+  it("zeigt die Art jedes Diagramms in der Liste", async () => {
+    templates = [template("t1", "Fahrplan")];
+    sources = [{ ...overview("a", "Projekte", 12), views: ["flow", "metro"] }];
+    render(<App />);
+
+    const liste = await screen.findByRole("navigation", { name: "Diagramme" });
+    expect(within(liste).getByText("Mermaid")).toBeTruthy();
+    expect(within(liste).getByText("Fluss")).toBeTruthy();
+    expect(within(liste).getByText("Metro")).toBeTruthy();
   });
 });

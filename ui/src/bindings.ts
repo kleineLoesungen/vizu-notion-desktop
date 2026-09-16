@@ -109,6 +109,43 @@ export type FieldError = { field: string, message: string, };
  */
 export type Hint = { syntax: string, meaning: string, };
 
+export type MetroLine = { label: string, color: string, stations: Array<MetroStation>, };
+
+export type MetroMap = { lines: Array<MetroLine>, zones: Array<MetroZone>, ticks: Array<MetroTick>, width: number, height: number, 
+/**
+ * Jede Seite der Quelle, auch die ausgeblendeten: das Filterfeld.
+ */
+all_nodes: Array<NodeInfo>, 
+/**
+ * Seiten ohne lesbares Datum. Sie stehen in keiner Linie — die Oberfläche
+ * sagt es, statt sie stillschweigend zu verschlucken.
+ */
+undated: Array<string>, };
+
+export type MetroStation = { 
+/**
+ * Die Seiten-ID — dieselbe wie im Filterfeld.
+ */
+id: string, title: string, 
+/**
+ * Wie in Notion, als Text: `2026-04-01`.
+ */
+date: string, x: number, y: number, kind: StationKind, 
+/**
+ * Beschriftung über oder unter der Station — sonst überlagern sie sich.
+ */
+label_above: boolean, };
+
+/**
+ * Eine Marke auf der Zeitachse.
+ */
+export type MetroTick = { label: string, x: number, };
+
+/**
+ * Ein Band hinter mehreren Spuren: alle Linien mit demselben `tag`/`parent`.
+ */
+export type MetroZone = { label: string, y: number, height: number, };
+
 /**
  * Ein Knoten für das Filterfeld — jede Zeile, auch ausgeblendete.
  */
@@ -166,6 +203,8 @@ fetch: FetchStatus | null,
  */
 views: Array<ViewKind>, };
 
+export type StationKind = "start" | "stop" | "terminus" | "single";
+
 export type Template = { id: string, 
 /**
  * Kurzname für die Kommandozeile — der Dateiname ohne `.mmd`.
@@ -222,4 +261,4 @@ store_error: string | null, };
 /**
  * Eine Ansicht, die sich allein aus der Zuordnung ergibt.
  */
-export type ViewKind = "flow";
+export type ViewKind = "flow" | "metro";

@@ -23,11 +23,7 @@ use serde_json::{Map, Value, json};
 
 use super::style;
 
-/// Zehn gut unterscheidbare Farben (Tableau 10), wie in der Webapp.
-const PALETTE: [&str; 10] = [
-    "#4e79a7", "#f28e2b", "#e15759", "#76b7b2", "#59a14f", "#edc948", "#b07aa1", "#ff9da7",
-    "#9c755f", "#bab0ac",
-];
+use crate::palette::TABLEAU_10 as PALETTE;
 
 /// Knoten, die eine CSS-Klasse bekommen sollen: Kennung → Klassenname.
 ///

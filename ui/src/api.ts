@@ -25,6 +25,7 @@ import type {
   FetchStatus,
   FieldError,
   FlowGraph,
+  MetroMap,
   Property,
   Source,
   SourceInput,
@@ -94,6 +95,8 @@ export const api = {
     /** Der Fluss einer Quelle: Kanten entlang `next`, fertig angeordnet. */
     flow: (id: string, hidden: string[], subtitle: string | null) =>
       call<FlowGraph>("flow_render", { id, hidden, subtitle }),
+    /** Die Metro-Karte: Linien auf einer Zeitachse aus `date`. */
+    metro: (id: string, hidden: string[]) => call<MetroMap>("metro_render", { id, hidden }),
   },
 
   templates: {

@@ -211,6 +211,8 @@ pub struct SourceOverview {
 pub enum ViewKind {
     /// Braucht `next`: Kanten entlang der Nachfolger.
     Flow,
+    /// Braucht `date` und `next`: Linien auf einer Zeitachse.
+    Metro,
 }
 
 /// Was eine Quelle ohne Vorlage zeichnen kann.
@@ -218,6 +220,9 @@ pub fn views(source: &Source) -> Vec<ViewKind> {
     let mut out = Vec::new();
     if crate::flow::eligible(source) {
         out.push(ViewKind::Flow);
+    }
+    if crate::metro::eligible(source) {
+        out.push(ViewKind::Metro);
     }
     out
 }

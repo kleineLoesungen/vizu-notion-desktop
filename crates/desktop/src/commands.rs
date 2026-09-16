@@ -22,6 +22,7 @@ use ts_rs::TS;
 use uuid::Uuid;
 use vizu_notion_core::fetch::{self, FetchStatus, SourceOverview};
 use vizu_notion_core::flow::{self, FlowGraph};
+use vizu_notion_core::metro::{self, MetroMap};
 use vizu_notion_core::notion::Property;
 use vizu_notion_core::secret::{self, TokenStatus};
 use vizu_notion_core::source::{self, Source, SourceInput};
@@ -181,6 +182,17 @@ pub async fn flow_render(
 ) -> ApiResult<FlowGraph> {
     let hidden: HashSet<String> = hidden.into_iter().collect();
     state.with(|app| flow::build(app.conn(), id, &hidden, subtitle.as_deref()))
+}
+
+/// Zeichnet die Metro-Karte einer Quelle — ohne Vorlage, ohne Netz.
+#[tauri::command]
+pub async fn metro_render(
+    state: State<'_, AppState>,
+    id: Uuid,
+    hidden: Vec<String>,
+) -> ApiResult<MetroMap> {
+    let hidden: HashSet<String> = hidden.into_iter().collect();
+    state.with(|app| metro::build(app.conn(), id, &hidden))
 }
 
 // --- Token -----------------------------------------------------------------

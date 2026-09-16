@@ -18,6 +18,7 @@ use std::time::Duration;
 use time::macros::format_description;
 use vizu_notion_core::fetch::{FetchStatus, SourceOverview};
 use vizu_notion_core::flow::FlowGraph;
+use vizu_notion_core::metro::MetroMap;
 use vizu_notion_core::secret::{TokenOrigin, TokenStatus};
 use vizu_notion_core::source::Source;
 use vizu_notion_core::template::{Diagram, Template};
@@ -172,6 +173,39 @@ impl Out {
         }
         println!();
         println!("{} Knoten, {} Kanten", graph.nodes.len(), graph.edges.len());
+    }
+
+    /// Für Menschen: je Linie eine Zeile mit ihren Stationen in Zeitfolge.
+    pub fn metro(&self, map: &MetroMap) {
+        if self.json {
+            self.print(map);
+            return;
+        }
+        if map.lines.is_empty() {
+            println!("Keine Seite mit Datum. Zuerst abrufen:  vizu-notion fetch");
+            return;
+        }
+        for line in &map.lines {
+            let stations: Vec<String> = line
+                .stations
+                .iter()
+                .map(|s| format!("{} ({})", s.title, s.date))
+                .collect();
+            println!("{}", stations.join("  →  "));
+        }
+        if !map.undated.is_empty() {
+            println!();
+            println!(
+                "Ohne Datum, deshalb nicht auf der Karte: {}",
+                map.undated.join(", ")
+            );
+        }
+        println!();
+        println!(
+            "{} Linien, {} Stationen",
+            map.lines.len(),
+            map.lines.iter().map(|l| l.stations.len()).sum::<usize>()
+        );
     }
 
     pub fn templates(&self, templates: &[Template]) {

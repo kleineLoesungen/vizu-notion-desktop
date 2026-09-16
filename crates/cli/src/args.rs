@@ -86,6 +86,19 @@ pub enum Command {
         hidden: Vec<String>,
     },
 
+    /// Die Metro-Karte einer Quelle zeichnen — ohne Vorlage.
+    ///
+    /// Braucht die Rollen `date` und `next`.
+    Metro {
+        /// Name oder Kennung der Quelle.
+        #[arg(value_name = "QUELLE")]
+        source: String,
+
+        /// Seiten-IDs, die nicht gezeichnet werden. Mehrfach oder mit Komma.
+        #[arg(long = "hide", value_name = "SEITEN-ID", value_delimiter = ',')]
+        hidden: Vec<String>,
+    },
+
     /// Mermaid-Vorlagen verwalten.
     #[command(subcommand)]
     Template(TemplateCommand),
