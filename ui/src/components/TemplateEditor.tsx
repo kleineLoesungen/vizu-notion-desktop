@@ -57,7 +57,7 @@ export function TemplateEditor({
         <h1>{isNew ? "Neue Vorlage" : (preview?.title ?? slug)}</h1>
         <div className="actions">
           {onDelete && (
-            <button type="button" className="ghost danger" onClick={onDelete}>
+            <button type="button" className="ghost destructive" onClick={onDelete}>
               Löschen
             </button>
           )}

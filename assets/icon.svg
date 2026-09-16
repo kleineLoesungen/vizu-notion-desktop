@@ -19,23 +19,27 @@
     </linearGradient>
   </defs>
 
-  <!-- Die abgerundete Fläche, wie sie macOS erwartet. -->
-  <rect x="64" y="64" width="896" height="896" rx="208" fill="url(#paper)"/>
-  <rect x="64" y="64" width="896" height="896" rx="208" fill="none"
-        stroke="#1a1a19" stroke-opacity="0.09" stroke-width="8"/>
+  <!--
+    Die abgerundete Fläche. macOS erwartet sie kleiner als die Zeichenfläche:
+    824 von 1024 Punkten, mittig. Wer die vollen 1024 nutzt, bekommt ein
+    Symbol, das im Dock größer wirkt als alle anderen.
+  -->
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#paper)"/>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="none"
+        stroke="#1a1a19" stroke-opacity="0.09" stroke-width="7"/>
 
   <!-- Die Kanten: links hoch, quer hinunter, rechts hoch. -->
-  <g stroke="#1a1a19" stroke-width="34" stroke-linecap="round" fill="none">
-    <path d="M356 676 V 380"/>
-    <path d="M356 348 L 668 660"/>
-    <path d="M668 628 V 332"/>
+  <g stroke="#1a1a19" stroke-width="31" stroke-linecap="round" fill="none">
+    <path d="M368 663 V 391"/>
+    <path d="M368 361 L 656 648"/>
+    <path d="M656 618 V 346"/>
   </g>
 
   <!-- Die Knoten. Weiß gefüllt, damit die Kanten darunter enden. -->
-  <g stroke="#1a1a19" stroke-width="34">
-    <circle cx="356" cy="704" r="46" fill="#fdfdfc"/>
-    <circle cx="356" cy="320" r="46" fill="#fdfdfc"/>
-    <circle cx="668" cy="688" r="46" fill="#fdfdfc"/>
-    <circle cx="668" cy="304" r="46" fill="#3b6ea5"/>
+  <g stroke="#1a1a19" stroke-width="31">
+    <circle cx="368" cy="689" r="42" fill="#fdfdfc"/>
+    <circle cx="368" cy="335" r="42" fill="#fdfdfc"/>
+    <circle cx="656" cy="675" r="42" fill="#fdfdfc"/>
+    <circle cx="656" cy="321" r="42" fill="#3b6ea5"/>
   </g>
 </svg>

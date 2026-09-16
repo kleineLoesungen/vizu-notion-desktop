@@ -758,8 +758,13 @@ button.small {
   padding: var(--space-3);
 }
 
-button.danger {
+/* Löschen in einem Formular: kein roter Klotz, aber deutlich abgesetzt — und
+   links, weg von Abbrechen und Speichern. Nicht `danger` nennen: Das ist oben
+   schon der rote Knopf, und zwei Regeln mit demselben Namen überschreiben
+   einander gegenseitig die Farbe. */
+button.destructive {
   color: var(--danger);
+  border-color: var(--border);
   margin-right: auto;
 }
 

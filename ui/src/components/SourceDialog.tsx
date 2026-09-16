@@ -144,7 +144,7 @@ export function SourceDialog({
 
         <div className="actions">
           {onDelete && (
-            <button type="button" className="ghost danger" onClick={onDelete}>
+            <button type="button" className="ghost destructive" onClick={onDelete}>
               Löschen
             </button>
           )}
