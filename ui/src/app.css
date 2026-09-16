@@ -987,3 +987,44 @@ button.destructive {
   margin: 0;
   color: var(--muted);
 }
+
+/* --- Flussdiagramm --------------------------------------------------------- */
+
+.flow-svg {
+  display: block;
+}
+
+.flow-node rect {
+  fill: var(--surface);
+  stroke: var(--border);
+  stroke-width: 1.5;
+}
+
+.flow-node text {
+  fill: var(--text);
+  font-size: 14px;
+  text-anchor: middle;
+}
+
+.flow-node text.flow-subtitle {
+  fill: var(--muted);
+  font-size: 12px;
+}
+
+.flow-edge {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.5;
+}
+
+.flow-arrow-head {
+  fill: var(--muted);
+}
+
+/* Beschriftung und Auswahlfeld nebeneinander, etwa in einer Kopfzeile. */
+.inline-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--muted);
+}

@@ -136,6 +136,26 @@ Relation. In `nodes` stehen sie weiterhin.
 > Token speichern, Vorlagen bearbeiten mit Vorschau und das Diagramm als SVG
 > speichern. Beide Schalen arbeiten auf derselben Datenbank.
 
+## Ohne Vorlage: der Fluss
+
+Hat eine Quelle die Rolle `next`, lässt sich ihr Ablauf ohne Vorlage zeichnen —
+die Kanten entstehen aus der Relation:
+
+```bash
+vizu-notion flow Projekte
+vizu-notion flow Projekte --sub status        # zweite Zeile im Knoten
+vizu-notion flow Projekte --json | jq '.nodes[0]'
+```
+
+Für Menschen kommen die Knoten nach Ebenen sortiert heraus, mit ihren
+Nachfolgern. Das JSON enthält zusätzlich **x und y in Punkten** — dieselbe
+Anordnung, mit der die Oberfläche zeichnet. Sie steht in `core`, damit beide
+Schalen dasselbe Bild ergeben.
+
+Anders als in einer Vorlage ist hier jede Seite ein eigener Knoten, auch bei
+gleichem Titel: Der Graph kommt aus den Relationen, und die kennen Seiten,
+keine Texte.
+
 ## Kennungen
 
 Quellen werden über ihren **Namen** angesprochen (ohne Rücksicht auf Groß- und

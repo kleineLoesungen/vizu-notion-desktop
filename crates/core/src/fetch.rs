@@ -201,6 +201,25 @@ pub struct SourceOverview {
     pub source: Source,
     /// `null`: noch nie abgerufen.
     pub fetch: Option<FetchStatus>,
+    /// Welche fertigen Ansichten die Zuordnung hergibt — ohne Vorlage.
+    pub views: Vec<ViewKind>,
+}
+
+/// Eine Ansicht, die sich allein aus der Zuordnung ergibt.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "snake_case")]
+pub enum ViewKind {
+    /// Braucht `next`: Kanten entlang der Nachfolger.
+    Flow,
+}
+
+/// Was eine Quelle ohne Vorlage zeichnen kann.
+pub fn views(source: &Source) -> Vec<ViewKind> {
+    let mut out = Vec::new();
+    if crate::flow::eligible(source) {
+        out.push(ViewKind::Flow);
+    }
+    out
 }
 
 /// Alle Quellen, nach Namen sortiert, jeweils mit ihrem letzten Abruf.
@@ -209,7 +228,12 @@ pub fn overview(conn: &Connection) -> Result<Vec<SourceOverview>> {
         .into_iter()
         .map(|source| {
             let fetch = status(conn, source.id)?;
-            Ok(SourceOverview { source, fetch })
+            let views = views(&source);
+            Ok(SourceOverview {
+                source,
+                fetch,
+                views,
+            })
         })
         .collect()
 }

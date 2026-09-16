@@ -69,6 +69,23 @@ pub enum Command {
         sources: Vec<String>,
     },
 
+    /// Den Fluss einer Quelle zeichnen — ohne Vorlage.
+    ///
+    /// Braucht eine Rolle `next`. Die Anordnung ist dieselbe wie im Fenster.
+    Flow {
+        /// Name oder Kennung der Quelle.
+        #[arg(value_name = "QUELLE")]
+        source: String,
+
+        /// Rolle, die unter dem Titel steht (`status`, `date`, …).
+        #[arg(long, value_name = "ROLLE")]
+        sub: Option<String>,
+
+        /// Seiten-IDs, die nicht gezeichnet werden. Mehrfach oder mit Komma.
+        #[arg(long = "hide", value_name = "SEITEN-ID", value_delimiter = ',')]
+        hidden: Vec<String>,
+    },
+
     /// Mermaid-Vorlagen verwalten.
     #[command(subcommand)]
     Template(TemplateCommand),

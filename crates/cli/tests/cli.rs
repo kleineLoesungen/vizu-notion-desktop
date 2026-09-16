@@ -387,6 +387,30 @@ fn eine_vorlage_ohne_passende_quelle_wird_nicht_gespeichert() {
     assert!(out.stderr.contains("Projekte"), "{}", out.stderr);
 }
 
+#[test]
+fn eine_quelle_ohne_next_kann_keinen_fluss() {
+    let ctx = Ctx::new();
+    ctx.seed();
+    // „Aufgaben“ hat nur title.
+    let out = ctx.run(&["flow", "Aufgaben", "--json"]);
+
+    assert_eq!(out.code, 4);
+    let err: serde_json::Value = serde_json::from_str(&out.stderr).unwrap();
+    assert_eq!(err["error"]["fields"][0]["field"], "mappings.next");
+}
+
+#[test]
+fn der_fluss_ohne_abruf_ist_leer_aber_kein_fehler() {
+    let ctx = Ctx::new();
+    ctx.seed();
+    let out = ctx.run(&["flow", "Projekte"]).ok();
+    assert!(out.stdout.contains("vizu-notion fetch"), "{}", out.stdout);
+
+    let graph = ctx.run(&["flow", "Projekte", "--json"]).ok().json();
+    assert_eq!(graph["nodes"], serde_json::json!([]));
+    assert_eq!(graph["subtitle_roles"], serde_json::json!([]));
+}
+
 // --- Token -----------------------------------------------------------------
 
 #[test]

@@ -61,6 +61,14 @@ fn run(cli: Cli) -> Result<()> {
             let app = App::open(paths)?;
             commands::fetch::run(sources, &app, &out)
         }
+        Command::Flow {
+            source,
+            sub,
+            hidden,
+        } => {
+            let app = App::open(paths)?;
+            commands::flow::run(&source, sub.as_deref(), &hidden, &app, &out)
+        }
         Command::Template(cmd) => {
             let app = App::open(paths)?;
             commands::template::run(cmd, &app, &out)

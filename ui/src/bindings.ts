@@ -43,6 +43,33 @@ export type ErrorCode = "not_found" | "validation_failed" | "ambiguous_id" | "co
  */
 export type FetchStatus = { source_id: string, database_title: string, database_url: string, page_count: number, request_count: number, fetched_at: string, };
 
+export type FlowEdge = { from: string, to: string, };
+
+export type FlowGraph = { nodes: Array<FlowNode>, edges: Array<FlowEdge>, 
+/**
+ * Größe der Zeichnung in Punkten — die Oberfläche passt danach ein.
+ */
+width: number, height: number, 
+/**
+ * Jede Seite der Quelle, auch die ausgeblendeten: das Filterfeld.
+ */
+all_nodes: Array<NodeInfo>, 
+/**
+ * Rollen, die als zweite Zeile taugen — für die Auswahl in der Oberfläche.
+ */
+subtitle_roles: Array<string>, };
+
+export type FlowNode = { 
+/**
+ * Die Seiten-ID — dieselbe wie im Filterfeld.
+ */
+id: string, title: string, 
+/**
+ * Ein zweiter Wert unter dem Titel, etwa der Status. Leer, wenn keiner
+ * gewählt ist.
+ */
+subtitle: string, x: number, y: number, };
+
 /**
  * Ein fertiges Diagramm.
  */
@@ -133,7 +160,11 @@ export type SourceOverview = { source: Source,
 /**
  * `null`: noch nie abgerufen.
  */
-fetch: FetchStatus | null, };
+fetch: FetchStatus | null, 
+/**
+ * Welche fertigen Ansichten die Zuordnung hergibt — ohne Vorlage.
+ */
+views: Array<ViewKind>, };
 
 export type Template = { id: string, 
 /**
@@ -187,3 +218,8 @@ store: string,
  * Der Speicher ließ sich nicht lesen.
  */
 store_error: string | null, };
+
+/**
+ * Eine Ansicht, die sich allein aus der Zuordnung ergibt.
+ */
+export type ViewKind = "flow";

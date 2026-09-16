@@ -1,15 +1,26 @@
 // Die Vorlagen in der Seitenleiste. Zeichnet nur.
 
-import type { Template } from "../bindings";
+import type { SourceOverview, Template } from "../bindings";
 
 type Props = {
   templates: Template[];
+  /** Quellen, die ohne Vorlage etwas zeichnen können. */
+  sources: SourceOverview[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  onSelectFlow: (sourceId: string) => void;
   onCreate: () => void;
 };
 
-export function TemplateList({ templates, selectedId, onSelect, onCreate }: Props) {
+export function TemplateList({
+  templates,
+  sources,
+  selectedId,
+  onSelect,
+  onSelectFlow,
+  onCreate,
+}: Props) {
+  const flows = sources.filter((s) => s.views.includes("flow"));
   return (
     <nav className="template-nav" aria-label="Vorlagen">
       <div className="sidebar-head-inline">
@@ -18,9 +29,9 @@ export function TemplateList({ templates, selectedId, onSelect, onCreate }: Prop
           Neu
         </button>
       </div>
-      {templates.length === 0 ? (
+      {templates.length === 0 && flows.length === 0 ? (
         <p className="muted sidebar-empty">
-          Noch keine Vorlage. Einlesen mit <code>vizu-notion template import</code>
+          Noch keine Vorlage. „Neu" legt eine an — oder <code>vizu-notion template import</code>
         </p>
       ) : (
         <ul className="source-list">
@@ -38,6 +49,27 @@ export function TemplateList({ templates, selectedId, onSelect, onCreate }: Prop
             </li>
           ))}
         </ul>
+      )}
+
+      {flows.length > 0 && (
+        <>
+          <h3 className="sidebar-title">Ohne Vorlage</h3>
+          <ul className="source-list">
+            {flows.map(({ source }) => (
+              <li key={`flow-${source.id}`}>
+                <button
+                  type="button"
+                  className="source-item"
+                  aria-current={source.id === selectedId ? "true" : undefined}
+                  onClick={() => onSelectFlow(source.id)}
+                >
+                  <span className="source-title">Fluss: {source.name}</span>
+                  <span className="source-excerpt">entlang „next"</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </nav>
   );

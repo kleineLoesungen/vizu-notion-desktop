@@ -24,6 +24,7 @@ import type {
   ErrorCode,
   FetchStatus,
   FieldError,
+  FlowGraph,
   Property,
   Source,
   SourceInput,
@@ -90,6 +91,9 @@ export const api = {
     remove: (id: string) => call<null>("source_delete", { id }),
     /** Die Spalten aus dem letzten Abruf — für die Auswahl beim Zuordnen. */
     properties: (id: string) => call<Property[]>("source_properties", { id }),
+    /** Der Fluss einer Quelle: Kanten entlang `next`, fertig angeordnet. */
+    flow: (id: string, hidden: string[], subtitle: string | null) =>
+      call<FlowGraph>("flow_render", { id, hidden, subtitle }),
   },
 
   templates: {

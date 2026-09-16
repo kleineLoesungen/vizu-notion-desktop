@@ -12,10 +12,12 @@
 //! * Für Menschen wird in Ortszeit umgerechnet, für Maschinen nie.
 //! * Der Notion-Token erscheint in keiner Fassung — höchstens sein Hinweis.
 
+use std::cmp::Ordering;
 use std::time::Duration;
 
 use time::macros::format_description;
 use vizu_notion_core::fetch::{FetchStatus, SourceOverview};
+use vizu_notion_core::flow::FlowGraph;
 use vizu_notion_core::secret::{TokenOrigin, TokenStatus};
 use vizu_notion_core::source::Source;
 use vizu_notion_core::template::{Diagram, Template};
@@ -121,6 +123,55 @@ impl Out {
 
     pub fn fetched(&self, statuses: &[FetchStatus]) {
         self.print(statuses);
+    }
+
+    /// Für Menschen: die Knoten nach Ebenen, mit ihren Nachfolgern. Für
+    /// Maschinen der ganze Graph samt Koordinaten — dieselben Zahlen, mit
+    /// denen die Oberfläche zeichnet.
+    pub fn flow(&self, graph: &FlowGraph) {
+        if self.json {
+            self.print(graph);
+            return;
+        }
+        if graph.nodes.is_empty() {
+            println!("Keine Seiten. Zuerst abrufen:  vizu-notion fetch");
+            return;
+        }
+        let mut rows: Vec<&vizu_notion_core::flow::FlowNode> = graph.nodes.iter().collect();
+        rows.sort_by(|a, b| {
+            (a.y, a.x)
+                .partial_cmp(&(b.y, b.x))
+                .unwrap_or(Ordering::Equal)
+        });
+        let width = rows
+            .iter()
+            .map(|n| n.title.chars().count())
+            .max()
+            .unwrap_or(5)
+            .clamp(5, 40);
+
+        for node in rows {
+            let followers: Vec<&str> = graph
+                .edges
+                .iter()
+                .filter(|e| e.from == node.id)
+                .filter_map(|e| graph.nodes.iter().find(|n| n.id == e.to))
+                .map(|n| n.title.as_str())
+                .collect();
+            let arrow = if followers.is_empty() {
+                String::new()
+            } else {
+                format!("  →  {}", followers.join(", "))
+            };
+            let subtitle = if node.subtitle.is_empty() {
+                String::new()
+            } else {
+                format!("  ({})", node.subtitle)
+            };
+            println!("{:<width$}{subtitle}{arrow}", truncate(&node.title, width));
+        }
+        println!();
+        println!("{} Knoten, {} Kanten", graph.nodes.len(), graph.edges.len());
     }
 
     pub fn templates(&self, templates: &[Template]) {

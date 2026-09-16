@@ -12,7 +12,8 @@
 //! **Neuer Typ über IPC?** Unten in `TYPES` eintragen, `#[derive(TS)]` am Typ.
 
 use ts_rs::TS;
-use vizu_notion_core::fetch::{FetchStatus, SourceOverview};
+use vizu_notion_core::fetch::{FetchStatus, SourceOverview, ViewKind};
+use vizu_notion_core::flow::{FlowEdge, FlowGraph, FlowNode};
 use vizu_notion_core::notion::Property;
 use vizu_notion_core::rows::NodeInfo;
 use vizu_notion_core::secret::{TokenOrigin, TokenStatus};
@@ -43,6 +44,9 @@ fn generate() -> String {
         decl::<Config>(&cfg),
         decl::<ErrorCode>(&cfg),
         decl::<FetchStatus>(&cfg),
+        decl::<FlowEdge>(&cfg),
+        decl::<FlowGraph>(&cfg),
+        decl::<FlowNode>(&cfg),
         decl::<Diagram>(&cfg),
         decl::<Example>(&cfg),
         decl::<FieldError>(&cfg),
@@ -58,6 +62,7 @@ fn generate() -> String {
         decl::<Theme>(&cfg),
         decl::<TokenOrigin>(&cfg),
         decl::<TokenStatus>(&cfg),
+        decl::<ViewKind>(&cfg),
     ];
 
     let mut out = String::from(

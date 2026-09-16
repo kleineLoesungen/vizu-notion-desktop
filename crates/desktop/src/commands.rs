@@ -21,6 +21,7 @@ use tauri::State;
 use ts_rs::TS;
 use uuid::Uuid;
 use vizu_notion_core::fetch::{self, FetchStatus, SourceOverview};
+use vizu_notion_core::flow::{self, FlowGraph};
 use vizu_notion_core::notion::Property;
 use vizu_notion_core::secret::{self, TokenStatus};
 use vizu_notion_core::source::{self, Source, SourceInput};
@@ -168,6 +169,18 @@ pub async fn diagram_render(
         let found = template::get(app.conn(), id)?;
         template::render(app.conn(), &found, &hidden)
     })
+}
+
+/// Zeichnet den Fluss einer Quelle — ohne Vorlage, ohne Netz.
+#[tauri::command]
+pub async fn flow_render(
+    state: State<'_, AppState>,
+    id: Uuid,
+    hidden: Vec<String>,
+    subtitle: Option<String>,
+) -> ApiResult<FlowGraph> {
+    let hidden: HashSet<String> = hidden.into_iter().collect();
+    state.with(|app| flow::build(app.conn(), id, &hidden, subtitle.as_deref()))
 }
 
 // --- Token -----------------------------------------------------------------

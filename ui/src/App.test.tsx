@@ -58,6 +58,7 @@ const STAMP = "2026-09-16T06:39:51Z";
 
 function overview(id: string, name: string, pages?: number): SourceOverview {
   return {
+    views: [],
     source: {
       id,
       name,
@@ -137,9 +138,24 @@ function backend(cmd: string, args: Record<string, unknown> = {}): unknown {
         created_at: STAMP,
         updated_at: STAMP,
       };
-      sources = [{ source: created, fetch: null }];
+      sources = [{ source: created, fetch: null, views: [] }];
       return created;
     }
+    case "flow_render":
+      return {
+        nodes: [
+          { id: "p1", title: "Website", subtitle: "Aktiv", x: 0, y: 0 },
+          { id: "p2", title: "Launch", subtitle: "", x: 0, y: 128 },
+        ].filter((n) => !(args.hidden as string[]).includes(n.id)),
+        edges: [{ from: "p1", to: "p2" }],
+        width: 180,
+        height: 184,
+        all_nodes: [
+          { id: "p1", title: "Website", source: "Projekte", relations: ["p2"] },
+          { id: "p2", title: "Launch", source: "Projekte", relations: [] },
+        ],
+        subtitle_roles: ["status"],
+      };
     case "source_properties":
       return [{ name: "Name", id: "title", kind: "title" }];
     case "template_help":
@@ -550,5 +566,37 @@ describe("Oberfläche", () => {
 
     await user.click(screen.getByRole("button", { name: "Endgültig löschen" }));
     await waitFor(() => expect(commands("source_delete")[0]?.args).toEqual({ id: "a" }));
+  });
+
+  it("zeichnet den Fluss einer Quelle ohne Vorlage", async () => {
+    const user = userEvent.setup();
+    sources = [{ ...overview("a", "Projekte", 12), views: ["flow"] }];
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: /Fluss: Projekte/ }));
+
+    await waitFor(() => expect(commands("flow_render")).toHaveLength(1));
+    expect(commands("flow_render")[0]?.args).toEqual({
+      id: "a",
+      hidden: [],
+      subtitle: null,
+    });
+    // Einmal im Diagramm gezeichnet, einmal als Eintrag im Filterfeld.
+    expect(await screen.findByRole("img", { name: /Flussdiagramm/ })).toBeTruthy();
+    expect(screen.getAllByText("Website").length).toBeGreaterThan(1);
+    expect(screen.getByRole("checkbox", { name: /Launch/ })).toBeTruthy();
+  });
+
+  it("zeichnet den Fluss mit anderer zweiter Zeile neu", async () => {
+    const user = userEvent.setup();
+    sources = [{ ...overview("a", "Projekte", 12), views: ["flow"] }];
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: /Fluss: Projekte/ }));
+    await screen.findByRole("img", { name: /Flussdiagramm/ });
+    await user.selectOptions(screen.getByLabelText("Zweite Zeile"), "status");
+
+    await waitFor(() => expect(commands("flow_render")).toHaveLength(2));
+    expect(commands("flow_render")[1]?.args).toMatchObject({ subtitle: "status" });
   });
 });

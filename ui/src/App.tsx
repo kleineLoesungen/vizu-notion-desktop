@@ -15,6 +15,7 @@ import type {
   AppInfo,
   Config,
   Diagram,
+  FlowGraph,
   Property,
   Source,
   SourceInput,
@@ -27,6 +28,7 @@ import { ConfirmDialog } from "./components/ConfirmDialog";
 import { DiagramView } from "./components/DiagramView";
 import { EmptyState } from "./components/EmptyState";
 import { FilterPanel } from "./components/FilterPanel";
+import { FlowView } from "./components/FlowView";
 import { GettingStarted } from "./components/GettingStarted";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { SourceDetail } from "./components/SourceDetail";
@@ -41,7 +43,9 @@ import { applyTheme, useIsDark } from "./lib/theme";
 type Selection =
   | { kind: "none" }
   | { kind: "source"; id: string }
-  | { kind: "template"; id: string };
+  | { kind: "template"; id: string }
+  /** Eine Ansicht ohne Vorlage — die Quelle zeichnet aus ihrer Zuordnung. */
+  | { kind: "flow"; id: string };
 
 /** Die Vorlage im Editor. `id` leer heißt: noch nicht gespeichert. */
 type Draft = { id: string | null; slug: string; body: string; saved: string };
@@ -73,6 +77,9 @@ export function App() {
   const [selection, setSelection] = useState<Selection>({ kind: "none" });
 
   const [diagram, setDiagram] = useState<Diagram | null>(null);
+  const [flow, setFlow] = useState<FlowGraph | null>(null);
+  /** Welche Rolle im Fluss unter dem Titel steht. */
+  const [subtitle, setSubtitle] = useState<string | null>(null);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [drawing, setDrawing] = useState(false);
 
@@ -194,11 +201,36 @@ export function App() {
     setSelection({ kind: "source", id });
     setDraft(null);
     setDiagram(null);
+    setFlow(null);
+  }
+
+  /** Die Ansicht ohne Vorlage. Gezeichnet wird wieder in Rust. */
+  const drawFlow = useCallback(
+    async (id: string, hide: Set<string>, role: string | null) => {
+      try {
+        setFlow(await api.sources.flow(id, [...hide], role));
+        setBanner(null);
+      } catch (raw) {
+        setFlow(null);
+        fail(raw);
+      }
+    },
+    [fail],
+  );
+
+  function selectFlow(id: string) {
+    setSelection({ kind: "flow", id });
+    setDraft(null);
+    setDiagram(null);
+    setHidden(new Set());
+    setSubtitle(null);
+    void drawFlow(id, new Set(), null);
   }
 
   function selectTemplate(id: string) {
     setSelection({ kind: "template", id });
     setDraft(null);
+    setFlow(null);
     // Ausgeblendete Knoten gehören zur Vorlage, nicht zur Anwendung.
     setHidden(new Set());
     void draw(id, new Set());
@@ -208,6 +240,7 @@ export function App() {
   function changeHidden(next: Set<string>) {
     setHidden(next);
     if (selection.kind === "template") void draw(selection.id, next);
+    if (selection.kind === "flow") void drawFlow(selection.id, next, subtitle);
   }
 
   function toggleNode(id: string) {
@@ -216,14 +249,17 @@ export function App() {
     changeHidden(next);
   }
 
+  /** Die Knotenliste der gerade sichtbaren Ansicht. */
+  const nodes = flow?.all_nodes ?? diagram?.nodes ?? [];
+
   function onlyRelated(id: string) {
-    const keep = withNeighbours(diagram?.nodes ?? [], id);
-    changeHidden(new Set((diagram?.nodes ?? []).map((n) => n.id).filter((n) => !keep.has(n))));
+    const keep = withNeighbours(nodes, id);
+    changeHidden(new Set(nodes.map((n) => n.id).filter((n) => !keep.has(n))));
   }
 
   function setSourceVisible(source: string, visible: boolean) {
     const next = new Set(hidden);
-    for (const node of diagram?.nodes ?? []) {
+    for (const node of nodes) {
       if (node.source !== source) continue;
       if (visible) {
         next.delete(node.id);
@@ -367,7 +403,12 @@ export function App() {
   }
 
   async function exportSvg(svg: string) {
-    const name = draft?.slug || selectedTemplate?.slug || "diagramm";
+    const name =
+      draft?.slug ||
+      selectedTemplate?.slug ||
+      (selection.kind === "flow"
+        ? `fluss-${sources.find((s) => s.source.id === selection.id)?.source.name ?? ""}`
+        : "diagramm");
     try {
       const path = await api.exportSvg(svg, name);
       if (path) setBanner(`Gespeichert: ${path}`);
@@ -418,8 +459,10 @@ export function App() {
         <div className="brand">{APP_NAME}</div>
         <TemplateList
           templates={templates}
-          selectedId={selection.kind === "template" ? selection.id : null}
+          sources={sources}
+          selectedId={selection.kind === "none" ? null : selection.id}
           onSelect={selectTemplate}
+          onSelectFlow={selectFlow}
           onCreate={() => void editTemplate(null)}
         />
         {/* Quellen richtet man selten ein — eingeklappt, bis sie gebraucht werden. */}
@@ -533,6 +576,33 @@ export function App() {
           </section>
         )}
 
+        {selection.kind === "flow" && flow && (
+          <section className="diagram-page">
+            <header className="detail-head">
+              <h1>Fluss: {sources.find((s) => s.source.id === selection.id)?.source.name}</h1>
+              <label className="inline-field">
+                Zweite Zeile
+                <select
+                  value={subtitle ?? ""}
+                  onChange={(e) => {
+                    const role = e.target.value || null;
+                    setSubtitle(role);
+                    void drawFlow(selection.id, hidden, role);
+                  }}
+                >
+                  <option value="">keine</option>
+                  {flow.subtitle_roles.map((role) => (
+                    <option key={role} value={role}>
+                      {role}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </header>
+            <FlowView graph={flow} onExport={(svg) => void exportSvg(svg)} />
+          </section>
+        )}
+
         {selection.kind === "none" &&
           !draft &&
           (ready ? (
@@ -554,9 +624,9 @@ export function App() {
           ))}
       </main>
 
-      {selectedTemplate && diagram && (
+      {(selectedTemplate || selection.kind === "flow") && nodes.length > 0 && (
         <FilterPanel
-          nodes={diagram.nodes}
+          nodes={nodes}
           hidden={hidden}
           fetched={fetchedAt}
           onToggle={toggleNode}
