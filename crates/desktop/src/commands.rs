@@ -14,6 +14,8 @@
 //! 3. **Neuer Befehl = drei Stellen:** hier, `generate_handler!` in `lib.rs`,
 //!    `ui/src/api.ts`. `tests/ipc_contract.rs` prüft, dass keine fehlt.
 
+use std::collections::HashSet;
+
 use serde::Serialize;
 use tauri::State;
 use ts_rs::TS;
@@ -21,6 +23,7 @@ use uuid::Uuid;
 use vizu_notion_core::fetch::{self, FetchStatus, SourceOverview};
 use vizu_notion_core::secret::{self, TokenStatus};
 use vizu_notion_core::source::{self, Source};
+use vizu_notion_core::template::{self, Diagram, Template};
 use vizu_notion_core::{Config, Paths, notion};
 
 use crate::error::{ApiError, ApiResult};
@@ -61,6 +64,31 @@ pub async fn source_fetch(state: State<'_, AppState>, id: Uuid) -> ApiResult<Fet
     .map_err(|e| ApiError::internal(format!("Abruf abgebrochen: {e}")))??;
 
     state.with(|app| fetch::store(app.conn(), &download))
+}
+
+// --- Vorlagen und Diagramme --------------------------------------------------
+
+#[tauri::command]
+pub async fn template_list(state: State<'_, AppState>) -> ApiResult<Vec<Template>> {
+    state.with(|app| template::list(app.conn()))
+}
+
+/// Zeichnet eine Vorlage aus dem Zwischenspeicher — ohne Netz.
+///
+/// `hidden` sind Seiten-IDs, die das Filterfeld ausgeblendet hat. Sie fehlen
+/// im Mermaid-Text, stehen aber weiter in `nodes`, damit die Oberfläche sie
+/// wieder einblenden kann.
+#[tauri::command]
+pub async fn diagram_render(
+    state: State<'_, AppState>,
+    id: Uuid,
+    hidden: Vec<String>,
+) -> ApiResult<Diagram> {
+    let hidden: HashSet<String> = hidden.into_iter().collect();
+    state.with(|app| {
+        let found = template::get(app.conn(), id)?;
+        template::render(app.conn(), &found, &hidden)
+    })
 }
 
 // --- Token -----------------------------------------------------------------

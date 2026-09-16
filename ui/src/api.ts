@@ -20,11 +20,13 @@ import type {
   ApiError as ApiErrorData,
   AppInfo,
   Config,
+  Diagram,
   ErrorCode,
   FetchStatus,
   FieldError,
   Source,
   SourceOverview,
+  Template,
   TokenStatus,
 } from "./bindings";
 
@@ -79,6 +81,12 @@ export const api = {
     get: (id: string) => call<Source>("source_get", { id }),
     /** Dauert Sekunden: Rust holt die Daten von Notion und speichert sie. */
     fetch: (id: string) => call<FetchStatus>("source_fetch", { id }),
+  },
+
+  templates: {
+    list: () => call<Template[]>("template_list"),
+    /** Zeichnet aus dem Zwischenspeicher — ohne Netz, deshalb schnell. */
+    render: (id: string, hidden: string[]) => call<Diagram>("diagram_render", { id, hidden }),
   },
 
   /** Ob ein Token hinterlegt ist — der Token selbst kommt nie ins Webview. */

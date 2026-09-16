@@ -48,6 +48,20 @@ export type ErrorCode = "not_found" | "validation_failed" | "ambiguous_id" | "co
 export type FetchStatus = { source_id: string, database_title: string, database_url: string, page_count: number, request_count: number, fetched_at: string, };
 
 /**
+ * Ein fertiges Diagramm.
+ */
+export type Diagram = { title: string, 
+/**
+ * Der Mermaid-Text, so wie ihn auch `vizu-notion render` ausgibt.
+ */
+mermaid: string, 
+/**
+ * Jede Seite der beteiligten Quellen — auch die ausgeblendeten, damit das
+ * Filterfeld sie wieder einblenden kann.
+ */
+nodes: Array<NodeInfo>, };
+
+/**
  * Eine Meldung, die zu genau einem Eingabefeld gehört.
  *
  * `field` ist englisch und entspricht dem Feldnamen im Modell (`name`,
@@ -56,6 +70,15 @@ export type FetchStatus = { source_id: string, database_title: string, database_
  * für Menschen.
  */
 export type FieldError = { field: string, message: string, };
+
+/**
+ * Ein Knoten für das Filterfeld — jede Zeile, auch ausgeblendete.
+ */
+export type NodeInfo = { id: string, title: string, source: string, 
+/**
+ * Seiten-IDs, auf die diese Seite über irgendeine Relation zeigt.
+ */
+relations: Array<string>, };
 
 export type Source = { id: string, name: string, 
 /**
@@ -84,6 +107,29 @@ export type SourceOverview = { source: Source,
  * `null`: noch nie abgerufen.
  */
 fetch: FetchStatus | null, };
+
+export type Template = { id: string, 
+/**
+ * Kurzname für die Kommandozeile — der Dateiname ohne `.mmd`.
+ */
+slug: string, 
+/**
+ * Aus dem Kopf: die Beschriftung in der Oberfläche.
+ */
+title: string, 
+/**
+ * Aus dem Kopf: die benutzten Quellen.
+ */
+sources: Array<string>, 
+/**
+ * Der ganze Text, Kopf inbegriffen.
+ */
+body: string, created_at: string, updated_at: string, };
+
+/**
+ * Was von außen hereinkommt — ungeprüft.
+ */
+export type TemplateInput = { slug: string, body: string, };
 
 export type Theme = "system" | "light" | "dark";
 

@@ -10,11 +10,33 @@
 // crates/desktop/tests/ipc_contract.rs.
 
 import { mockIPC, mockWindows } from "@tauri-apps/api/mocks";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
-import type { ApiError, Config, FetchStatus, SourceOverview, TokenStatus } from "./bindings";
+import type {
+  ApiError,
+  Config,
+  Diagram,
+  FetchStatus,
+  SourceOverview,
+  Template,
+  TokenStatus,
+} from "./bindings";
+
+// mermaid.js zeichnet in jsdom nicht — und hier geht es auch nicht ums
+// Zeichnen, sondern darum, dass die Oberfläche den richtigen Text anfordert.
+// Was daraus ein SVG macht, ist Sache von mermaid.
+const drawn: string[] = [];
+vi.mock("./lib/mermaid", () => ({
+  renderDiagram: (host: HTMLElement, text: string) => {
+    drawn.push(text);
+    host.textContent = text;
+    return Promise.resolve({ ok: true });
+  },
+  renderDiagrams: () => Promise.resolve(),
+  MERMAID_SELECTOR: "",
+}));
 
 type Call = { cmd: string; args: Record<string, unknown> };
 
@@ -48,7 +70,39 @@ function overview(id: string, name: string, pages?: number): SourceOverview {
   };
 }
 
+function template(id: string, title: string): Template {
+  return {
+    id,
+    slug: title.toLowerCase(),
+    title,
+    sources: ["Projekte"],
+    body: "---\ntitle: x\nsources:\n  - Projekte\n---\nflowchart TD\n",
+    created_at: STAMP,
+    updated_at: STAMP,
+  };
+}
+
+/** Zwei Projekte, das erste zeigt auf das zweite. */
+function diagramFor(hidden: string[]): Diagram {
+  const nodes = [
+    { id: "p1", title: "Website", source: "Projekte", relations: ["p2"] },
+    { id: "p2", title: "Launch", source: "Projekte", relations: [] },
+    { id: "z1", title: "Wachstum", source: "Ziele", relations: [] },
+  ].filter((n) => !hidden.includes(n.id));
+  return {
+    title: "Fahrplan",
+    mermaid: `flowchart TD\n${nodes.map((n) => `  ${n.id}["${n.title}"]`).join("\n")}`,
+    // Ausgeblendete Knoten bleiben in der Liste — das Filterfeld braucht sie.
+    nodes: [
+      { id: "p1", title: "Website", source: "Projekte", relations: ["p2"] },
+      { id: "p2", title: "Launch", source: "Projekte", relations: [] },
+      { id: "z1", title: "Wachstum", source: "Ziele", relations: [] },
+    ],
+  };
+}
+
 let sources: SourceOverview[];
+let templates: Template[];
 let calls: Call[];
 let config: Config;
 let token: TokenStatus;
@@ -77,6 +131,10 @@ function backend(cmd: string, args: Record<string, unknown> = {}): unknown {
       };
     case "token_status":
       return token;
+    case "template_list":
+      return templates;
+    case "diagram_render":
+      return diagramFor(args.hidden as string[]);
     case "source_list":
       return sources;
     case "source_fetch": {
@@ -92,7 +150,9 @@ function backend(cmd: string, args: Record<string, unknown> = {}): unknown {
 
 beforeEach(() => {
   sources = [];
+  templates = [];
   calls = [];
+  drawn.length = 0;
   nextError = null;
   config = { app_name: "Vizu Notion", theme: "light", accent: "#3b6ea5" };
   token = { origin: "store", hint: "ntn_…stuv", store: "Schlüsselbund", store_error: null };
@@ -225,5 +285,65 @@ describe("Oberfläche", () => {
     ).toBe("accent-error");
     // … und nicht oben im Fenster.
     expect(document.querySelector(".banner")).toBeNull();
+  });
+
+  it("zeichnet eine Vorlage, sobald sie gewählt ist", async () => {
+    const user = userEvent.setup();
+    templates = [template("t1", "Fahrplan")];
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: /Fahrplan/ }));
+
+    await waitFor(() => expect(commands("diagram_render")).toHaveLength(1));
+    expect(commands("diagram_render")[0]?.args).toEqual({ id: "t1", hidden: [] });
+    expect(drawn[0]).toContain("Website");
+  });
+
+  it("blendet einen Knoten aus und lässt in Rust neu zeichnen", async () => {
+    const user = userEvent.setup();
+    templates = [template("t1", "Fahrplan")];
+    render(<App />);
+    await user.click(await screen.findByRole("button", { name: /Fahrplan/ }));
+    await screen.findByRole("checkbox", { name: /Website/ });
+
+    await user.click(screen.getByRole("checkbox", { name: /Website/ }));
+
+    await waitFor(() => expect(commands("diagram_render")).toHaveLength(2));
+    expect(commands("diagram_render")[1]?.args).toEqual({ id: "t1", hidden: ["p1"] });
+    // Der ausgeblendete Knoten steht weiter in der Liste, sonst käme er nie zurück.
+    expect(screen.getByRole("checkbox", { name: /Website/ })).toBeTruthy();
+  });
+
+  it("zeigt mit „Verwandte“ nur den Knoten und seine Nachbarn", async () => {
+    const user = userEvent.setup();
+    templates = [template("t1", "Fahrplan")];
+    render(<App />);
+    await user.click(await screen.findByRole("button", { name: /Fahrplan/ }));
+    await screen.findByRole("checkbox", { name: /Website/ });
+
+    await user.click(screen.getByRole("button", { name: "Verwandte von Website zeigen" }));
+
+    // „Wachstum" hängt an nichts und fällt heraus, „Launch" bleibt als Ziel.
+    await waitFor(() =>
+      expect(commands("diagram_render")[1]?.args).toEqual({
+        id: "t1",
+        hidden: ["z1"],
+      }),
+    );
+  });
+
+  it("schaltet eine ganze Quelle auf einmal aus", async () => {
+    const user = userEvent.setup();
+    templates = [template("t1", "Fahrplan")];
+    render(<App />);
+    await user.click(await screen.findByRole("button", { name: /Fahrplan/ }));
+    const panel = await screen.findByRole("complementary", { name: "Knoten filtern" });
+    const gruppe = within(panel).getByText("Projekte").closest("section") as HTMLElement;
+
+    await user.click(within(gruppe).getByRole("button", { name: "Keine" }));
+
+    await waitFor(() =>
+      expect(commands("diagram_render")[1]?.args).toEqual({ id: "t1", hidden: ["p1", "p2"] }),
+    );
   });
 });

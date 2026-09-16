@@ -13,8 +13,10 @@
 
 use ts_rs::TS;
 use vizu_notion_core::fetch::{FetchStatus, SourceOverview};
+use vizu_notion_core::rows::NodeInfo;
 use vizu_notion_core::secret::{TokenOrigin, TokenStatus};
 use vizu_notion_core::source::{ColumnMapping, Source, SourceInput};
+use vizu_notion_core::template::{Diagram, Template, TemplateInput};
 use vizu_notion_core::{Config, ErrorCode, FieldError, Theme};
 use vizu_notion_desktop::ApiError;
 use vizu_notion_desktop::commands::AppInfo;
@@ -40,10 +42,14 @@ fn generate() -> String {
         decl::<Config>(&cfg),
         decl::<ErrorCode>(&cfg),
         decl::<FetchStatus>(&cfg),
+        decl::<Diagram>(&cfg),
         decl::<FieldError>(&cfg),
+        decl::<NodeInfo>(&cfg),
         decl::<Source>(&cfg),
         decl::<SourceInput>(&cfg),
         decl::<SourceOverview>(&cfg),
+        decl::<Template>(&cfg),
+        decl::<TemplateInput>(&cfg),
         decl::<Theme>(&cfg),
         decl::<TokenOrigin>(&cfg),
         decl::<TokenStatus>(&cfg),

@@ -263,3 +263,49 @@ fn ausgeblendete_knoten_fehlen_im_diagramm_aber_nicht_in_der_liste() {
     assert!(!gefiltert.mermaid.contains("Website"));
     assert_eq!(gefiltert.nodes.len(), 2, "die Liste zeigt weiterhin beide");
 }
+
+#[test]
+fn classid_gibt_nur_die_kennung_ohne_kasten() {
+    // Das Muster aus `config/mermaid.example` der Webapp erzeugt mit `nodeId`
+    // einen Klassennamen mit Klammern, den Mermaid verwirft. `classId` ist der
+    // Ausweg — siehe docs/UMSETZUNG.md, 3.1.
+    let body = "---\ntitle: \"Nach Status\"\nsources:\n  - Projekte\n---\nflowchart TD\n\
+                {{#each (group Projekte \"status\")}}\n\
+                classDef cls-{{classId \"status\" status}} fill:{{palette @index}}\n\
+                {{#group-item}}\n  {{title}}:::cls-{{classId \"status\" status}}\n{{/group-item}}\n\
+                {{/each}}\n";
+    let context: Context = BTreeMap::from([(
+        "Projekte".to_string(),
+        vec![
+            Row::from([
+                ("id".into(), "p1".into()),
+                ("title".into(), "Website".into()),
+                ("status".into(), "Aktiv".into()),
+            ]),
+            Row::from([
+                ("id".into(), "p2".into()),
+                ("title".into(), "Launch".into()),
+                ("status".into(), "Geplant".into()),
+            ]),
+        ],
+    )]);
+
+    let mermaid = template::render_rows(body, &context).unwrap();
+
+    for line in mermaid
+        .lines()
+        .filter(|l| l.trim_start().starts_with("classDef"))
+    {
+        assert!(
+            !line.contains('[') && !line.contains('"'),
+            "Klassenname mit Klammern: {line}"
+        );
+    }
+    assert!(
+        mermaid.contains("classDef cls-n7vtbr5 fill:#4e79a7"),
+        "{mermaid}"
+    );
+    // n7vtbr5 ist die Kennung, die nodeId für „Aktiv“ in einer Gruppe erzeugt —
+    // siehe den Referenzfall `group`. Klasse und Knoten gehören damit zusammen.
+    assert!(mermaid.contains(":::cls-n7vtbr5"), "{mermaid}");
+}

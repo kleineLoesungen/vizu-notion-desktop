@@ -20,6 +20,8 @@ use tauri::ipc::{CallbackFn, InvokeBody};
 use tauri::test::{INVOKE_KEY, MockRuntime, mock_builder, mock_context, noop_assets};
 use tauri::webview::InvokeRequest;
 use tauri::{WebviewWindow, WebviewWindowBuilder};
+use vizu_notion_core::fetch::{self, Download};
+use vizu_notion_core::notion::Page;
 use vizu_notion_core::secret::{MemoryStore, SecretStore};
 use vizu_notion_core::source::{ColumnMapping, SourceInput};
 use vizu_notion_core::{App, Paths, source};
@@ -48,21 +50,78 @@ impl Ctx {
 
     /// Eine Quelle, wie sie sonst die Kommandozeile anlegt.
     fn source(&self, name: &str) -> uuid::Uuid {
+        self.with_core(|app| {
+            source::create(
+                app.conn(),
+                SourceInput::new(
+                    name,
+                    "396f66270f5d8034b55cebc685aa5e50",
+                    vec![ColumnMapping::new("title", "Name")],
+                ),
+            )
+            .unwrap()
+            .id
+        })
+    }
+
+    /// Eine Vorlage, wie sie sonst `vizu-notion template import` anlegt.
+    fn template(&self, slug: &str, body: &str) -> uuid::Uuid {
+        self.with_core(|app| {
+            vizu_notion_core::template::create(
+                app.conn(),
+                vizu_notion_core::template::TemplateInput::new(slug, body),
+            )
+            .unwrap()
+            .id
+        })
+    }
+
+    /// Seiten im Zwischenspeicher — als wären sie abgerufen worden.
+    ///
+    /// Über denselben Weg wie ein echter Abruf: Die Desktop-Schale schreibt
+    /// kein SQL, auch nicht im Test.
+    fn pages(&self, source_id: uuid::Uuid, titles: &[(&str, &str)]) {
+        let pages: Vec<Page> = titles
+            .iter()
+            .map(|(id, title)| {
+                serde_json::from_value(json!({
+                    "id": id,
+                    "url": format!("https://app.notion.com/p/{id}"),
+                    "last_edited_time": "2026-09-16T00:00:00.000Z",
+                    "properties": {
+                        "Name": { "type": "title", "title": [{ "plain_text": title }] }
+                    }
+                }))
+                .unwrap()
+            })
+            .collect();
+        let download = Download {
+            source_id,
+            database: serde_json::from_value(json!({
+                "id": "396f6627-0f5d-8034-b55c-ebc685aa5e50",
+                "title": [{ "plain_text": "vizu Projekte" }],
+                "url": "https://app.notion.com/p/396f66270f5d8034b55cebc685aa5e50",
+                "data_sources": [{ "id": "ds-1", "name": "vizu Projekte" }]
+            }))
+            .unwrap(),
+            data_source_id: "ds-1".to_string(),
+            schema: json!({ "properties": {} }),
+            pages,
+            titles: Default::default(),
+            requests: 3,
+        };
+        self.with_core(|app| fetch::store(app.conn(), &download).unwrap());
+    }
+
+    /// Eine zweite Verbindung auf dieselben Dateien — die Kommandozeile macht
+    /// es genauso, während die Oberfläche läuft.
+    fn with_core<T>(&self, f: impl FnOnce(&App) -> T) -> T {
         let app = App::open_with(
             Paths::under(self.dir_path()),
             Box::new(MemoryStore::default()),
         )
         .unwrap();
-        source::create(
-            app.conn(),
-            SourceInput::new(
-                name,
-                "396f66270f5d8034b55cebc685aa5e50",
-                vec![ColumnMapping::new("title", "Name")],
-            ),
-        )
-        .unwrap()
-        .id
+        f(&app)
     }
 
     fn set_token(&self, token: &str) {
@@ -155,6 +214,67 @@ fn der_token_selbst_kommt_nie_ins_webview() {
         !status.to_string().contains("1234567890"),
         "Token sichtbar: {status}"
     );
+}
+
+#[test]
+fn zeichnet_eine_vorlage_und_meldet_ihre_knoten() {
+    let ctx = Ctx::new();
+    let source = ctx.source("Projekte");
+    let template = ctx.template(
+        "fahrplan",
+        "---\ntitle: \"Fahrplan\"\nsources:\n  - Projekte\n---\nflowchart TD\n\
+         {{#each Projekte}}\n  {{title}}\n{{/each}}\n",
+    );
+    ctx.pages(source, &[("p1", "Website"), ("p2", "Launch")]);
+
+    let diagram = ctx
+        .invoke(
+            "diagram_render",
+            json!({ "id": template.to_string(), "hidden": [] }),
+        )
+        .unwrap();
+
+    assert_eq!(diagram["title"], "Fahrplan");
+    assert!(
+        diagram["mermaid"]
+            .as_str()
+            .unwrap()
+            .contains("[\"Website\"]"),
+        "{}",
+        diagram["mermaid"]
+    );
+    assert_eq!(diagram["nodes"].as_array().unwrap().len(), 2);
+
+    // Ausgeblendet: nicht im Text, aber weiter in der Liste — sonst könnte das
+    // Filterfeld den Knoten nie wieder einblenden.
+    let gefiltert = ctx
+        .invoke(
+            "diagram_render",
+            json!({ "id": template.to_string(), "hidden": ["p1"] }),
+        )
+        .unwrap();
+    assert!(!gefiltert["mermaid"].as_str().unwrap().contains("Website"));
+    assert_eq!(gefiltert["nodes"].as_array().unwrap().len(), 2);
+}
+
+#[test]
+fn eine_vorlage_mit_fehler_kommt_als_eingabefehler_zurueck() {
+    let ctx = Ctx::new();
+    ctx.source("Projekte");
+    let template = ctx.template(
+        "kaputt",
+        "---\ntitle: \"K\"\nsources:\n  - Projekte\n---\n{{#each Projekte}}\n",
+    );
+
+    let err = ctx
+        .invoke(
+            "diagram_render",
+            json!({ "id": template.to_string(), "hidden": [] }),
+        )
+        .unwrap_err();
+
+    assert_eq!(err["code"], "validation_failed");
+    assert_eq!(err["fields"][0]["field"], "body");
 }
 
 #[test]

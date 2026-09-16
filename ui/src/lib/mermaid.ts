@@ -1,7 +1,7 @@
-// Mermaid-Diagramme in bereits gerendertem Markdown.
+// Mermaid zeichnen.
 //
-// marked macht aus einem ```mermaid-Block ein <pre><code class="language-mermaid">.
-// Diese Datei sucht solche Blöcke und ersetzt sie durch das SVG.
+// Zwei Wege hinein: ein ganzer Diagrammtext aus Rust (renderDiagram) und
+// ```mermaid-Blöcke in gerendertem Markdown (renderDiagrams).
 //
 // Drei Dinge, die hier absichtlich so sind:
 //
@@ -26,6 +26,46 @@ function load(): Promise<Mermaid> {
 }
 
 export const MERMAID_SELECTOR = "pre > code.language-mermaid";
+
+/** Was beim Zeichnen herauskam. */
+export type DiagramResult = { ok: true } | { ok: false; message: string };
+
+/**
+ * Zeichnet einen ganzen Diagrammtext in `host`.
+ *
+ * Der Text kommt aus `vizu_notion_core::template` — dieselbe Zeichenkette, die
+ * auch `vizu-notion render` ausgibt. Hier wird nur gezeichnet.
+ */
+export async function renderDiagram(
+  host: HTMLElement,
+  text: string,
+  options: { dark: boolean; isCurrent: () => boolean },
+): Promise<DiagramResult> {
+  const mermaid = await load();
+  if (!options.isCurrent()) return { ok: true };
+
+  mermaid.initialize({
+    startOnLoad: false,
+    securityLevel: "strict",
+    theme: options.dark ? "dark" : "default",
+    fontFamily: getComputedStyle(host).fontFamily,
+  });
+
+  const id = `mermaid-${++counter}`;
+  try {
+    // parse wirft bei einem Syntaxfehler mit lesbarer Meldung. render allein
+    // hinterlässt dabei ein Fehlerbild im <body>.
+    await mermaid.parse(text);
+    const { svg } = await mermaid.render(id, text);
+    if (!options.isCurrent()) return { ok: true };
+    host.innerHTML = svg;
+    return { ok: true };
+  } catch (error) {
+    document.getElementById(`d${id}`)?.remove();
+    if (options.isCurrent()) host.replaceChildren();
+    return { ok: false, message: firstLine(error) };
+  }
+}
 
 export async function renderDiagrams(
   root: HTMLElement,

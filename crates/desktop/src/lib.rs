@@ -57,6 +57,8 @@ pub fn configure<R: Runtime>(builder: tauri::Builder<R>, state: AppState) -> tau
             commands::source_list,
             commands::source_get,
             commands::source_fetch,
+            commands::template_list,
+            commands::diagram_render,
             commands::token_status,
             commands::config_get,
             commands::config_set,

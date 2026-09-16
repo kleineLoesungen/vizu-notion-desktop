@@ -3,6 +3,7 @@
 //! | Helfer | Wozu |
 //! |---|---|
 //! | `nodeId` | setzt der Umschreiber ein: Attribut → `nXXXXXX["Wert"]` |
+//! | `classId` | dieselbe Kennung **ohne** Kasten — für `classDef`-Zeilen |
 //! | `group` | Zeilen nach einem Feld gruppieren |
 //! | `group-item` | die Zeilen einer Gruppe durchlaufen |
 //! | `palette` | eine von zehn unterscheidbaren Farben, nach Nummer |
@@ -105,6 +106,7 @@ pub fn escape(text: &str) -> String {
 pub fn register(hb: &mut Handlebars<'_>, classes: ClassAssignments) {
     hb.register_escape_fn(escape);
     hb.register_helper("nodeId", Box::new(NodeId(classes)));
+    hb.register_helper("classId", Box::new(ClassId));
     hb.register_helper("group", Box::new(Group));
     hb.register_helper("group-item", Box::new(GroupItem));
     hb.register_helper("palette", Box::new(Palette));
@@ -156,6 +158,42 @@ impl HelperDef for NodeId {
             }
         }
         out.write(&format!("{id}{open}{label}{close}"))?;
+        Ok(())
+    }
+}
+
+/// `{{classId "attribut" wert}}` — nur die Kennung, ohne Kasten und Text.
+///
+/// Gibt es in der Webapp nicht. Dort empfiehlt `config/mermaid.example`
+/// `classDef cls-{{nodeId …}}`, was zu `classDef cls-nXXXXXX["Done"]` wird —
+/// einem Klassennamen mit Klammern, den Mermaid verwirft. Mit `classId` wird
+/// daraus `classDef cls-nXXXXXX`. Vorhandene Vorlagen ändert der Helfer nicht,
+/// weil der Umschreiber ihn nie von sich aus einsetzt.
+struct ClassId;
+
+impl HelperDef for ClassId {
+    fn call<'reg: 'rc, 'rc>(
+        &self,
+        h: &Helper<'rc>,
+        _: &'reg Handlebars<'reg>,
+        ctx: &'rc Context,
+        rc: &mut RenderContext<'reg, 'rc>,
+        out: &mut dyn Output,
+    ) -> HelperResult {
+        // Dieselbe Rechnung wie nodeId, damit die Klasse zum Knoten passt.
+        let value = js_string(h.param(1).map(|p| p.value()));
+        let source = hash(h, "source");
+        let group_key = rc
+            .evaluate(ctx, "_groupKey")
+            .ok()
+            .map(|v| js_string(Some(v.as_json())))
+            .unwrap_or_default();
+        let scope = if group_key.is_empty() {
+            source
+        } else {
+            format!("{source}\0{group_key}")
+        };
+        out.write(&stable_id(&value, &scope))?;
         Ok(())
     }
 }
