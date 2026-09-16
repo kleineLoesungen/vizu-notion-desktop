@@ -1,10 +1,21 @@
-// Das Diagramm: zeichnen, zoomen, verschieben.
+// Das Diagramm: zeichnen, einpassen, zoomen, verschieben.
 //
 // Zeichnet nur. Der Mermaid-Text kommt fertig aus Rust; was hier passiert, ist
 // Darstellung — mermaid.js macht daraus ein SVG, und eine CSS-Transformation
 // sorgt für Zoom und Verschieben (ohne weiteres Paket).
+//
+// Nach jedem Zeichnen wird **eingepasst**: Ein Diagramm aus 130 Aufgaben ist
+// sonst so groß, dass man im leeren Raum daneben landet. Sobald jemand selbst
+// zoomt oder schiebt, bleibt seine Ansicht stehen.
 
-import { type PointerEvent, useEffect, useRef, useState, type WheelEvent } from "react";
+import {
+  type PointerEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type WheelEvent,
+} from "react";
 import { renderDiagram } from "../lib/mermaid";
 
 type Props = {
@@ -13,14 +24,53 @@ type Props = {
   dark: boolean;
 };
 
+type View = { zoom: number; x: number; y: number };
+
 const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 4;
+/** Rand zwischen Diagramm und Fläche, in Pixeln. */
+const PADDING = 24;
+/** Beim Einpassen wird höchstens so weit vergrößert. */
+const FIT_MAX = 1.5;
 
 export function DiagramView({ mermaid, dark }: Props) {
   const host = useRef<HTMLDivElement>(null);
+  const canvas = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState({ zoom: 1, x: 0, y: 0 });
+  const [view, setView] = useState<View>({ zoom: 1, x: 0, y: 0 });
   const drag = useRef<{ x: number; y: number } | null>(null);
+
+  /** Ganz sichtbar und mittig. Gibt `false` zurück, wenn nichts zu messen war. */
+  const fitToView = useCallback(() => {
+    const svg = host.current?.querySelector("svg");
+    const area = canvas.current;
+    if (!svg || !area) return false;
+
+    // Mermaid schreibt die natürliche Größe in viewBox. `getBoundingClientRect`
+    // wäre die schon skalierte Größe und damit im Kreis gerechnet.
+    const box = svg.viewBox.baseVal;
+    const width = box?.width || svg.clientWidth;
+    const height = box?.height || svg.clientHeight;
+    const available = area.getBoundingClientRect();
+    if (!width || !height || !available.width || !available.height) return false;
+
+    const zoom = Math.min(
+      FIT_MAX,
+      Math.max(
+        MIN_ZOOM,
+        Math.min(
+          (available.width - 2 * PADDING) / width,
+          (available.height - 2 * PADDING) / height,
+        ),
+      ),
+    );
+    setView({
+      zoom,
+      x: (available.width - width * zoom) / 2,
+      y: (available.height - height * zoom) / 2,
+    });
+    return true;
+  }, []);
 
   useEffect(() => {
     const element = host.current;
@@ -31,18 +81,32 @@ export function DiagramView({ mermaid, dark }: Props) {
         dark,
         isCurrent: () => current,
       });
-      if (current) setError(result.ok ? null : result.message);
+      if (!current) return;
+      setError(result.ok ? null : result.message);
+      if (result.ok) {
+        // Mermaid begrenzt die Breite seines SVG auf die des Fensters. Für das
+        // Einpassen zählt die natürliche Größe aus der viewBox — sonst wäre
+        // die Rechnung im Kreis geführt.
+        const svg = element.querySelector("svg");
+        const box = svg?.viewBox.baseVal;
+        if (svg && box?.width && box.height) {
+          svg.style.width = `${box.width}px`;
+          svg.style.height = `${box.height}px`;
+          svg.style.maxWidth = "none";
+        }
+        fitToView();
+      }
     })();
     // Ein neuer Text macht ein noch laufendes Zeichnen gegenstandslos.
     return () => {
       current = false;
     };
-  }, [mermaid, dark]);
+  }, [mermaid, dark, fitToView]);
 
-  function zoomAt(delta: number) {
+  function zoomBy(factor: number) {
     setView((v) => ({
       ...v,
-      zoom: Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, v.zoom * delta)),
+      zoom: Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, v.zoom * factor)),
     }));
   }
 
@@ -50,7 +114,7 @@ export function DiagramView({ mermaid, dark }: Props) {
     // Ohne Zusatztaste scrollt die Seite — wie in der Webapp.
     if (!event.ctrlKey && !event.metaKey) return;
     event.preventDefault();
-    zoomAt(event.deltaY < 0 ? 1.1 : 1 / 1.1);
+    zoomBy(event.deltaY < 0 ? 1.1 : 1 / 1.1);
   }
 
   function onPointerDown(event: PointerEvent<HTMLDivElement>) {
@@ -76,16 +140,16 @@ export function DiagramView({ mermaid, dark }: Props) {
           type="button"
           className="ghost"
           aria-label="Verkleinern"
-          onClick={() => zoomAt(1 / 1.2)}
+          onClick={() => zoomBy(1 / 1.2)}
         >
           −
         </button>
         <span className="zoom-value">{Math.round(view.zoom * 100)} %</span>
-        <button type="button" className="ghost" aria-label="Vergrößern" onClick={() => zoomAt(1.2)}>
+        <button type="button" className="ghost" aria-label="Vergrößern" onClick={() => zoomBy(1.2)}>
           +
         </button>
-        <button type="button" className="ghost" onClick={() => setView({ zoom: 1, x: 0, y: 0 })}>
-          Ansicht zurücksetzen
+        <button type="button" className="ghost" onClick={() => fitToView()}>
+          Einpassen
         </button>
       </div>
 
@@ -104,6 +168,7 @@ export function DiagramView({ mermaid, dark }: Props) {
 
       {/* biome-ignore lint/a11y/noStaticElementInteractions: Zoomfläche, die Bedienung steht als Knopf daneben */}
       <div
+        ref={canvas}
         className="diagram-canvas"
         onWheel={onWheel}
         onPointerDown={onPointerDown}

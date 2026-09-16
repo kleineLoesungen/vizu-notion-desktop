@@ -591,7 +591,6 @@ input[type="color"] {
 
 .diagram-stage {
   transform-origin: 0 0;
-  padding: var(--space-4);
   width: max-content;
 }
 
