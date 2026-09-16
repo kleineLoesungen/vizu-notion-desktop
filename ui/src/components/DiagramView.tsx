@@ -26,12 +26,22 @@ type Props = {
 
 type View = { zoom: number; x: number; y: number };
 
-const MIN_ZOOM = 0.2;
+// Weit genug heraus, dass auch ein Diagramm aus 130 Knoten ganz ins Fenster
+// passt. Lesbar ist es dort nicht mehr — aber darum geht es beim Einpassen
+// auch nicht, sondern um den Überblick.
+const MIN_ZOOM = 0.02;
 const MAX_ZOOM = 4;
 /** Rand zwischen Diagramm und Fläche, in Pixeln. */
 const PADDING = 24;
 /** Beim Einpassen wird höchstens so weit vergrößert. */
 const FIT_MAX = 1.5;
+
+// Unter zehn Prozent wäre „0 %" gerundet — eine Nachkommastelle rettet die
+// Anzeige.
+function zoomLabel(zoom: number): string {
+  const percent = zoom * 100;
+  return `${percent < 10 ? percent.toFixed(1) : Math.round(percent)} %`;
+}
 
 export function DiagramView({ mermaid, dark }: Props) {
   const host = useRef<HTMLDivElement>(null);
@@ -144,7 +154,7 @@ export function DiagramView({ mermaid, dark }: Props) {
         >
           −
         </button>
-        <span className="zoom-value">{Math.round(view.zoom * 100)} %</span>
+        <span className="zoom-value">{zoomLabel(view.zoom)}</span>
         <button type="button" className="ghost" aria-label="Vergrößern" onClick={() => zoomBy(1.2)}>
           +
         </button>
