@@ -564,6 +564,8 @@ input[type="color"] {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  /* In der schmalen Vorschau des Editors passen nicht alle Knöpfe nebeneinander. */
+  flex-wrap: wrap;
 }
 
 .zoom-value {
@@ -768,6 +770,8 @@ button.danger {
   min-height: 0;
   padding: var(--space-4);
   gap: var(--space-3);
+  /* Sonst wächst der Editor über das Fenster hinaus, statt zu scrollen. */
+  overflow: hidden;
 }
 
 .editor-panes {
@@ -788,14 +792,32 @@ button.danger {
   gap: var(--space-2);
 }
 
+/* Jede Beschriftung im Editor trägt ihr Feld — und gibt die Höhe weiter,
+   sonst bliebe das Textfeld zwei Zeilen hoch. */
+.editor-text label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-weight: 500;
+  min-width: 0;
+}
+
 .editor-text label.grow {
   flex: 1;
   min-height: 0;
 }
 
+.editor-preview {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: var(--space-2);
+}
+
 .template-body {
   flex: 1;
-  min-height: 0;
+  /* Auch in einem kleinen Fenster bleibt das Textfeld benutzbar. */
+  min-height: 180px;
   width: 100%;
   resize: none;
   font-family: var(--font-mono);
@@ -916,11 +938,22 @@ button.danger {
 .editor-row {
   display: flex;
   gap: var(--space-3);
+  align-items: end;
+}
+
+/* Der Kurzname ist kurz, die Beispielliste braucht den Rest. */
+.editor-row .grow-x:first-child {
+  flex: 0 1 220px;
 }
 
 .editor-row .grow-x {
   flex: 1;
   min-width: 0;
+}
+
+.cheat-sheet {
+  max-height: 34vh;
+  overflow-y: auto;
 }
 
 .cheat-sheet dl {
