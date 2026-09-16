@@ -61,6 +61,14 @@ fn run(cli: Cli) -> Result<()> {
             let app = App::open(paths)?;
             commands::fetch::run(sources, &app, &out)
         }
+        Command::Template(cmd) => {
+            let app = App::open(paths)?;
+            commands::template::run(cmd, &app, &out)
+        }
+        Command::Render { template, hidden } => {
+            let app = App::open(paths)?;
+            commands::template::render(&template, &hidden, &app, &out)
+        }
         Command::Token(cmd) => {
             let app = App::open(paths)?;
             commands::token::run(cmd, &app, &out)

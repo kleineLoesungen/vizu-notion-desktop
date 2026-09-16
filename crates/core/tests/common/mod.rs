@@ -84,6 +84,15 @@ impl FixtureNotion {
     }
 
     fn respond_from_files(&self, request: &Request) -> Response {
+        // Eine einzelne Seite: in allen Stapeln nachsehen. So beantwortet die
+        // Attrappe auch das Nachschlagen eines Relationsziels.
+        if request.method == Method::Get
+            && let Some(id) = request.path.strip_prefix("/pages/")
+            && !id.contains('/')
+            && let Some(page) = find_page(id)
+        {
+            return ok(page);
+        }
         for label in ["ziele", "projekte", "aufgaben"] {
             let db = self.ids.database(label);
             let ds = self.ids.data_source(label);
@@ -112,6 +121,29 @@ impl Transport for FixtureNotion {
         }
         Ok(self.respond_from_files(request))
     }
+}
+
+/// Sucht eine Seite über alle festgehaltenen Stapel.
+fn find_page(id: &str) -> Option<Value> {
+    for label in ["ziele", "projekte", "aufgaben"] {
+        let mut n = 1;
+        while fixture_dir()
+            .join(format!("2025-09-03/{label}.query.{n}.json"))
+            .exists()
+        {
+            let batch = read_json(&format!("2025-09-03/{label}.query.{n}.json"));
+            if let Some(page) = batch["results"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .find(|p| p["id"] == id)
+            {
+                return Some(page.clone());
+            }
+            n += 1;
+        }
+    }
+    None
 }
 
 /// Der Stapel, dessen Vorgänger `start_cursor` als `next_cursor` hatte.

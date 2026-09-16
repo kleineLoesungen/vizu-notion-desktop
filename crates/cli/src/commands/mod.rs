@@ -7,6 +7,7 @@
 pub mod config;
 pub mod fetch;
 pub mod source;
+pub mod template;
 pub mod token;
 
 use std::io::{IsTerminal, Write};

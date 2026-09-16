@@ -8,6 +8,11 @@ use vizu_notion_core::notion::Method;
 use vizu_notion_core::source::{self, ColumnMapping, Source, SourceInput};
 use vizu_notion_core::{App, ErrorCode, fetch};
 
+/// Was die Datenbank schon an Titeln kennt — spart Anfragen beim Abruf.
+fn known(app: &App) -> std::collections::HashSet<String> {
+    fetch::known_titles(app.conn()).unwrap()
+}
+
 fn app() -> App {
     App::in_memory().unwrap()
 }
@@ -29,12 +34,14 @@ fn ruft_alle_seiten_ueber_mehrere_stapel_ab() {
     let log = notion.log();
     let (client, _) = client(notion);
 
-    let download = fetch::download(&client, &aufgaben).unwrap();
+    let download = fetch::download(&client, &aufgaben, &known(&app)).unwrap();
 
     assert_eq!(download.pages.len(), 130);
     assert_eq!(download.database.title(), "vizu Aufgaben");
-    // Datenbank, Schema, zwei Stapel.
-    assert_eq!(download.requests, 4);
+    // Datenbank, Schema, zwei Stapel — dazu je ein Blick auf die zwölf
+    // Projekte, auf die die Aufgaben zeigen.
+    assert_eq!(download.requests, 4 + 12);
+    assert_eq!(download.titles.len(), 12);
     let queries = log
         .lock()
         .unwrap()
@@ -49,7 +56,7 @@ fn speichert_die_seiten_in_der_reihenfolge_der_abfrage() {
     let app = app();
     let projekte = add(&app, "projekte", vec![ColumnMapping::new("title", "Name")]);
     let (client, _) = client(FixtureNotion::new());
-    let download = fetch::download(&client, &projekte).unwrap();
+    let download = fetch::download(&client, &projekte, &known(&app)).unwrap();
 
     let status = fetch::store(app.conn(), &download).unwrap();
 
@@ -71,7 +78,7 @@ fn ein_neuer_abruf_ersetzt_den_alten_vollstaendig() {
     let app = app();
     let projekte = add(&app, "projekte", vec![]);
     let (client, _) = client(FixtureNotion::new());
-    let mut download = fetch::download(&client, &projekte).unwrap();
+    let mut download = fetch::download(&client, &projekte, &known(&app)).unwrap();
     fetch::store(app.conn(), &download).unwrap();
 
     download.pages.truncate(3);
@@ -103,7 +110,7 @@ fn eine_unbekannte_spalte_ist_ein_eingabefehler_an_der_rolle() {
     );
     let (client, _) = client(FixtureNotion::new());
 
-    let err = fetch::download(&client, &projekte).unwrap_err();
+    let err = fetch::download(&client, &projekte, &known(&app)).unwrap_err();
 
     let fields = err.fields().expect("Eingabefehler");
     let names: Vec<&str> = fields.iter().map(|f| f.field.as_str()).collect();
@@ -126,7 +133,7 @@ fn eine_nicht_geteilte_datenbank_sagt_das_auch() {
     .unwrap();
     let (client, _) = client(FixtureNotion::new());
 
-    let err = fetch::download(&client, &fremd).unwrap_err();
+    let err = fetch::download(&client, &fremd, &known(&app)).unwrap_err();
 
     assert_eq!(err.code(), ErrorCode::NotionNotShared);
     assert!(err.to_string().contains("geteilt"), "{err}");
@@ -173,7 +180,7 @@ fn gekuerzte_relationen_werden_nachgeladen() {
     let log = notion.log();
     let (client, _) = client(notion);
 
-    let download = fetch::download(&client, &projekte).unwrap();
+    let download = fetch::download(&client, &projekte, &known(&app)).unwrap();
 
     let ziel = &download.pages[0].properties["Ziel"];
     assert_eq!(ziel["has_more"], json!(false));
@@ -193,7 +200,7 @@ fn eine_waehrend_des_abrufs_geloeschte_quelle_wird_nicht_wiederbelebt() {
     let app = app();
     let projekte = add(&app, "projekte", vec![]);
     let (client, _) = client(FixtureNotion::new());
-    let download = fetch::download(&client, &projekte).unwrap();
+    let download = fetch::download(&client, &projekte, &known(&app)).unwrap();
 
     source::delete(app.conn(), projekte.id).unwrap();
 
@@ -208,7 +215,11 @@ fn eine_andere_datenbank_verwirft_den_zwischenspeicher() {
     let app = app();
     let projekte = add(&app, "projekte", vec![]);
     let (client, _) = client(FixtureNotion::new());
-    fetch::store(app.conn(), &fetch::download(&client, &projekte).unwrap()).unwrap();
+    fetch::store(
+        app.conn(),
+        &fetch::download(&client, &projekte, &known(&app)).unwrap(),
+    )
+    .unwrap();
 
     // Nur umbenennen: Abruf bleibt.
     source::update(
@@ -235,7 +246,11 @@ fn loeschen_nimmt_abruf_und_seiten_mit() {
     let app = app();
     let projekte = add(&app, "projekte", vec![]);
     let (client, _) = client(FixtureNotion::new());
-    fetch::store(app.conn(), &fetch::download(&client, &projekte).unwrap()).unwrap();
+    fetch::store(
+        app.conn(),
+        &fetch::download(&client, &projekte, &known(&app)).unwrap(),
+    )
+    .unwrap();
 
     source::delete(app.conn(), projekte.id).unwrap();
 

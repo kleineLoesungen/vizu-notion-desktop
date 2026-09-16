@@ -34,8 +34,10 @@ pub mod fetch;
 pub mod ids;
 pub mod notion;
 pub mod paths;
+pub mod rows;
 pub mod secret;
 pub mod source;
+pub mod template;
 pub mod timestamp;
 
 pub use config::{Config, Theme};

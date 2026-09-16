@@ -45,15 +45,17 @@ pub async fn source_get(state: State<'_, AppState>, id: Uuid) -> ApiResult<Sourc
 /// Gesperrt wird nur zweimal kurz: Quelle und Token holen, Ergebnis speichern.
 #[tauri::command]
 pub async fn source_fetch(state: State<'_, AppState>, id: Uuid) -> ApiResult<FetchStatus> {
-    let (source, token) = state.with(|app| {
+    let (source, token, known) = state.with(|app| {
         let source = source::get(app.conn(), id)?;
         let token = secret::resolve(app.secrets())?;
-        Ok((source, token))
+        // Titel, die schon in der Datenbank stehen, spart der Abruf sich.
+        let known = fetch::known_titles(app.conn())?;
+        Ok((source, token, known))
     })?;
 
     let download = tauri::async_runtime::spawn_blocking(move || {
         let client = notion::Client::new(notion::HttpTransport::new(&token));
-        fetch::download(&client, &source)
+        fetch::download(&client, &source, &known)
     })
     .await
     .map_err(|e| ApiError::internal(format!("Abruf abgebrochen: {e}")))??;

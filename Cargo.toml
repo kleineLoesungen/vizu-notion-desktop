@@ -31,7 +31,10 @@ repository = "https://github.com/kleineLoesungen/vizu-notion-desktop"
 anyhow = "1.0.104"
 thiserror = "2.0.20"
 serde = { version = "1.0.229", features = ["derive"] }
-serde_json = "1.0.151"
+# preserve_order: Objekte behalten die Reihenfolge, in der sie entstanden
+# sind. Ohne das stünden die classDef-Zeilen einer Vorlage alphabetisch statt
+# in der Reihenfolge der `styles` — und die Ausgabe wiche von der Webapp ab.
+serde_json = { version = "1.0.151", features = ["preserve_order"] }
 toml = "1.1.6"
 directories = "6.0.0"
 rusqlite = { version = "0.40.2", features = ["bundled"] }
@@ -47,6 +50,13 @@ tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
 # (ring) bringt rustls mit. Begründung und Messungen: docs/UMSETZUNG.md, S3.
 ureq = { version = "3.4.2", default-features = false, features = ["rustls-no-provider", "platform-verifier", "gzip", "json"] }
 rustls = { version = "0.23.45", default-features = false, features = ["ring", "std", "tls12"] }
+# Die Vorlagen-Engine. Trifft die Ausgabe von handlebars.js 4.7 bytegleich,
+# siehe crates/core/tests/fixtures/templates/ und docs/UMSETZUNG.md, S1.
+handlebars = "6.4.4"
+# YAML für das Frontmatter der Vorlagen. Reines Rust, YAML 1.2 wie js-yaml.
+serde-saphyr = "1.2.0"
+regex = "1.13.1"
+
 # Schlüsselbund des Systems für den Notion-Token: Keychain auf macOS, Secret
 # Service über zbus (reines Rust) auf Linux.
 keyring = "4.2.0"

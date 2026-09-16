@@ -1,0 +1,6 @@
+---
+source: crates/cli/tests/cli.rs
+expression: text
+---
+KURZNAME    TITEL                         QUELLEN
+uebersicht  Übersicht                     Projekte

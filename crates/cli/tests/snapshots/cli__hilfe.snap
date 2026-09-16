@@ -9,6 +9,8 @@ Usage: vizu-notion [OPTIONS] <COMMAND>
 Commands:
   source       Quellen verwalten: welche Notion-Datenbank unter welchem Namen
   fetch        Daten von Notion abrufen und zwischenspeichern
+  template     Mermaid-Vorlagen verwalten
+  render       Eine Vorlage zeichnen und den Mermaid-Text ausgeben
   token        Den Notion-Token speichern, prüfen oder löschen
   config       Einstellungen anzeigen und ändern
   paths        Zeigt, wo die Anwendung ihre Dateien ablegt

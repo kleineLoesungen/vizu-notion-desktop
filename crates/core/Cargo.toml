@@ -25,6 +25,9 @@ serde_json.workspace = true
 ureq.workspace = true
 rustls.workspace = true
 keyring.workspace = true
+handlebars.workspace = true
+serde-saphyr.workspace = true
+regex.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true

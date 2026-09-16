@@ -294,6 +294,99 @@ fn loeschen_ohne_terminal_verlangt_ausdrueckliche_bestaetigung() {
     assert_eq!(ctx.run(&["source", "show", "Projekte"]).code, 3);
 }
 
+// --- Vorlagen ---------------------------------------------------------------
+
+const VORLAGE: &str = "---\ntitle: \"Übersicht\"\nsources:\n  - Projekte\n---\nflowchart TD\n{{#each Projekte}}\n  {{title}} --> {{next}}\n{{/each}}\n";
+
+#[test]
+fn liest_vorlagen_aus_dateien_und_zeichnet_sie() {
+    let ctx = Ctx::new();
+    ctx.seed();
+    let file = ctx.dir.path().join("uebersicht.mmd");
+    std::fs::write(&file, VORLAGE).unwrap();
+
+    let imported = ctx
+        .run(&["template", "import", file.to_str().unwrap()])
+        .ok();
+    assert!(
+        imported.stdout.contains("uebersicht"),
+        "{}",
+        imported.stdout
+    );
+
+    snapshot("vorlagen", &ctx.run(&["template", "list"]).ok().stdout);
+
+    // Noch nichts abgerufen: Das Diagramm besteht nur aus dem Kopf. Was mit
+    // Daten herauskommt, prüfen die Referenzfälle in crates/core.
+    let rendered = ctx.run(&["render", "uebersicht"]).ok();
+    assert_eq!(rendered.stdout.trim(), "flowchart TD");
+
+    let json = ctx.run(&["render", "uebersicht", "--json"]).ok().json();
+    assert_eq!(json["title"], "Übersicht");
+    assert_eq!(json["nodes"], serde_json::json!([]));
+}
+
+#[test]
+fn ein_erneuter_import_ersetzt_die_vorlage() {
+    let ctx = Ctx::new();
+    ctx.seed();
+    let file = ctx.dir.path().join("uebersicht.mmd");
+    std::fs::write(&file, VORLAGE).unwrap();
+    ctx.run(&["template", "import", file.to_str().unwrap()])
+        .ok();
+    std::fs::write(&file, VORLAGE.replace("Übersicht", "Neuer Titel")).unwrap();
+
+    ctx.run(&["template", "import", file.to_str().unwrap()])
+        .ok();
+
+    let list = ctx.run(&["template", "list", "--json"]).ok().json();
+    assert_eq!(list.as_array().unwrap().len(), 1);
+    assert_eq!(list[0]["title"], "Neuer Titel");
+}
+
+#[test]
+fn ein_ganzes_verzeichnis_auf_einmal() {
+    let ctx = Ctx::new();
+    ctx.seed();
+    let dir = ctx.dir.path().join("vorlagen");
+    std::fs::create_dir(&dir).unwrap();
+    std::fs::write(dir.join("eins.mmd"), VORLAGE).unwrap();
+    std::fs::write(dir.join("zwei.mmd"), VORLAGE).unwrap();
+    std::fs::write(dir.join("liesmich.txt"), "kein Diagramm").unwrap();
+
+    ctx.run(&["template", "import", dir.to_str().unwrap()]).ok();
+
+    let list = ctx.run(&["template", "list", "--json"]).ok().json();
+    assert_eq!(list.as_array().unwrap().len(), 2, "die .txt bleibt liegen");
+}
+
+#[test]
+fn eine_kaputte_vorlage_ergibt_vier_und_nennt_den_grund() {
+    let ctx = Ctx::new();
+    ctx.seed();
+    let file = ctx.dir.path().join("kaputt.mmd");
+    std::fs::write(&file, "flowchart TD\n  A --> B\n").unwrap();
+
+    let out = ctx.run(&["template", "import", file.to_str().unwrap(), "--json"]);
+
+    assert_eq!(out.code, 4);
+    let err: serde_json::Value = serde_json::from_str(&out.stderr).unwrap();
+    assert_eq!(err["error"]["fields"][0]["field"], "body");
+    assert!(ctx.run(&["template", "list", "--json"]).ok().json()[0].is_null());
+}
+
+#[test]
+fn eine_vorlage_ohne_passende_quelle_wird_nicht_gespeichert() {
+    let ctx = Ctx::new();
+    let file = ctx.dir.path().join("uebersicht.mmd");
+    std::fs::write(&file, VORLAGE).unwrap();
+
+    let out = ctx.run(&["template", "import", file.to_str().unwrap()]);
+
+    assert_eq!(out.code, 4);
+    assert!(out.stderr.contains("Projekte"), "{}", out.stderr);
+}
+
 // --- Token -----------------------------------------------------------------
 
 #[test]

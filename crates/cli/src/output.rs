@@ -18,6 +18,7 @@ use time::macros::format_description;
 use vizu_notion_core::fetch::{FetchStatus, SourceOverview};
 use vizu_notion_core::secret::{TokenOrigin, TokenStatus};
 use vizu_notion_core::source::Source;
+use vizu_notion_core::template::{Diagram, Template};
 use vizu_notion_core::{Config, Paths, ids, timestamp};
 
 pub struct Out {
@@ -120,6 +121,56 @@ impl Out {
 
     pub fn fetched(&self, statuses: &[FetchStatus]) {
         self.print(statuses);
+    }
+
+    pub fn templates(&self, templates: &[Template]) {
+        if self.json {
+            self.print(templates);
+            return;
+        }
+        if templates.is_empty() {
+            println!("Keine Vorlagen. Einlesen mit:  vizu-notion template import diagramm.mmd");
+            return;
+        }
+        let width = templates
+            .iter()
+            .map(|t| t.slug.chars().count())
+            .max()
+            .unwrap_or(8)
+            .clamp(8, 30);
+        println!("{:<width$}  {:<28}  QUELLEN", "KURZNAME", "TITEL");
+        for t in templates {
+            println!(
+                "{:<width$}  {:<28}  {}",
+                truncate(&t.slug, width),
+                truncate(&t.title, 28),
+                t.sources.join(", ")
+            );
+        }
+    }
+
+    pub fn template(&self, template: &Template) {
+        if self.json {
+            self.print(template);
+            return;
+        }
+        println!("{}", template.title);
+        println!("{}", "─".repeat(template.title.chars().count().max(3)));
+        println!("Kurzname:  {}", template.slug);
+        println!("Quellen:   {}", template.sources.join(", "));
+        println!("Kennung:   {}", template.id);
+        println!();
+        println!("{}", template.body.trim_end());
+    }
+
+    /// Der Mermaid-Text geht roh auf stdout — damit
+    /// `vizu-notion render x > diagramm.mmd` das Richtige tut.
+    pub fn diagram(&self, diagram: &Diagram) {
+        if self.json {
+            self.print(diagram);
+            return;
+        }
+        println!("{}", diagram.mermaid);
     }
 
     pub fn token_status(&self, status: &TokenStatus) {

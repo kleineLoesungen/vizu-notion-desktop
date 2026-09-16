@@ -18,8 +18,12 @@ use rusqlite_migration::{M, Migrations};
 
 use crate::error::{Error, Result};
 
-static MIGRATIONS: LazyLock<Migrations<'static>> =
-    LazyLock::new(|| Migrations::new(vec![M::up(include_str!("../migrations/0001_init.sql"))]));
+static MIGRATIONS: LazyLock<Migrations<'static>> = LazyLock::new(|| {
+    Migrations::new(vec![
+        M::up(include_str!("../migrations/0001_init.sql")),
+        M::up(include_str!("../migrations/0002_templates.sql")),
+    ])
+});
 
 /// Öffnet die Datei, legt sie bei Bedarf an und bringt das Schema auf Stand.
 pub fn open(path: &Path) -> Result<Connection> {

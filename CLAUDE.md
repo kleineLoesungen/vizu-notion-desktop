@@ -259,6 +259,25 @@ Namen werden nie umbenannt, nur ergänzt.
 
 ---
 
+## Die Vorlagen-Engine ist an die Webapp gebunden
+
+`crates/core/src/template/` erzeugt denselben Mermaid-Text wie die Webapp
+vizu-notion-local. Das ist kein Nebenbei, sondern der Grund, warum vorhandene
+`.mmd`-Vorlagen hier unverändert laufen:
+
+* `crates/core/tests/template.rs` vergleicht mit Dateien, die die
+  Original-Logik (handlebars.js 4.7) erzeugt hat. **Diese Dateien werden nicht
+  angepasst, wenn ein Test fehlschlägt** — sie sind die Vorgabe.
+* Die Knotenkennung ist FNV-1a über **UTF-16**-Codeeinheiten, nicht über
+  UTF-8-Bytes. Anders gerechnet, ändern sich alle Kennungen mit Emoji.
+* Die Maskierung ist die von Handlebars.js, als eigene `escape_fn`.
+* `serde_json` läuft mit `preserve_order`; sonst stünden die `classDef`-Zeilen
+  alphabetisch statt in der Reihenfolge der `styles`.
+
+Auch die Eigenheiten der Webapp sind übernommen, etwa dass ein Quellname mit
+Bindestrich nicht als Quelle erkannt wird. Was davon warum bleibt, steht in
+docs/UMSETZUNG.md, Abschnitt 3.1.
+
 ## Kurzkennungen: hinten, nicht vorn
 
 Die Kennungen sind UUIDv7. Die **beginnt mit dem Zeitstempel** — zwei Quellen
@@ -313,6 +332,8 @@ Bitte nicht „nachrüsten":
 |---|---|
 | `crates/core/tests/source.rs` | Quellen: Prüfung, Namen, Import. **Hier liegt der Schwerpunkt.** |
 | `crates/core/tests/fetch.rs` | Abruf und Zwischenspeicher, gegen festgehaltene Notion-Antworten |
+| `crates/core/tests/rows.rs` | Notion-Seiten → Zeilen: Spaltenarten, Relationen, Ausblenden |
+| `crates/core/tests/template.rs` | **Die Vorlagen-Engine gegen die Referenz der Webapp — bytegleich** |
 | `crates/core/tests/notion.rs` | Takt, Wiederholung bei 429, Deutung der Fehler |
 | `crates/core/tests/secret.rs` | Token: Herkunft, Prüfung, Speicher |
 | `crates/core/tests/config.rs` | Einstellungen lesen, schreiben, ablehnen |

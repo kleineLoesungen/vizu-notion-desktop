@@ -11,6 +11,8 @@
 //! Netzabruf darin, stünde jeder andere Befehl so lange still. Getrennt kann sie
 //! den Download ohne Sperre laufen lassen und nur zum Speichern kurz sperren.
 
+use std::collections::{BTreeMap, HashSet};
+
 use rusqlite::{Connection, OptionalExtension, params};
 use serde::Serialize;
 use serde_json::{Value, json};
@@ -32,6 +34,9 @@ pub struct Download {
     /// Die Antwort von `GET /data_sources/{id}`.
     pub schema: Value,
     pub pages: Vec<Page>,
+    /// Titel von Relationszielen außerhalb dieser Quelle. Ohne sie stünde im
+    /// Diagramm die Seiten-ID.
+    pub titles: BTreeMap<String, String>,
     pub requests: u32,
 }
 
@@ -53,7 +58,11 @@ pub struct FetchStatus {
 /// Prüft dabei die Zuordnung gegen das Schema: Eine Rolle, deren Spalte es in
 /// Notion nicht gibt, ist ein Eingabefehler an `mappings.<rolle>` — mit den
 /// vorhandenen Spalten in der Meldung, denn meist ist es ein Tippfehler.
-pub fn download<T: Transport>(client: &Client<T>, source: &Source) -> Result<Download> {
+pub fn download<T: Transport>(
+    client: &Client<T>,
+    source: &Source,
+    known_titles: &HashSet<String>,
+) -> Result<Download> {
     let database = client.database(&source.database_id)?;
     let data_source = database.data_sources.first().ok_or_else(|| Error::Notion {
         kind: NotionErrorKind::Other,
@@ -78,6 +87,7 @@ pub fn download<T: Transport>(client: &Client<T>, source: &Source) -> Result<Dow
 
     let mut pages = client.query_data_source(&data_source_id)?;
     complete_relations(client, &properties, &mut pages)?;
+    let titles = foreign_titles(client, &pages, known_titles)?;
 
     Ok(Download {
         source_id: source.id,
@@ -85,6 +95,7 @@ pub fn download<T: Transport>(client: &Client<T>, source: &Source) -> Result<Dow
         data_source_id,
         schema,
         pages,
+        titles,
         requests: client.requests(),
     })
 }
@@ -92,7 +103,7 @@ pub fn download<T: Transport>(client: &Client<T>, source: &Source) -> Result<Dow
 /// Ersetzt den Zwischenspeicher der Quelle durch den Download — ganz oder gar nicht.
 pub fn store(conn: &Connection, download: &Download) -> Result<FetchStatus> {
     // Die Quelle kann während des Downloads gelöscht worden sein.
-    source::get(conn, download.source_id)?;
+    let source = source::get(conn, download.source_id)?;
     let id = download.source_id.to_string();
     let fetched_at = timestamp::now();
 
@@ -100,18 +111,29 @@ pub fn store(conn: &Connection, download: &Download) -> Result<FetchStatus> {
     tx.execute("DELETE FROM pages WHERE source_id = ?1", [&id])?;
     {
         let mut insert = tx.prepare(
-            "INSERT INTO pages (source_id, page_id, position, url, last_edited_time, properties) \
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            "INSERT INTO pages (source_id, page_id, position, title, url, last_edited_time, properties) \
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
         )?;
         for (position, page) in download.pages.iter().enumerate() {
             insert.execute(params![
                 id,
                 page.id,
                 position as i64,
+                crate::rows::page_title(page, &source),
                 page.url,
                 page.last_edited_time,
                 Value::Object(page.properties.clone()).to_string(),
             ])?;
+        }
+    }
+    {
+        let mut insert = tx.prepare(
+            "INSERT INTO page_titles (page_id, title, fetched_at) VALUES (?1, ?2, ?3) \
+             ON CONFLICT (page_id) DO UPDATE SET title = excluded.title, \
+                                                 fetched_at = excluded.fetched_at",
+        )?;
+        for (page_id, title) in &download.titles {
+            insert.execute(params![page_id, title, timestamp::to_text(fetched_at)])?;
         }
     }
     tx.execute(
@@ -150,7 +172,27 @@ pub fn fetch_with_http(
 ) -> Result<FetchStatus> {
     let token = secret::resolve(secrets)?;
     let client = Client::new(notion::HttpTransport::new(&token));
-    store(conn, &download(&client, source)?)
+    let known = known_titles(conn)?;
+    store(conn, &download(&client, source, &known)?)
+}
+
+/// Seiten, deren Titel schon in der Datenbank stehen — als eigene Seite einer
+/// Quelle oder als früher geholtes Relationsziel.
+///
+/// Wer das beim Abruf mitgibt, spart je bekannter Seite eine Anfrage.
+pub fn known_titles(conn: &Connection) -> Result<HashSet<String>> {
+    let mut out = HashSet::new();
+    for sql in [
+        "SELECT page_id FROM pages",
+        "SELECT page_id FROM page_titles",
+    ] {
+        let mut stmt = conn.prepare(sql)?;
+        let ids = stmt.query_map([], |r| r.get::<_, String>(0))?;
+        for id in ids {
+            out.insert(id?);
+        }
+    }
+    Ok(out)
 }
 
 /// Eine Quelle mit dem Stand ihres letzten Abrufs — für Listen.
@@ -237,6 +279,52 @@ pub fn pages(conn: &Connection, source_id: Uuid) -> Result<Vec<Page>> {
             })
         })
         .collect()
+}
+
+/// Holt die Titel der Relationsziele, die weder in dieser Quelle liegen noch
+/// schon bekannt sind.
+fn foreign_titles<T: Transport>(
+    client: &Client<T>,
+    pages: &[Page],
+    known: &HashSet<String>,
+) -> Result<BTreeMap<String, String>> {
+    let own: HashSet<&str> = pages.iter().map(|p| p.id.as_str()).collect();
+    let mut wanted: Vec<String> = Vec::new();
+    for page in pages {
+        for target in crate::rows::relation_targets(page) {
+            if !own.contains(target.as_str())
+                && !known.contains(&target)
+                && !wanted.contains(&target)
+            {
+                wanted.push(target);
+            }
+        }
+    }
+
+    let mut titles = BTreeMap::new();
+    for id in wanted {
+        match client.page(&id) {
+            Ok(page) => {
+                let title = page
+                    .properties
+                    .values()
+                    .find(|v| v["type"] == "title")
+                    .map(crate::rows::text_of)
+                    .unwrap_or_default();
+                titles.insert(id, title);
+            }
+            // Eine Seite im Papierkorb oder ohne Freigabe soll den ganzen
+            // Abruf nicht scheitern lassen — dann steht eben die Kennung da.
+            Err(Error::Notion {
+                kind: NotionErrorKind::NotShared,
+                ..
+            }) => {
+                tracing::warn!(page = %id, "Relationsziel nicht lesbar");
+            }
+            Err(e) => return Err(e),
+        }
+    }
+    Ok(titles)
 }
 
 fn check_mappings(

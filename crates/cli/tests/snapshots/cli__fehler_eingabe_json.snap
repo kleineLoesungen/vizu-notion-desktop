@@ -5,6 +5,7 @@ expression: text
 {
   "error": {
     "code": "validation_failed",
+    "message": "name: darf nicht leer sein; database_id: keine Notion-Kennung — die 32 Zeichen aus der Adresse der Datenbank einfügen",
     "fields": [
       {
         "field": "name",
@@ -14,7 +15,6 @@ expression: text
         "field": "database_id",
         "message": "keine Notion-Kennung — die 32 Zeichen aus der Adresse der Datenbank einfügen"
       }
-    ],
-    "message": "name: darf nicht leer sein; database_id: keine Notion-Kennung — die 32 Zeichen aus der Adresse der Datenbank einfügen"
+    ]
   }
 }

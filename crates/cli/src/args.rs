@@ -69,6 +69,23 @@ pub enum Command {
         sources: Vec<String>,
     },
 
+    /// Mermaid-Vorlagen verwalten.
+    #[command(subcommand)]
+    Template(TemplateCommand),
+
+    /// Eine Vorlage zeichnen und den Mermaid-Text ausgeben.
+    ///
+    /// Der Text ist derselbe, den auch die Oberfläche an mermaid.js gibt.
+    Render {
+        /// Kurzname oder Kennung der Vorlage.
+        #[arg(value_name = "VORLAGE")]
+        template: String,
+
+        /// Seiten-IDs, die nicht gezeichnet werden. Mehrfach oder mit Komma.
+        #[arg(long = "hide", value_name = "SEITEN-ID", value_delimiter = ',')]
+        hidden: Vec<String>,
+    },
+
     /// Den Notion-Token speichern, prüfen oder löschen.
     #[command(subcommand)]
     Token(TokenCommand),
@@ -162,6 +179,39 @@ pub enum SourceCommand {
         /// Pfad zur Datei, `-` für stdin.
         #[arg(value_name = "DATEI")]
         file: PathBuf,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum TemplateCommand {
+    /// Alle Vorlagen mit Titel und Quellen.
+    #[command(alias = "ls")]
+    List,
+
+    /// Eine Vorlage anzeigen, mit ihrem Text.
+    Show {
+        #[arg(value_name = "VORLAGE")]
+        template: String,
+    },
+
+    /// `.mmd`-Dateien einlesen. Ein vorhandener Kurzname wird ersetzt.
+    ///
+    /// Der Kurzname ist der Dateiname ohne Endung. Ein Verzeichnis liest alle
+    /// `.mmd`-Dateien darin.
+    Import {
+        #[arg(value_name = "DATEI", required = true)]
+        files: Vec<PathBuf>,
+    },
+
+    /// Eine Vorlage löschen.
+    #[command(alias = "delete")]
+    Rm {
+        #[arg(value_name = "VORLAGE")]
+        template: String,
+
+        /// Nicht nachfragen.
+        #[arg(short = 'y', long)]
+        yes: bool,
     },
 }
 

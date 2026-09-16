@@ -67,6 +67,13 @@ impl<T: Transport> Client<T> {
         self.call(&Request::get(format!("/data_sources/{id}")))
     }
 
+    /// `GET /pages/{id}` — eine einzelne Seite, etwa das Ziel einer Relation
+    /// in einer Datenbank, die selbst keine Quelle ist.
+    pub fn page(&self, id: &str) -> Result<Page> {
+        let body = self.call(&Request::get(format!("/pages/{id}")))?;
+        serde_json::from_value(body).map_err(|e| unexpected(format!("Seite unlesbar: {e}")))
+    }
+
     /// Alle Seiten einer Datenquelle, Stapel für Stapel.
     pub fn query_data_source(&self, id: &str) -> Result<Vec<Page>> {
         let path = format!("/data_sources/{id}/query");

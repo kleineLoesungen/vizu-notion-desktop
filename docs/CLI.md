@@ -86,6 +86,40 @@ Fortschritt geht auf stderr, die Nutzausgabe auf stdout. Mehrere Quellen werden
 nacheinander abgerufen; beim ersten Fehler bricht der Befehl ab, bereits
 Abgerufenes bleibt gespeichert.
 
+## Vorlagen und Diagramme
+
+Eine Vorlage ist eine `.mmd`-Datei: ein Kopf mit `title` und `sources`, darunter
+ein Mermaid-Diagramm mit Handlebars-Bindungen. Das Format ist **dasselbe wie in
+der Webapp** vizu-notion-local, und die Ausgabe ist bytegleich.
+
+```bash
+vizu-notion template import diagramm.mmd      # Kurzname = Dateiname ohne .mmd
+vizu-notion template import config/           # alle .mmd darin
+vizu-notion template list
+vizu-notion template show diagramm
+vizu-notion template rm diagramm --yes
+```
+
+Ein erneuter Import **ersetzt** die Vorlage mit demselben Kurznamen. Fehlt im
+Kopf `title` oder `sources`, oder gibt es eine genannte Quelle nicht, wird
+nichts gespeichert (Rückgabewert 4).
+
+```bash
+vizu-notion render diagramm > diagramm-fertig.mmd
+vizu-notion render diagramm --hide <seiten-id>,<seiten-id>
+vizu-notion render diagramm --json | jq -r '.nodes[].title'
+```
+
+`render` rechnet **ohne Netz** — es benutzt, was `fetch` zuletzt geholt hat.
+Auf stdout steht nur der Mermaid-Text; damit lässt er sich weiterreichen, etwa
+an [mermaid.live](https://mermaid.live) oder `mmdc`. Mit `--json` kommen
+zusätzlich `title` und `nodes`: jede Seite der beteiligten Quellen mit
+Kennung, Titel, Quelle und ihren Relationen — die Grundlage des Filterfelds in
+der Oberfläche.
+
+Mit `--hide` bleiben Seiten aus dem Diagramm draußen, auch als Ziel einer
+Relation. In `nodes` stehen sie weiterhin.
+
 ## Kennungen
 
 Quellen werden über ihren **Namen** angesprochen (ohne Rücksicht auf Groß- und
@@ -161,10 +195,10 @@ eine Fehlermeldung als Nutzdaten liest:
 {
   "error": {
     "code": "validation_failed",
+    "message": "mappings.next: Spalte „Nachfolger“ gibt es in „vizu Projekte“ nicht (vorhanden: Name, Nächstes, Start)",
     "fields": [
       { "field": "mappings.next", "message": "Spalte „Nachfolger“ gibt es in „vizu Projekte“ nicht (vorhanden: Name, Nächstes, Start)" }
-    ],
-    "message": "mappings.next: Spalte „Nachfolger“ gibt es in „vizu Projekte“ nicht (vorhanden: Name, Nächstes, Start)"
+    ]
   }
 }
 ```

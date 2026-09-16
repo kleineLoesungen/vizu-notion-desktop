@@ -38,10 +38,15 @@ CREATE TABLE fetches (
 -- Die Seiten des letzten Abrufs, so wie Notion sie liefert. `properties` ist
 -- das JSON-Objekt der Seite; Relationen sind darin bereits vollständig
 -- nachgeladen (has_more). `position` hält die Reihenfolge der Abfrage.
+--
+-- `title` steht doppelt — im JSON und als eigene Spalte. So findet eine
+-- Relation den Namen ihres Ziels, ohne dass dessen ganze Quelle gelesen
+-- werden muss.
 CREATE TABLE pages (
     source_id        TEXT NOT NULL REFERENCES sources (id) ON DELETE CASCADE,
     page_id          TEXT NOT NULL,
     position         INTEGER NOT NULL,
+    title            TEXT NOT NULL,
     url              TEXT NOT NULL,
     last_edited_time TEXT NOT NULL,
     properties       TEXT NOT NULL,
