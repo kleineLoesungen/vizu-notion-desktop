@@ -100,6 +100,18 @@ vizu-notion template show diagramm
 vizu-notion template rm diagramm --yes
 ```
 
+**Auf `subgraph`- und `classDef`-Zeilen greift der Umschreiber nicht** — dort
+steht Mermaid-Syntax, keine Bindung. Wer dort ein Feld braucht, ruft den Helfer
+selbst auf, sonst landet der rohe Text im Diagramm und Mermaid stolpert über
+Anführungszeichen oder Klammern darin:
+
+```
+subgraph {{nodeId "title" title}}      ✅  ergibt  subgraph nXXXXXX["Q3 Review & Plan"]
+subgraph {{this.title}}                ❌  ergibt  subgraph Q3 "Review" & [Plan]
+classDef cls-{{classId "status" status}} fill:#4e79a7   ✅  nur die Kennung
+classDef cls-{{nodeId "status" status}} fill:#4e79a7    ❌  Kennung mit Kasten
+```
+
 Ein erneuter Import **ersetzt** die Vorlage mit demselben Kurznamen. Fehlt im
 Kopf `title` oder `sources`, oder gibt es eine genannte Quelle nicht, wird
 nichts gespeichert (Rückgabewert 4).

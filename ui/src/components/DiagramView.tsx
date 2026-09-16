@@ -90,9 +90,16 @@ export function DiagramView({ mermaid, dark }: Props) {
       </div>
 
       {error && (
-        <p className="diagram-error" role="alert">
-          Diagramm fehlerhaft: {error}
-        </p>
+        <div className="diagram-error" role="alert">
+          {`Mermaid nimmt das Diagramm nicht an:\n${error}`}
+        </div>
+      )}
+
+      {error && (
+        <details>
+          <summary>Erzeugter Mermaid-Text</summary>
+          <pre className="diagram-source">{mermaid}</pre>
+        </details>
       )}
 
       {/* biome-ignore lint/a11y/noStaticElementInteractions: Zoomfläche, die Bedienung steht als Knopf daneben */}

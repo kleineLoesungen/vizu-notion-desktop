@@ -63,7 +63,7 @@ export async function renderDiagram(
   } catch (error) {
     document.getElementById(`d${id}`)?.remove();
     if (options.isCurrent()) host.replaceChildren();
-    return { ok: false, message: firstLine(error) };
+    return { ok: false, message: readable(error) };
   }
 }
 
@@ -109,6 +109,16 @@ export async function renderDiagrams(
 }
 
 function firstLine(error: unknown): string {
-  const text = error instanceof Error ? error.message : String(error);
-  return text.split("\n")[0] ?? text;
+  return readable(error).split("\n")[0] ?? "";
+}
+
+/**
+ * Die Meldung von Mermaid, ganz.
+ *
+ * Bei einem Syntaxfehler steht in den Zeilen darunter die fehlerhafte Stelle
+ * mit einem Zeiger — die erste Zeile allein („Parse error on line 2") sagt
+ * niemandem, was falsch ist.
+ */
+function readable(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
