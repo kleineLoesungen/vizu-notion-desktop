@@ -95,9 +95,9 @@ und wird zur Laufzeit verweigert.
 
 5. **Plugins und Fenster-API brauchen eine Berechtigung.** Was nicht in
    `crates/desktop/capabilities/default.json` steht, wird zur Laufzeit mit
-   „… not allowed" abgelehnt — obwohl alles kompiliert. Beispiel: Den
-   Fenstertitel setzen braucht `core:window:allow-set-title`. Eigene Befehle
-   aus `commands.rs` sind ohne Eintrag erlaubt.
+   „… not allowed" abgelehnt — obwohl alles kompiliert. Beispiel: Der
+   Speichern-Dialog des SVG-Exports braucht `dialog:allow-save`. Eigene
+   Befehle aus `commands.rs` sind ohne Eintrag erlaubt.
 
 6. **Der Fehlertyp muss `Serialize` sein.** `vizu_notion_core::Error` ist es
    absichtlich nicht. Befehle geben `ApiResult<T>` zurück; `ApiError` hat

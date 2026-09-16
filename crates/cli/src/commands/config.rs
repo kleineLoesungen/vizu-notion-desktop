@@ -36,7 +36,6 @@ pub fn run(cmd: ConfigCommand, app: &mut App, out: &Out) -> Result<()> {
 /// `config_kennt_alle_felder` erinnert daran.
 fn apply(config: &mut Config, key: &str, value: &str) -> Result<()> {
     match key {
-        "app_name" => config.app_name = value.to_string(),
         "accent" => config.accent = value.to_string(),
         "theme" => {
             config.theme = match value {
@@ -46,7 +45,7 @@ fn apply(config: &mut Config, key: &str, value: &str) -> Result<()> {
                 _ => bail!("theme kennt nur: system, light, dark (nicht {value:?})"),
             }
         }
-        _ => bail!("unbekannter Schlüssel {key:?} — bekannt sind: app_name, theme, accent"),
+        _ => bail!("unbekannter Schlüssel {key:?} — bekannt sind: theme, accent"),
     }
     Ok(())
 }

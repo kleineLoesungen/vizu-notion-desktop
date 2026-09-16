@@ -14,23 +14,38 @@ use ts_rs::TS;
 
 use crate::error::{Error, Result, Validator};
 
+/// Die Akzentfarbe, mit der die Anwendung ausgeliefert wird.
+pub const DEFAULT_ACCENT: &str = "#3b6ea5";
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[serde(default, deny_unknown_fields)]
 pub struct Config {
-    /// Fenstertitel und Name in der Oberfläche.
-    pub app_name: String,
     /// Hell, dunkel oder der Systemeinstellung folgen.
     pub theme: Theme,
     /// Akzentfarbe als `#rrggbb`. Siehe docs/DESIGN.md.
     pub accent: String,
 }
 
+/// Die Datei, wie sie auf der Platte steht.
+///
+/// Eigener Typ, damit [`Config`] keine Altlast trägt: `app_name` war einmal
+/// eine Einstellung (Fenstertitel). Eine vorhandene Datei damit soll die
+/// Anwendung nicht ablehnen — der Schlüssel wird überlesen und beim nächsten
+/// Speichern nicht wieder geschrieben.
+#[derive(Debug, Default, Deserialize)]
+#[serde(default, deny_unknown_fields)]
+struct Stored {
+    theme: Theme,
+    accent: Option<String>,
+    #[allow(dead_code)]
+    app_name: Option<String>,
+}
+
 impl Default for Config {
     fn default() -> Self {
         Self {
-            app_name: "Vizu Notion".to_string(),
             theme: Theme::System,
-            accent: "#3b6ea5".to_string(),
+            accent: DEFAULT_ACCENT.to_string(),
         }
     }
 }
@@ -72,10 +87,14 @@ impl Config {
             }
         };
 
-        let config: Config = toml::from_str(&text).map_err(|source| Error::ConfigParse {
+        let stored: Stored = toml::from_str(&text).map_err(|source| Error::ConfigParse {
             path: path.to_path_buf(),
             source,
         })?;
+        let config = Config {
+            theme: stored.theme,
+            accent: stored.accent.unwrap_or_else(|| DEFAULT_ACCENT.to_string()),
+        };
         config.validate()?;
         Ok(config)
     }
@@ -93,11 +112,6 @@ impl Config {
 
     pub fn validate(&self) -> Result<()> {
         let mut v = Validator::new();
-        v.require(
-            !self.app_name.trim().is_empty(),
-            "app_name",
-            "darf nicht leer sein",
-        );
         v.require(
             is_hex_color(&self.accent),
             "accent",

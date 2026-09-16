@@ -14,7 +14,6 @@
 // `sourceId`. Die Befehle hier haben deshalb nur einwortige Argumente.
 
 import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { save } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import type {
@@ -135,11 +134,6 @@ export const api = {
     });
     if (!path) return null;
     return call<string>("export_svg", { path, svg });
-  },
-
-  /** Braucht `core:window:allow-set-title` in crates/desktop/capabilities/. */
-  setWindowTitle: async (title: string) => {
-    await getCurrentWindow().setTitle(title);
   },
 
   /**

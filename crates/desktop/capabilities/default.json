@@ -5,7 +5,6 @@
   "windows": ["main"],
   "permissions": [
     "core:default",
-    "core:window:allow-set-title",
     "dialog:allow-save",
     {
       "identifier": "opener:allow-open-url",

@@ -21,10 +21,6 @@ property: string, };
 
 export type Config = { 
 /**
- * Fenstertitel und Name in der Oberfläche.
- */
-app_name: string, 
-/**
  * Hell, dunkel oder der Systemeinstellung folgen.
  */
 theme: Theme, 

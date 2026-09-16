@@ -23,6 +23,7 @@ import type {
   TemplateHelp,
   TokenStatus,
 } from "./bindings";
+import { ConfirmDialog } from "./components/ConfirmDialog";
 import { DiagramView } from "./components/DiagramView";
 import { EmptyState } from "./components/EmptyState";
 import { FilterPanel } from "./components/FilterPanel";
@@ -57,6 +58,12 @@ flowchart TD
 {{/each}}
 `;
 
+/**
+ * Der Name der Anwendung — aus `ui/index.html`, wo auch der Fenstertitel
+ * herkommt. Eine Einstellung dafür gab es einmal; sie ergab keinen Sinn.
+ */
+const APP_NAME = document.title;
+
 /** So lange nach dem letzten Tastendruck wird gewartet, bevor neu gezeichnet wird. */
 const PREVIEW_DELAY_MS = 400;
 
@@ -80,6 +87,10 @@ export function App() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [help, setHelp] = useState<TemplateHelp | null>(null);
+  /** Eine Löschung, die noch bestätigt werden muss. */
+  const [confirmDelete, setConfirmDelete] = useState<
+    { kind: "source"; name: string } | { kind: "template"; name: string } | null
+  >(null);
 
   // Zwei Sorten Fehler, wie überall im Kit: mit Feldern an die Felder,
   // ohne Felder als Meldung oben.
@@ -148,12 +159,7 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (!config) return;
-    applyTheme(config);
-    document.title = config.app_name;
-    api.setWindowTitle(config.app_name).catch(() => {
-      // Ohne Fenster (Tests, Browser) gibt es keinen Titel zu setzen.
-    });
+    if (config) applyTheme(config);
   }, [config]);
 
   // Die Vorschau im Editor: verzögert, damit nicht bei jedem Tastendruck
@@ -291,6 +297,7 @@ export function App() {
 
   async function deleteSource() {
     const existing = sourceDialog?.source;
+    setConfirmDelete(null);
     if (!existing) return;
     try {
       await api.sources.remove(existing.id);
@@ -330,6 +337,7 @@ export function App() {
   }
 
   async function deleteTemplate() {
+    setConfirmDelete(null);
     if (!draft?.id) return;
     try {
       await api.templates.remove(draft.id);
@@ -407,7 +415,7 @@ export function App() {
   return (
     <div className="app">
       <aside className="sidebar">
-        <div className="brand">{config?.app_name ?? " "}</div>
+        <div className="brand">{APP_NAME}</div>
         <TemplateList
           templates={templates}
           selectedId={selection.kind === "template" ? selection.id : null}
@@ -484,7 +492,9 @@ export function App() {
             onSlugChange={(slug) => setDraft({ ...draft, slug })}
             onBodyChange={(body) => setDraft({ ...draft, body })}
             onSave={() => void saveTemplate()}
-            {...(draft.id ? { onDelete: () => void deleteTemplate() } : {})}
+            {...(draft.id
+              ? { onDelete: () => setConfirmDelete({ kind: "template", name: draft.slug }) }
+              : {})}
             onClose={() => {
               setDraft(null);
               setDiagram(null);
@@ -562,11 +572,32 @@ export function App() {
           properties={properties}
           fieldMessage={fieldMessage}
           onSave={(input) => void saveSource(input)}
-          {...(sourceDialog.source ? { onDelete: () => void deleteSource() } : {})}
+          {...(sourceDialog.source
+            ? {
+                onDelete: () =>
+                  setConfirmDelete({ kind: "source", name: sourceDialog.source?.name ?? "" }),
+              }
+            : {})}
           onClose={() => {
             setFieldError(null);
             setSourceDialog(null);
           }}
+        />
+      )}
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title={confirmDelete.kind === "source" ? "Quelle löschen" : "Diagramm löschen"}
+          message={
+            confirmDelete.kind === "source"
+              ? `„${confirmDelete.name}“ wird gelöscht, mitsamt den abgerufenen Seiten. Vorlagen, die diese Quelle benutzen, zeichnen danach nicht mehr.`
+              : `„${confirmDelete.name}“ wird gelöscht. Die Daten der Quellen bleiben.`
+          }
+          confirmLabel="Endgültig löschen"
+          onConfirm={() =>
+            void (confirmDelete.kind === "source" ? deleteSource() : deleteTemplate())
+          }
+          onCancel={() => setConfirmDelete(null)}
         />
       )}
 

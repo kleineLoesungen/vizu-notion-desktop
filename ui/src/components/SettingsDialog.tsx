@@ -49,16 +49,6 @@ export function SettingsDialog({
         }}
       >
         <label>
-          Name der Anwendung
-          <input
-            value={draft.app_name}
-            onChange={(e) => setDraft({ ...draft, app_name: e.target.value })}
-            aria-describedby="app_name-error"
-          />
-        </label>
-        <FieldMessage id="app_name-error" message={fieldMessage("app_name")} />
-
-        <label>
           Aussehen
           <select
             value={draft.theme}

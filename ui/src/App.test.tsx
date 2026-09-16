@@ -146,6 +146,9 @@ function backend(cmd: string, args: Record<string, unknown> = {}): unknown {
       return { examples: [], hints: [] };
     case "template_get":
       return templates[0];
+    case "template_delete":
+    case "source_delete":
+      return null;
     case "template_save":
       return { ...template("t1", "Fahrplan"), slug: (args.input as TemplateInput).slug };
     case "diagram_preview":
@@ -196,7 +199,7 @@ beforeEach(() => {
   saved.path = null;
   saved.svg = undefined;
   nextError = null;
-  config = { app_name: "Vizu Notion", theme: "light", accent: "#3b6ea5" };
+  config = { theme: "light", accent: "#3b6ea5" };
   token = { origin: "store", hint: "ntn_…stuv", store: "Schlüsselbund", store_error: null };
   mockWindows("main");
   mockIPC((cmd, args) => {
@@ -519,5 +522,33 @@ describe("Oberfläche", () => {
 
     await waitFor(() => expect(commands("diagram_render")).toHaveLength(1));
     expect(commands("export_svg")).toHaveLength(0);
+  });
+
+  it("löscht ein Diagramm erst nach der Rückfrage", async () => {
+    const user = userEvent.setup();
+    templates = [template("t1", "Fahrplan")];
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: /Fahrplan/ }));
+    await user.click(await screen.findByRole("button", { name: "Bearbeiten" }));
+    await user.click(await screen.findByRole("button", { name: "Löschen" }));
+    expect(commands("template_delete")).toHaveLength(0);
+
+    await user.click(screen.getByRole("button", { name: "Endgültig löschen" }));
+    await waitFor(() => expect(commands("template_delete")[0]?.args).toEqual({ id: "t1" }));
+  });
+
+  it("löscht eine Quelle erst nach der Rückfrage", async () => {
+    const user = userEvent.setup();
+    sources = [overview("a", "Projekte", 12)];
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: /Projekte/ }));
+    await user.click(await screen.findByRole("button", { name: "Bearbeiten" }));
+    await user.click(await screen.findByRole("button", { name: "Löschen" }));
+    expect(commands("source_delete")).toHaveLength(0);
+
+    await user.click(screen.getByRole("button", { name: "Endgültig löschen" }));
+    await waitFor(() => expect(commands("source_delete")[0]?.args).toEqual({ id: "a" }));
   });
 });

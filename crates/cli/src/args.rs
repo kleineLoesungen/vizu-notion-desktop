@@ -246,7 +246,7 @@ pub enum ConfigCommand {
 
     /// Eine Einstellung setzen.
     ///
-    /// Schlüssel: `app_name`, `theme` (system|light|dark), `accent` (#rrggbb).
+    /// Schlüssel: `theme` (system|light|dark), `accent` (#rrggbb).
     Set { key: String, value: String },
 
     /// Einstellungen auf die Voreinstellung zurücksetzen.

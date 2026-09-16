@@ -538,13 +538,15 @@ fn einstellungen_ueberleben_den_programmstart() {
 #[test]
 fn eine_kaputte_einstellung_wird_nicht_uebernommen() {
     let ctx = Ctx::new();
-    ctx.run(&["config", "set", "app_name", "Vereinsportal"])
-        .ok();
+    ctx.run(&["config", "set", "theme", "dark"]).ok();
     assert_eq!(ctx.run(&["config", "set", "accent", "blau"]).code, 4);
 
     let config = ctx.run(&["config", "show", "--json"]).ok().json();
     assert_eq!(config["accent"], "#3b6ea5", "alter Wert blieb stehen");
-    assert_eq!(config["app_name"], "Vereinsportal");
+    assert_eq!(
+        config["theme"], "dark",
+        "die gültige Einstellung steht noch"
+    );
 }
 
 #[test]

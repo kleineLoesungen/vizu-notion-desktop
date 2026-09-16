@@ -198,7 +198,6 @@ impl Out {
             self.print(config);
             return;
         }
-        println!("app_name  {}", config.app_name);
         println!("theme     {:?}  ({})", config.theme, config.theme.label());
         println!("accent    {}", config.accent);
     }
