@@ -133,22 +133,25 @@ Komponenten *können* nicht speichern — sie importieren `api` nicht, der
 Schichtwächter besteht darauf. Das Gegenstück zu `Model`/`Action` im
 egui-Kit, nur in der Sprache von React.
 
-## Markdown und Mermaid
+## Vom Vorlagentext zum Bild
 
 ```
-Notiz.body ──marked──▶ HTML ──DOMPurify──▶ sicheres HTML ──▶ .markdown
-                                                              │
-                              <pre><code class="language-mermaid"> gefunden?
-                                                              │ ja
-                                              import("mermaid") (einmal)
-                                              parse → render → SVG ersetzt <pre>
+Vorlage (.mmd)  ──core::template──▶  Mermaid-Text  ──▶  ui/lib/mermaid.ts
+   Handlebars + Notion-Daten             │              import("mermaid") (einmal)
+                                         │              parse → render → SVG
+                                         └──▶  vizu-notion render (stdout)
 ```
 
-* **Bereinigt wird immer.** Im Webview hätte ein eingeschleustes Skript
-  Zugriff auf jeden IPC-Befehl — und damit auf die Daten jeder Quelle.
+* **Den Text erzeugt `core`, nicht die Oberfläche.** Deshalb liefert
+  `vizu-notion render` genau das, was im Fenster steht.
 * **Mermaid wird nachgeladen.** Vite legt es als eigene Stücke ins Bündel.
-  Eine Notiz ohne Diagramm lädt es nie; die Anwendung startet ohne Wartezeit
-  und ohne Netz.
+  Wer nur Fluss und Metro-Karte ansieht, lädt es nie; die Anwendung startet
+  ohne Wartezeit und ohne Netz.
+* **Fluss und Metro-Karte gehen ohne Mermaid.** Ihre Koordinaten kommen aus
+  `core::flow` und `core::metro`, gezeichnet wird eigenes SVG.
+* **Wird aus Benutzertext je HTML, dann nur über `ui/src/lib/markdown.ts`.**
+  Dort bereinigt DOMPurify. Im Webview hätte ein eingeschleustes Skript
+  Zugriff auf jeden IPC-Befehl — und damit auf die Daten jeder Quelle.
 * **Veraltete Darstellungen werden verworfen.** Wer tippt, erzeugt alle
   150 ms eine neue; eine langsame alte darf eine schnelle neue nicht
   überschreiben (`isCurrent` in `lib/mermaid.ts`).

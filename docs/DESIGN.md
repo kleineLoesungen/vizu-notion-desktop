@@ -16,7 +16,6 @@ dunklen Aussehen falsch ist. `crates/core/tests/layering.rs`
 Über die Einstellungen, in der Oberfläche oder auf der Kommandozeile:
 
 ```bash
-vizu-notion config set app_name "Notizbuch"
 vizu-notion config set theme dark          # system | light | dark
 vizu-notion config set accent "#aa3344"
 ```

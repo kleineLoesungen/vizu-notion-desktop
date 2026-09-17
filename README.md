@@ -1,19 +1,17 @@
-# Vizu Notion — Desktop-Anwendungen mit Tauri, Weboberfläche und Kommandozeile
+# Vizu Notion — Notion-Datenbanken als Diagramme
 
-Startpunkt für Desktop-Werkzeuge auf **macOS und Linux**, deren Oberfläche aus
-dem Web kommt: **React und TypeScript** im Webview des Betriebssystems, damit
-Browserpakete wie **mermaid.js**, marked oder Chart-Bibliotheken einfach über
-npm benutzbar sind. Dahinter **Tauri 2** und **eine** Fachlogik in Rust, die
-auch ein Kommandozeilenwerkzeug bedient. Daten in einer **eingebetteten
-SQLite**.
+Eine Desktop-Anwendung für **macOS und Linux**, die Seiten aus Notion holt und
+daraus Diagramme zeichnet: **Mermaid** aus eigenen Vorlagen, ein **Fluss**
+entlang der Nachfolger und eine **Metro-Karte** auf einer Zeitachse. Die Daten
+liegen danach lokal in SQLite — gezeichnet wird ohne Netz.
 
-Gemacht für die Arbeit mit KI-Assistenten: klare Regeln in
-[CLAUDE.md](CLAUDE.md) (inklusive der Tauri-1-Fallen, in die Sprachmodelle
-tappen), aus Rust erzeugte TypeScript-Typen, fertige Rezepte, ein strenges
-`just check` — und Tests, die die Architektur und die IPC-Grenze bewachen.
+Dieselbe Fachlogik bedient ein Kommandozeilenwerkzeug: `vizu-notion render
+fahrplan` liefert denselben Mermaid-Text, den das Fenster anzeigt.
 
-Das Gegenstück ohne Webview, in reinem Rust mit egui:
-[vibe-starter-desktop](https://github.com/kleineLoesungen/vibe-starter-desktop).
+Nachfolger der Webapp
+[vizu-notion-local](https://github.com/kleineLoesungen/vizu-notion-local).
+Bestehende `.mmd`-Vorlagen und `sources.json` laufen unverändert weiter — die
+Ausgabe ist bytegleich, und ein Test hält das fest.
 
 ---
 
@@ -32,86 +30,58 @@ sudo apt install libwebkit2gtk-4.1-dev libxdo-dev libssl-dev \
 
 ```bash
 just setup    # npm-Pakete, Werkzeuge, einmal durchbauen
-just dev      # Desktop-Anwendung starten, lädt bei Änderungen neu
+just dev      # Anwendung starten, lädt bei Änderungen neu
 ```
 
-Das Fenster zeigt die eingerichteten Quellen. Angelegt werden sie vorerst auf
-der Kommandozeile — sie ist dieselbe Anwendung:
+Beim ersten Start führt die Anwendung durch die vier Schritte: Token,
+Quelle, Abruf, Diagramm.
 
-```bash
-just cli token set
-just cli source add Projekte --database <ID> --map title=Name
-just cli fetch
-just cli source list --json | jq -r '.[].source.name'
-```
+### Was man in Notion braucht
 
-Beides arbeitet auf **derselben** Datenbank. Wo die liegt, sagt `just cli paths`.
-Ohne die echten Daten anzufassen: `just dev-sandbox` und `just sandbox source list`.
+1. Unter [notion.so/profile/integrations](https://www.notion.so/profile/integrations)
+   eine **interne Integration** anlegen. Ein persönlicher Token ist nicht nötig.
+2. Die Datenbank in Notion über **… → Verbindungen** mit der Integration teilen.
+   Ohne diesen Schritt sieht die Anwendung sie nicht.
+3. Den Token in der Anwendung unter *Einstellungen* speichern — er liegt im
+   Schlüsselbund des Systems, nicht in einer Datei.
+
+Die Kennung der Datenbank sind die 32 Zeichen aus ihrer Adresse; „Spalten
+holen" im Quellen-Dialog prüft sie und schlägt die Zuordnung gleich vor.
 
 ---
 
-## Eigenes Projekt aus dem Kit
+## Was die Anwendung kann
 
-Das Kit selbst bleibt unverändert. Zwei Wege zu einer eigenen Kopie:
-
-**Über GitHub** — der grüne Knopf **„Use this template"** legt ein eigenes
-Repository mit frischer Historie an. Danach klonen und umbenennen:
-
-```bash
-git clone git@github.com:<du>/notizbuch.git
-cd notizbuch
-./scripts/new-project.sh notizbuch "Notizbuch"
-just setup && just check
-```
-
-**Lokal**, ohne Umweg über GitHub:
-
-```bash
-git clone https://github.com/kleineLoesungen/vibe-starter-tauri notizbuch
-cd notizbuch
-./scripts/new-project.sh notizbuch "Notizbuch"
-git remote remove origin        # zeigt sonst noch auf das Kit
-just setup && just check
-```
-
-`new-project.sh` benennt um: Kistennamen, Binaries, Bündelkennung,
-Umgebungsvariablen, Datenverzeichnis, Fenstertitel, `package.json`,
-`tauri.conf.json`.
-
-**Das Skript direkt nach dem Klonen ausführen.** Bis dahin heißt das Projekt
-noch „starter" und benutzt dasselbe Datenverzeichnis wie das Kit — zwei
-Projekte mit demselben Namen teilen sich unbemerkt eine Datenbank.
-
-### Spätere Verbesserungen aus dem Kit holen
-
-```bash
-git remote add kit https://github.com/kleineLoesungen/vibe-starter-tauri
-git fetch kit
-git log --oneline kit/main
-git cherry-pick <sha>
-```
-
-Ein `merge` wäre der falsche Griff — er zöge die ganze Kit-Geschichte herein.
-
----
-
-## Was drin ist
-
-| Bereich | Umsetzung |
+| | |
 |---|---|
-| Aufbau | Arbeitsbereich `core` · `cli` · `desktop` + `ui/`, bewacht von einem Test |
-| Desktop | Tauri 2.11 — Webview des Systems (WebKit), Fenster in wenigen MB statt Chromium |
-| Oberfläche | React 19, TypeScript 7, Vite 8 — kein CSS-Framework, keine Zustandsbibliothek |
-| Browserpakete | mermaid 12 (nachgeladen), marked, DOMPurify — alles über npm, läuft offline |
-| IPC | Befehle als `async fn`, eine Fehlerhülle wie im CLI-JSON, TS-Typen aus Rust (ts-rs) |
-| Sicherheit | CSP ohne fremde Quellen, Capabilities, bereinigtes Markdown, Verweise im Standardbrowser |
-| Kommandozeile | clap 4, `--json` bei jedem Befehl, eigene Rückgabewerte, Handbuch, Vervollständigung |
-| Daten | SQLite eingebettet, `STRICT`, WAL, nummerierte Migrationen |
-| Einstellungen | TOML, von Oberfläche und CLI gemeinsam benutzt; hell/dunkel/System, Akzentfarbe |
-| Prüfung | Feldgenaue Fehler aus Rust — in der Oberfläche am Feld, in der CLI als `error.fields` |
-| Ausliefern | `.app` + `.dmg` (auch universal), `.deb` + `.AppImage`, CLI-Tarball |
-| Qualität | rustfmt, Clippy, Biome, `tsc`, `cargo deny`, `npm audit` — Warnungen sind Fehler |
-| Tests | Fachlogik, Schichtwächter, CLI-Schnappschüsse, IPC ohne Fenster, Oberfläche mit `mockIPC` |
+| **Quellen** | Eine Notion-Datenbank unter einem Namen, mit einer Zuordnung: welche Spalte ist `title`, `date`, `next`, `tag` … Der Vorschlag dafür kommt aus den Spalten selbst. |
+| **Abrufen** | Alle Seiten samt Relationen, mit Takt und Wiederholung bei 429. Das Ergebnis bleibt in SQLite; Zeichnen braucht danach kein Netz. |
+| **Mermaid** | Eigene Vorlagen mit Handlebars, Beispiele und Spickzettel im Editor, Vorschau beim Tippen. |
+| **Fluss** | Ohne Vorlage: Knoten und Pfeile entlang der Rolle `next`, angeordnet in core. |
+| **Metro-Karte** | Zeitachse aus `date`, Linien entlang `next`, Bänder aus `tag`, mit Abzweigungen und Umsteigestationen. |
+| **Filtern** | Einzelne Seiten ausblenden, „nur Verwandte" zeigen, je Quelle aufklappen. |
+| **Ansichten** | Das Eingestellte unter einem Namen sichern und wieder öffnen — der Ersatz für die Teilen-Links der Webapp. |
+| **Ausgeben** | SVG speichern; auf der Kommandozeile Mermaid-Text oder JSON. |
+
+---
+
+## Die Kommandozeile
+
+Dieselbe Anwendung, dieselbe Datenbank:
+
+```bash
+just cli token set                                    # Token speichern
+just cli source add Projekte --database <ID> --auto   # Zuordnung vorschlagen lassen
+just cli fetch                                        # von Notion holen
+just cli render fahrplan                              # Mermaid-Text auf stdout
+just cli metro Projekte --json | jq '.lines | length'
+just cli view list                                    # gespeicherte Ansichten
+```
+
+Wo die Datenbank liegt, sagt `just cli paths`. Ohne die echten Daten
+anzufassen: `just dev-sandbox` und `just sandbox source list`.
+
+Alle Befehle, Rückgabewerte und das JSON-Format: [docs/CLI.md](docs/CLI.md).
 
 ---
 
@@ -121,11 +91,15 @@ Ein `merge` wäre der falsche Griff — er zöge die ganze Kit-Geschichte herein
 crates/
 ├── core/                    ← FACHLOGIK. Kennt weder clap noch tauri noch stdout.
 │   ├── migrations/            Nummerierte SQL-Dateien, ins Binary einkompiliert
-│   ├── src/source.rs          Quellen: Notion-Datenbank unter einem Namen
-│   ├── src/notion/           Notion-API: Transport, Takt, Modelle
-│   ├── src/fetch.rs          Abrufen und zwischenspeichern
-│   ├── src/secret.rs         Der Notion-Token
-│   ├── src/config.rs          Einstellungen, TOML
+│   ├── src/source.rs          Quellen, Zuordnung, Vorschlag aus den Spalten
+│   ├── src/notion/            Notion-API: Transport, Takt, Modelle
+│   ├── src/fetch.rs           Abrufen, zwischenspeichern, Schema ansehen
+│   ├── src/secret.rs          Der Notion-Token
+│   ├── src/template/          Mermaid aus Vorlagen — bytegleich zur Webapp
+│   ├── src/flow.rs            Flussdiagramm: Graph und Anordnung
+│   ├── src/metro.rs           Metro-Karte: Ketten, Zeitachse, Bänder
+│   ├── src/view.rs            Gespeicherte Ansichten
+│   ├── src/hidden.rs          Versteckte Diagramme
 │   ├── src/paths.rs           Die einzige Stelle mit macOS/Linux-Unterschieden
 │   └── tests/layering.rs      Der Wächter über die Schichtregel (Rust + TypeScript)
 │
@@ -135,26 +109,22 @@ crates/
     ├── tauri.conf.json        Fenster, CSP, Bündel
     ├── capabilities/          Was das Fenster darf
     ├── src/commands.rs        Die IPC-Befehle
-    ├── src/error.rs           ApiError — die Fehlerhülle
     ├── tests/ipc_contract.rs  Befehle ohne Fenster aufrufen; Rust ↔ api.ts
     └── tests/bindings.rs      Erzeugt ui/src/bindings.ts
 
-ui/
-├── index.html
-└── src/
-    ├── api.ts                 ← Die EINZIGE Stelle, die mit Rust spricht
-    ├── bindings.ts            Erzeugt aus Rust — nicht von Hand ändern
-    ├── App.tsx                Zustand, ruft api
-    ├── components/            Zeichnen nur
-    ├── lib/markdown.ts        Markdown → bereinigtes HTML
-    ├── lib/mermaid.ts         Diagramme, nachgeladen
-    ├── theme.css              Die EINZIGE Datei mit Farben
-    └── app.css                Aufbau und Abstände
-
-scripts/
-├── new-project.sh           Kit zu eigenem Projekt umbenennen
-└── package-cli.sh           dist/vizu-notion-cli-<version>-<os>-<arch>.tar.gz
+ui/src/
+├── api.ts                   ← Die EINZIGE Stelle, die mit Rust spricht
+├── bindings.ts              Erzeugt aus Rust — nicht von Hand ändern
+├── App.tsx                  Zustand, ruft api
+├── components/              Zeichnen nur: Diagramme, Listen, Dialoge
+├── lib/mermaid.ts           Mermaid, nachgeladen
+├── theme.css                Die EINZIGE Datei mit Farben
+└── app.css                  Aufbau und Abstände
 ```
+
+Rechnen tut `core`, zeichnen tut `ui`: Auch die Anordnung von Fluss und
+Metro-Karte kommt aus Rust, damit Fenster und Kommandozeile nicht
+auseinanderlaufen können.
 
 ---
 
@@ -171,13 +141,35 @@ Notarisieren: [docs/RELEASE.md](docs/RELEASE.md).
 
 ---
 
+## Mitarbeiten
+
+```bash
+just check    # rustfmt, Clippy, Biome, tsc, alle Tests, cargo deny, npm audit
+```
+
+Warnungen sind Fehler. Die Regeln des Projekts stehen in
+[CLAUDE.md](CLAUDE.md) — sie gelten für Menschen wie für KI-Assistenten.
+
+Entstanden aus dem Kit
+[vibe-starter-tauri](https://github.com/kleineLoesungen/vibe-starter-tauri).
+Verbesserungen von dort holt man einzeln:
+
+```bash
+git remote add kit https://github.com/kleineLoesungen/vibe-starter-tauri
+git fetch kit && git log --oneline kit/main
+git cherry-pick <sha>
+```
+
+---
+
 ## Weiterlesen
 
 | Datei | Inhalt |
 |---|---|
-| [CLAUDE.md](CLAUDE.md) | Die Regeln. Tauri-2-Fallstricke, festgenagelte Versionen, Schichtregel |
+| [CLAUDE.md](CLAUDE.md) | Die Regeln. Tauri-2-Fallstricke, Notion-Eigenheiten, Schichtregel |
+| [docs/UMSETZUNG.md](docs/UMSETZUNG.md) | Der Plan: Phasen, Entscheidungen, was von der Webapp übernommen wurde |
+| [docs/CLI.md](docs/CLI.md) | Befehle, Rückgabewerte, JSON-Format |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Warum die Schichten so geschnitten sind, wie die IPC-Grenze aussieht |
 | [docs/RECIPES.md](docs/RECIPES.md) | npm-Paket einbinden, neuer Befehl, neue Ressource, Plugin, Hintergrundarbeit |
 | [docs/DESIGN.md](docs/DESIGN.md) | Aussehen ändern, Farbmarken, Symbole |
-| [docs/CLI.md](docs/CLI.md) | Befehle, Rückgabewerte, JSON-Format |
 | [docs/RELEASE.md](docs/RELEASE.md) | Bündeln, signieren, notarisieren, veröffentlichen |

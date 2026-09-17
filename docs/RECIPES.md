@@ -27,7 +27,7 @@ stehen.
 
 ```ts
 // ui/src/lib/highlight.ts
-// Nachgeladen wie Mermaid: nur wer Code in einer Notiz hat, bezahlt dafür.
+// Nachgeladen wie Mermaid: nur wer Code anzeigt, bezahlt dafür.
 type Hljs = (typeof import("highlight.js"))["default"];
 let loading: Promise<Hljs> | undefined;
 

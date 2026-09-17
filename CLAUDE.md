@@ -139,6 +139,54 @@ ls crates/desktop/gen/schemas/          # alle Berechtigungen, nach dem ersten B
 
 ---
 
+## Notion — die Fallstricke
+
+Die zweite Stelle, an der Wissen aus dem Gedächtnis danebenliegt: Die
+Notion-API hat sich mit der Version **`2025-09-03`** spürbar geändert, und die
+meisten Beispiele im Netz stammen von davor.
+
+1. **Eine Datenbank ist nicht mehr die Datenquelle.** Eine `database` hat eine
+   Liste von `data_sources`; Schema und Seiten hängen an der Datenquelle:
+
+   | alt (2022-06-28) ❌ | jetzt (2025-09-03) ✅ |
+   |---|---|
+   | `GET /databases/{id}` liefert `properties` | `GET /data_sources/{id}` liefert sie |
+   | `POST /databases/{id}/query` | `POST /data_sources/{id}/query` |
+
+   `fetch::download` holt deshalb erst die Datenbank, dann ihre erste
+   Datenquelle. Mehrere Datenquellen kommen vor — dann steht eine Warnung im
+   Protokoll und es wird die erste benutzt.
+
+2. **Relationen sind bei mehr als 25 Zielen abgeschnitten.** Die Seite trägt
+   dann `has_more: true` und nur die ersten 25. Wer das übersieht, verliert
+   stillschweigend Kanten — `complete_relations` holt sie nach
+   (`GET /pages/{id}/properties/{property_id}`). Die Webapp tat das nicht; das
+   war einer ihrer Fehler.
+
+3. **Drei Anfragen je Sekunde.** `notion::Client` taktet selbst und wiederholt
+   bei `429` nach `Retry-After`. Wer daran vorbei anfragt, bekommt Fehler, die
+   erst bei großen Datenbanken auftreten.
+
+4. **IPv6 kann minutenlang hängen.** In manchen Netzen antwortet
+   `api.notion.com` über IPv6 nicht, und der Verbindungsversuch läuft ins Leere.
+   `notion::transport` löst deshalb **IPv4 zuerst** auf und setzt
+   `timeout_connect` und `timeout_global`. Nicht entfernen.
+
+5. **Ein Token steht nie im Code, in einem Test oder im Protokoll.** Er liegt
+   im Schlüsselbund (`secret`), ersatzweise in `VIZU_NOTION_TOKEN`. Tests
+   sprechen **nicht** mit Notion: Sie geben `notion::Transport` eine Attrappe
+   und lesen festgehaltene Antworten aus
+   `crates/core/tests/fixtures/notion/` (siehe README dort).
+
+6. **Leere Werte sind nicht `null`.** Ein leeres `status`, `formula`,
+   `people` oder `rollup` kommt als Objekt mit leerem Inhalt. `rows::text_of`
+   kennt die Formen; eigene Abfragen auf `value["…"]` gehen daran vorbei.
+
+7. **Der Link zu einer Seite ist `url` aus der Antwort**, nicht
+   `notion.so/{id}` zusammengebaut.
+
+---
+
 ## Sprache im Code
 
 * **Bezeichner englisch** — Typen, Funktionen, Felder, Tabellen, Befehle,

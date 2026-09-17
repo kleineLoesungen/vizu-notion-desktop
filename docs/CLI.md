@@ -39,6 +39,7 @@ benutzen Vorlagen sie später (`{{#each Projekte}}`).
 
 ```bash
 vizu-notion source add Projekte --database <ID> --map title=Name --map next=Nächstes
+vizu-notion source add Projekte --database <ID> --auto    # Zuordnung vorschlagen lassen
 vizu-notion source list
 vizu-notion source show Projekte
 vizu-notion source edit Projekte --map date=Start --unmap next
@@ -52,6 +53,12 @@ vizu-notion source rm Projekte --yes
   Buchstaben, Ziffern und `_` (`title`, `next`, `parent`, `tag`, `status`,
   `date`) — genau so heißen sie in Vorlagen. `id` ist vergeben: das ist immer
   die Seiten-ID.
+* **`--auto`** fragt die Spalten bei Notion ab und leitet die Zuordnung daraus
+  ab: `title` ist die Titelspalte, `next` eine Relation auf dieselbe Datenbank,
+  `date` ein Datum, `tag` eine Mehrfachauswahl. Bei mehreren Bewerbern
+  entscheidet der Name; wo die Wahl geraten wäre, wird nichts vorgeschlagen.
+  Ein eigenes `--map` hat Vorrang. Braucht Netz und Token — es ist derselbe
+  Vorschlag, den der Dialog im Fenster anbietet.
 * **`edit`** ersetzt nur, was genannt wird. Zeigt eine Quelle danach auf eine
   **andere** Datenbank, werden die zwischengespeicherten Seiten verworfen.
 
@@ -168,6 +175,29 @@ Anders als in einer Vorlage ist in beiden Ansichten jede Seite ein eigener
 Knoten, auch bei gleichem Titel: Der Graph kommt aus den Relationen, und die
 kennen Seiten, keine Texte.
 
+## Gespeicherte Ansichten
+
+Eine Ansicht hält fest, welches Diagramm gemeint ist und was daran eingestellt
+war: ausgeblendete Seiten und beim Fluss die zweite Zeile. Sie ersetzt die
+Teilen-Links der Webapp — für die es hier keinen Server gibt.
+
+```bash
+vizu-notion view add "Roadmap ohne Altlasten" --metro Projekte --hide 3dcf…,8a12…
+vizu-notion view add "Fluss mit Status" --flow Projekte --sub status
+vizu-notion view add "Fahrplan" --template fahrplan
+vizu-notion view list
+vizu-notion view show "Roadmap ohne Altlasten"
+vizu-notion view rm "Fahrplan" --yes
+```
+
+`view show` zeichnet dasselbe wie `render`, `flow` oder `metro` mit denselben
+Optionen — nur muss man sie nicht wieder eintippen. Auch `--json` gilt.
+
+Gespeichert wird die **Kennung** der Vorlage bzw. der Quelle, nicht ihr Name:
+Wird die Quelle umbenannt, zeigt die Ansicht weiter auf dieselbe. Wird sie
+gelöscht, bleibt die Ansicht stehen und meldet beim Zeichnen, dass ihr Ziel
+fehlt — stillschweigend mitlöschen wäre die falsche Voreinstellung.
+
 ## Kennungen
 
 Quellen werden über ihren **Namen** angesprochen (ohne Rücksicht auf Groß- und
@@ -275,7 +305,7 @@ VIZU_NOTION_TOKEN="$(pass notion)" vizu-notion fetch --json
 VIZU_NOTION_DATA_DIR=/tmp/t/data VIZU_NOTION_CONFIG_DIR=/tmp/t/config vizu-notion source list
 ```
 
-`source rm` fragt nach, wenn stdin ein Terminal ist. Ist es keins, bricht der
+`source rm` und `view rm` fragen nach, wenn stdin ein Terminal ist. Ist es keins, bricht der
 Befehl ab und verweist auf `--yes`. Stillschweigend zu löschen, weil niemand
 antworten kann, wäre die falsche Voreinstellung.
 
@@ -287,7 +317,6 @@ Dieselbe Datei, die auch die Oberfläche liest und schreibt.
 vizu-notion config show
 vizu-notion config set theme dark          # system | light | dark
 vizu-notion config set accent "#aa3344"    # #rrggbb
-vizu-notion config set app_name "Vizu Notion"
 vizu-notion config reset
 ```
 
