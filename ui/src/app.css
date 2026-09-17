@@ -749,6 +749,11 @@ button.small {
   grid-column: 1 / -1;
 }
 
+.mapping-head {
+  font-size: 12px;
+  margin-top: var(--space-2);
+}
+
 .token-box {
   display: flex;
   flex-direction: column;

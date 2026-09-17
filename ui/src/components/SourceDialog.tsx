@@ -21,7 +21,15 @@ type Props = {
 };
 
 /** Rollen, die Metro-Karte, Fluss und die Vorlagen der Webapp kennen. */
-const KNOWN_ROLES = ["title", "date", "next", "parent", "tag", "status", "assignee"];
+const KNOWN_ROLES: [string, string][] = [
+  ["title", "Titel der Seite"],
+  ["date", "Datum — Zeitachse der Metro-Karte"],
+  ["next", "Nachfolger — Linien und Pfeile"],
+  ["parent", "übergeordnete Seite"],
+  ["tag", "Schlagwort — Bänder der Metro-Karte"],
+  ["status", "Status"],
+  ["assignee", "zuständige Person"],
+];
 
 export function SourceDialog({
   source,
@@ -80,7 +88,8 @@ export function SourceDialog({
           <legend>Zuordnung</legend>
           <p className="muted">
             Links der Name, unter dem Vorlagen das Feld benutzen (<code>{"{{title}}"}</code>),
-            rechts die Spalte in Notion.
+            rechts die Spalte in Notion. Eine Notion-Spalte „Nächstes“ gehört also nach rechts, die
+            Rolle <code>next</code> nach links.
           </p>
           {properties.length === 0 && (
             <p className="muted">
@@ -97,10 +106,20 @@ export function SourceDialog({
             ))}
           </datalist>
           <datalist id="known-roles">
-            {KNOWN_ROLES.map((role) => (
-              <option key={role} value={role} />
+            {KNOWN_ROLES.map(([role, hint]) => (
+              <option key={role} value={role}>
+                {hint}
+              </option>
             ))}
           </datalist>
+
+          {/* Die beiden Felder sehen gleich aus; ohne Überschrift ist nicht zu
+              sehen, welche Seite welche ist. */}
+          <div className="mapping-row mapping-head" aria-hidden="true">
+            <span className="muted">Rolle</span>
+            <span />
+            <span className="muted">Spalte in Notion</span>
+          </div>
 
           {mappings.map((mapping, index) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: die Zeilen haben keine eigene Kennung
@@ -108,6 +127,7 @@ export function SourceDialog({
               <input
                 aria-label={`Rolle ${index + 1}`}
                 list="known-roles"
+                placeholder="next"
                 value={mapping.role}
                 onChange={(e) => change(index, { role: e.target.value })}
               />
@@ -115,6 +135,7 @@ export function SourceDialog({
               <input
                 aria-label={`Spalte ${index + 1}`}
                 list="notion-properties"
+                placeholder="Nächstes"
                 value={mapping.property}
                 onChange={(e) => change(index, { property: e.target.value })}
               />

@@ -122,10 +122,15 @@ impl SourceInput {
             if !is_role_name(&role) {
                 // Der Umschreiber der Vorlagen erkennt nur solche Namen als
                 // Feld ({{next}}). Ein „next-step" wäre dort unsichtbar.
+                // „Nächstes“ als Rolle heißt fast immer: Die beiden Seiten
+                // der Zuordnung sind vertauscht. Das steht deshalb in der
+                // Meldung, nicht nur die Regel.
                 v.add(
                     "mappings",
                     format!(
-                        "Rolle „{role}\u{201c} ungültig — Buchstaben, Ziffern und _, nicht mit einer Ziffer beginnend"
+                        "Rolle „{role}\u{201c} ungültig. Links steht die Rolle, die Vorlagen benutzen \
+                         (title, date, next, tag …), rechts der Spaltenname aus Notion. \
+                         Erlaubt sind Buchstaben, Ziffern und _, nicht mit einer Ziffer beginnend."
                     ),
                 );
                 continue;
