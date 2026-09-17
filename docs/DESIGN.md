@@ -140,6 +140,5 @@ In `crates/desktop/tauri.conf.json`:
 
 Die Mindestgröße nicht weglassen: Darunter überlappen Liste und Editor. Der
 Titel steht in `tauri.conf.json`, der Name in der Seitenleiste in
-`ui/index.html` — beide setzt `scripts/new-project.sh`. Eine Einstellung dafür
-gibt es nicht: Eine Anwendung, die ihren eigenen Namen ändern kann, verwirrt
-mehr, als sie nützt.
+`ui/index.html`. Eine Einstellung dafür gibt es nicht: Eine Anwendung, die
+ihren eigenen Namen ändern kann, verwirrt mehr, als sie nützt.

@@ -121,7 +121,7 @@ und wird zur Laufzeit verweigert.
    `api.openExternal` öffnet im Standardbrowser.
 
 9. **Pfade kommen aus `core`, nicht aus Tauri.** `app.path().app_data_dir()`
-   liefert `~/Library/Application Support/de.example.vizu_notion` — die
+   liefert `~/Library/Application Support/de.kleineloesungen.vizu-notion` — die
    CLI sucht in `…/vizu-notion`. Beide Schalen benutzen `vizu_notion_core::Paths`,
    sonst sehen sie verschiedene Datenbanken.
 
