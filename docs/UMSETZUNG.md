@@ -241,6 +241,13 @@ Risiko blockiert Phase 1–4 nicht). Befunde vorab:
   Farben dort (Linienpalette) sollen trotzdem aus `core` kommen, weil `core`
   die Linien ohnehin baut.
 
+**Erledigt.** Metroviz wurde am Ende gar nicht übernommen — die Karte zeichnet
+`core::metro` samt eigenem SVG, und damit fallen die fremden Stile weg. Die
+Nonce-Falle betrifft nur noch Mermaid; sie ist mit
+`dangerousDisableAssetCspModification: ["style-src"]` entschärft und **im
+gebauten Bündel nachgesehen** (macOS, 2026-09-17): Alle Diagrammarten
+erscheinen richtig, keine schwarzen Flächen.
+
 ### Phase 1 — Fundament: Quellen, Token, Abruf
 
 * `note` entfernen: core, CLI, Desktop, UI, Tests, Schnappschüsse, Migration.
@@ -323,10 +330,10 @@ Risiko blockiert Phase 1–4 nicht). Befunde vorab:
 * Gebaut auf macOS: `.app` und `.dmg`. Dabei kam heraus, dass die
   Bündelkennung aus dem Umbenenn-Skript einen Unterstrich enthielt, den Tauri
   ablehnt (jetzt `de.kleineloesungen.vizu-notion`).
+* Das gebaute Bündel wurde geöffnet und angesehen: Die Diagramme erscheinen
+  richtig, die Nonce-Falle ist also entschärft (Risiko S4).
 * **Offen:** Das Linux-Bündel (`.deb`/`.AppImage`) ist nur konfiguriert, nicht
-  gebaut — dafür braucht es einen Linux-Rechner oder CI. Und die Darstellung
-  im **gebauten** Bündel (Risiko S4: Nonce vor `style-src`) hat noch niemand
-  angesehen; im Entwicklungsbetrieb sieht man den Unterschied nicht.
+  gebaut — dafür braucht es einen Linux-Rechner oder CI.
 
 ---
 

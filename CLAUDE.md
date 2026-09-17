@@ -113,7 +113,8 @@ und wird zur Laufzeit verweigert.
    sobald eine Nonce da ist, **ignoriert der Browser `'unsafe-inline'`**. Im
    Entwicklungsbetrieb sieht alles richtig aus, im fertigen Bündel sind die
    Diagramme schwarze Flächen. Deshalb steht in `tauri.conf.json`
-   `"dangerousDisableAssetCspModification": ["style-src"]`. Nicht entfernen.
+   `"dangerousDisableAssetCspModification": ["style-src"]`. Nicht entfernen —
+   im gebauten Bündel nachgesehen, mit der Einstellung stimmt die Darstellung.
    Für `script-src` bleibt die Nonce an — dort ist sie ein Schutz.
 
 8. **Verweise öffnen nicht von selbst im Browser.** Ein `<a href>` im Webview
