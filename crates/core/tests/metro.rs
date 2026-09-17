@@ -10,12 +10,22 @@ use vizu_notion_core::source::{self, ColumnMapping, Source, SourceInput};
 use vizu_notion_core::{App, fetch};
 
 fn app_mit_projekten() -> (App, Source) {
+    app_mit("Projekte", "projekte")
+}
+
+/// Die Roadmap: gedacht für die Karte — mit Abzweigungen, Einmündungen und
+/// anderthalb Jahren Zeitraum. Siehe fixtures/notion/README.md.
+fn app_mit_roadmap() -> (App, Source) {
+    app_mit("Roadmap", "roadmap")
+}
+
+fn app_mit(name: &str, fixture: &str) -> (App, Source) {
     let app = App::in_memory().unwrap();
     let source = source::create(
         app.conn(),
         SourceInput::new(
-            "Projekte",
-            Ids::load().database("projekte"),
+            name,
+            Ids::load().database(fixture),
             vec![
                 ColumnMapping::new("title", "Name"),
                 ColumnMapping::new("next", "Nächstes"),
@@ -83,6 +93,60 @@ fn legt_ketten_entlang_der_nachfolger_an() {
         assert_eq!(stations.first().unwrap().kind, StationKind::Start);
         assert_eq!(stations.last().unwrap().kind, StationKind::Terminus);
     }
+}
+
+#[test]
+fn abzweigung_und_einmuendung_haengen_an_einer_station() {
+    let (app, source) = app_mit_roadmap();
+    let map = metro::build(app.conn(), source.id, &HashSet::new()).unwrap();
+
+    // „Architektur" zeigt auf zwei Nachfolger: Der zweite beginnt eine eigene
+    // Linie — die aber an der Station hängt, von der sie abzweigt, statt in
+    // der Luft. Ebenso münden „Rollout EU" und „Rollout US" in dieselbe
+    // Station „Version 1.0".
+    let stellen: Vec<(f32, f32)> = map
+        .lines
+        .iter()
+        .flat_map(|l| l.stations.iter().map(|s| (s.x, s.y)))
+        .collect();
+
+    let uebergaenge: Vec<_> = map
+        .lines
+        .iter()
+        .flat_map(|l| [l.entry, l.exit])
+        .flatten()
+        .collect();
+    assert!(
+        uebergaenge.len() >= 3,
+        "zu wenige Übergänge: {uebergaenge:?}"
+    );
+    for punkt in uebergaenge {
+        assert!(
+            stellen.contains(&(punkt.x, punkt.y)),
+            "der Übergang {punkt:?} liegt auf keiner Station"
+        );
+    }
+
+    // Die Abzweigung beginnt später als der Punkt, an dem sie abzweigt.
+    for line in &map.lines {
+        if let (Some(entry), Some(first)) = (line.entry, line.stations.first()) {
+            assert!(entry.x <= first.x, "{entry:?} liegt rechts von {first:?}");
+        }
+    }
+}
+
+#[test]
+fn die_roadmap_spannt_ueber_zwei_jahre() {
+    let (app, source) = app_mit_roadmap();
+    let map = metro::build(app.conn(), source.id, &HashSet::new()).unwrap();
+
+    assert_eq!(map.all_nodes.len(), 17);
+    // „Ideensammlung" hat kein Datum.
+    assert_eq!(map.undated.len(), 1);
+    assert!(map.ticks.iter().any(|t| t.label.ends_with("2026")));
+    assert!(map.ticks.iter().any(|t| t.label.ends_with("2027")));
+    // Vier Tags, vier Bänder — dazu eines für die Linien ohne Tag.
+    assert!(map.zones.len() >= 4, "{:?}", map.zones);
 }
 
 #[test]

@@ -278,7 +278,9 @@ describe("Oberfläche", () => {
 
     expect(await screen.findByRole("button", { name: /Projekte/ })).toBeTruthy();
     expect(commands("source_list")).toHaveLength(1);
-    expect(document.documentElement.dataset.theme).toBe("light");
+    // Das Farbschema setzt ein Effekt, nachdem die Einstellungen da sind —
+    // das kann einen Wimpernschlag nach der Liste geschehen.
+    await waitFor(() => expect(document.documentElement.dataset.theme).toBe("light"));
   });
 
   it("führt durch die vier Schritte bis zum ersten Diagramm", async () => {

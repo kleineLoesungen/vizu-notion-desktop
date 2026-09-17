@@ -1069,10 +1069,25 @@ button.destructive {
   stroke-width: 4;
 }
 
+/* Umsteigestation: Hier zweigt eine Linie ab oder mündet eine ein. Wie im
+   Liniennetzplan ein Ring, nicht der Punkt einer Linie. */
+.metro-station.interchange circle {
+  fill: var(--surface);
+  stroke: var(--text);
+  stroke-width: 3;
+}
+
 .metro-station text {
   fill: var(--text);
   font-size: 13px;
   text-anchor: middle;
+  /* Beschriftungen liegen zwangsläufig manchmal über einer Linie. Der Rand
+     in Hintergrundfarbe liegt hinter der Schrift (paint-order) und hält sie
+     lesbar — wie die weiße Kontur in gedruckten Netzplänen. */
+  paint-order: stroke fill;
+  stroke: var(--surface);
+  stroke-width: 3px;
+  stroke-linejoin: round;
 }
 
 .metro-station text.metro-date {

@@ -65,8 +65,17 @@ pub struct MetroStation {
     pub x: f32,
     pub y: f32,
     pub kind: StationKind,
+    /// Hier zweigt eine Linie ab oder mündet eine ein — eine Umsteigestation.
+    pub interchange: bool,
     /// Beschriftung über oder unter der Station — sonst überlagern sie sich.
     pub label_above: bool,
+}
+
+/// Ein Punkt, an dem eine Linie eine andere trifft.
+#[derive(Debug, Clone, Copy, PartialEq, Serialize, TS)]
+pub struct MetroPoint {
+    pub x: f32,
+    pub y: f32,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, TS)]
@@ -74,6 +83,12 @@ pub struct MetroLine {
     pub label: String,
     pub color: String,
     pub stations: Vec<MetroStation>,
+    /// Woher die Linie abzweigt: die Station, deren zweiter Nachfolger sie
+    /// beginnt. Ohne diesen Punkt hinge eine Abzweigung in der Luft.
+    pub entry: Option<MetroPoint>,
+    /// Wohin die Linie mündet, wenn ihr Nachfolger schon zu einer anderen
+    /// Linie gehört.
+    pub exit: Option<MetroPoint>,
 }
 
 /// Ein Band hinter mehreren Spuren: alle Linien mit demselben `tag`/`parent`.
@@ -137,11 +152,47 @@ pub fn build(conn: &Connection, source_id: Uuid, hidden: &HashSet<String>) -> Re
         }
     }
 
-    let chains = chains(&visible, &source, &dated, hidden);
+    let mut chains = chains(&visible, &source, &dated, hidden);
+    // Linien desselben Bandes nebeneinander, sonst zerfiele ein Tag in
+    // mehrere Streifen. Die Bänder stehen nach ihrem frühesten Datum
+    // untereinander — so läuft die Karte von oben links nach unten rechts,
+    // statt nach dem Alphabet der Tags. `sort_by_key` ist stabil, innerhalb
+    // eines Bandes bleibt die Reihenfolge der Ketten erhalten.
+    let mut earliest: BTreeMap<&str, Date> = BTreeMap::new();
+    for chain in &chains {
+        if let Some(first) = chain.pages.first().map(|p| dated[p.id.as_str()]) {
+            earliest
+                .entry(chain.zone.as_str())
+                .and_modify(|d| *d = (*d).min(first))
+                .or_insert(first);
+        }
+    }
+    let order: BTreeMap<String, Option<Date>> = chains
+        .iter()
+        .map(|c| (c.zone.clone(), earliest.get(c.zone.as_str()).copied()))
+        .collect();
+    chains.sort_by_key(|chain| {
+        (
+            chain.zone.is_empty(),
+            order[&chain.zone],
+            chain.zone.clone(),
+        )
+    });
+
+    // Jede Station, an der eine andere Linie abzweigt oder einmündet.
+    let junctions: HashSet<&str> = chains
+        .iter()
+        .flat_map(|chain| [chain.entry_from.as_deref(), chain.exit_to.as_deref()])
+        .flatten()
+        .collect();
+
     let (first, last) = span(&dated);
     let scale = Scale::new(first, last);
 
     let mut lines = Vec::new();
+    // Erst alle Stationen setzen, dann die Übergänge — ein Abzweig zeigt auf
+    // eine Station, die vielleicht erst in einer späteren Linie entsteht.
+    let mut positions: BTreeMap<String, MetroPoint> = BTreeMap::new();
     for (index, chain) in chains.iter().enumerate() {
         let y = AXIS_HEIGHT + index as f32 * LANE_HEIGHT + LANE_HEIGHT / 2.0;
         let stations: Vec<MetroStation> = chain
@@ -162,17 +213,40 @@ pub fn build(conn: &Connection, source_id: Uuid, hidden: &HashSet<String>) -> Re
                         i if i + 1 == chain.pages.len() => StationKind::Terminus,
                         _ => StationKind::Stop,
                     },
+                    interchange: junctions.contains(page.id.as_str()),
                     // Abwechselnd oben und unten: Zwei Stationen dicht
                     // beieinander hätten sonst überlappende Beschriftungen.
                     label_above: i % 2 == 0,
                 }
             })
             .collect();
+        for station in &stations {
+            positions.insert(
+                station.id.clone(),
+                MetroPoint {
+                    x: station.x,
+                    y: station.y,
+                },
+            );
+        }
         lines.push(MetroLine {
             label: chain.label.clone(),
             color: palette::nth(index).to_string(),
             stations,
+            entry: None,
+            exit: None,
         });
+    }
+
+    for (line, chain) in lines.iter_mut().zip(chains.iter()) {
+        line.entry = chain
+            .entry_from
+            .as_ref()
+            .and_then(|id| positions.get(id).copied());
+        line.exit = chain
+            .exit_to
+            .as_ref()
+            .and_then(|id| positions.get(id).copied());
     }
 
     let zones = zones(&chains);
@@ -193,6 +267,10 @@ struct Chain<'a> {
     label: String,
     zone: String,
     pages: Vec<&'a Page>,
+    /// Seite, von der diese Kette abzweigt.
+    entry_from: Option<String>,
+    /// Seite, in die diese Kette mündet — sie gehört schon zu einer anderen.
+    exit_to: Option<String>,
 }
 
 /// Zerlegt die Seiten in Ketten.
@@ -242,6 +320,9 @@ fn chains<'a>(
 
     let mut used: HashSet<String> = HashSet::new();
     let mut chains = Vec::new();
+    // Nachfolger, die übersprungen wurden, weil ihre Linie schon lief: Wer
+    // später dort beginnt, zweigt von dieser Seite ab.
+    let mut branch_source: BTreeMap<String, String> = BTreeMap::new();
     // Erst die echten Anfänge, dann der Rest — das hält die Reihenfolge
     // nachvollziehbar und fängt Kreise ein.
     let starts = placed
@@ -253,18 +334,32 @@ fn chains<'a>(
         if used.contains(&start.id) {
             continue;
         }
+        let entry_from = branch_source.get(&start.id).cloned();
         let mut chain = Vec::new();
         let mut current = *start;
+        let mut exit_to = None;
         loop {
             if !used.insert(current.id.clone()) {
                 break;
             }
             chain.push(current);
-            let Some(next) = successors(current)
-                .into_iter()
-                .find(|id| !used.contains(id))
-                .and_then(|id| by_id.get(id.as_str()).copied())
-            else {
+            let following = successors(current);
+            let next = following
+                .iter()
+                .find(|id| !used.contains(*id))
+                .and_then(|id| by_id.get(id.as_str()).copied());
+            // Alle weiteren Nachfolger zweigen hier ab.
+            for other in &following {
+                if next.is_none_or(|n| &n.id != other) {
+                    branch_source
+                        .entry(other.clone())
+                        .or_insert_with(|| current.id.clone());
+                }
+            }
+            let Some(next) = next else {
+                // Zeigt die letzte Seite auf etwas, das schon zu einer anderen
+                // Linie gehört, mündet sie dort hinein.
+                exit_to = following.into_iter().find(|id| used.contains(id));
                 break;
             };
             current = next;
@@ -289,6 +384,8 @@ fn chains<'a>(
             label,
             zone,
             pages: chain,
+            entry_from,
+            exit_to,
         });
     }
     chains

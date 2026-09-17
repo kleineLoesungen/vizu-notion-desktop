@@ -16,7 +16,7 @@ ohne Token.
 | `2022-06-28/` | Der Weg der Webapp: `POST /databases/{id}/query`. Eingabe für die Node-Referenz in Phase 2 |
 | `ids.json` | Welche Ersatz-ID zu welcher Datenbank und Datenquelle gehört |
 
-## Die drei Datenbanken
+## Die Datenbanken
 
 | Datenbank | Seiten | Spalten | Besonderheiten |
 |---|---|---|---|
@@ -24,5 +24,25 @@ ohne Token.
 | **vizu Projekte** | 12 | `Name`, `Start` (date), `Tags` (multi_select), `Status` (status), `Phase` (formula), `Ziel` (relation → Ziele), `Nächstes` (relation → Projekte) | zwei Projekte „Website"; `App 🚀`; `Q3 "Review" & [Plan]`; Projekt ohne Ziel; Projekt mit drei Zielen; `Nächstes` mit zwei Zielen; zwei Projekte ohne Datum |
 | **vizu Aufgaben** | 130 | `Name`, `Projekt` (relation → Projekte), `Erledigt` (checkbox), `Punkte` (number) | **zwei Stapel** (Blättern); jede 10. heißt „Doppelt"; jede 13. ohne Projekt; einige mit zwei Projekten |
 
-Die Dateien werden nicht von Hand geändert. Neu aufnehmen heißt: Testdaten
-neu anlegen, Antworten abrufen, erneut anonymisieren.
+### vizu Roadmap — von Hand gebaut
+
+`roadmap.*.json` ist die eine Ausnahme: **keine Aufnahme, sondern absichtlich
+gebaute Daten** in derselben Form wie die echten Antworten. Die drei
+aufgenommenen Datenbanken reichen nicht, um die Metro-Karte zu beurteilen —
+in ihnen hat nur eine einzige Seite zwei Nachfolger, und der fehlt das Datum.
+
+17 Seiten, Spalten wie bei „vizu Projekte" ohne `Ziel` und `Phase`, Zeitraum
+2026-01 bis 2027-03. Was darin steckt:
+
+| Fall | Wo |
+|---|---|
+| **Abzweigung** | „Architektur" → „Datenmodell" **und** „Design-System"; „Beta" → „Rollout EU" **und** „Rollout US" |
+| **Einmündung** | „Betriebshandbuch" und „Rollout US" münden in „Version 1.0" |
+| **Umsteigestation** | „Architektur", „Beta", „Version 1.0" |
+| **Vier Bänder** | Tags `Plattform`, `Produkt`, `Betrieb`, `Markt` |
+| **Einzelne Station** | „Messeauftritt" — ohne Vorgänger und ohne Nachfolger |
+| **Ohne Datum** | „Ideensammlung" — steht unter der Karte, nicht in ihr |
+| **Jahreswechsel** | „Mobil-App" 2027-01, „Version 1.1" 2027-03 |
+
+Die aufgenommenen Dateien werden nicht von Hand geändert. Neu aufnehmen
+heißt: Testdaten neu anlegen, Antworten abrufen, erneut anonymisieren.

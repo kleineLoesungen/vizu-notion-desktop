@@ -15,7 +15,7 @@ use ts_rs::TS;
 use vizu_notion_core::fetch::{FetchStatus, SourceOverview, ViewKind};
 use vizu_notion_core::flow::{FlowEdge, FlowGraph, FlowNode};
 use vizu_notion_core::metro::{
-    MetroLine, MetroMap, MetroStation, MetroTick, MetroZone, StationKind,
+    MetroLine, MetroMap, MetroPoint, MetroStation, MetroTick, MetroZone, StationKind,
 };
 use vizu_notion_core::notion::Property;
 use vizu_notion_core::rows::NodeInfo;
@@ -56,6 +56,7 @@ fn generate() -> String {
         decl::<Hint>(&cfg),
         decl::<MetroLine>(&cfg),
         decl::<MetroMap>(&cfg),
+        decl::<MetroPoint>(&cfg),
         decl::<MetroStation>(&cfg),
         decl::<MetroTick>(&cfg),
         decl::<MetroZone>(&cfg),

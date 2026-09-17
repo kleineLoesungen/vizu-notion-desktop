@@ -109,7 +109,17 @@ export type FieldError = { field: string, message: string, };
  */
 export type Hint = { syntax: string, meaning: string, };
 
-export type MetroLine = { label: string, color: string, stations: Array<MetroStation>, };
+export type MetroLine = { label: string, color: string, stations: Array<MetroStation>, 
+/**
+ * Woher die Linie abzweigt: die Station, deren zweiter Nachfolger sie
+ * beginnt. Ohne diesen Punkt hinge eine Abzweigung in der Luft.
+ */
+entry: MetroPoint | null, 
+/**
+ * Wohin die Linie mündet, wenn ihr Nachfolger schon zu einer anderen
+ * Linie gehört.
+ */
+exit: MetroPoint | null, };
 
 export type MetroMap = { lines: Array<MetroLine>, zones: Array<MetroZone>, ticks: Array<MetroTick>, width: number, height: number, 
 /**
@@ -122,6 +132,11 @@ all_nodes: Array<NodeInfo>,
  */
 undated: Array<string>, };
 
+/**
+ * Ein Punkt, an dem eine Linie eine andere trifft.
+ */
+export type MetroPoint = { x: number, y: number, };
+
 export type MetroStation = { 
 /**
  * Die Seiten-ID — dieselbe wie im Filterfeld.
@@ -131,6 +146,10 @@ id: string, title: string,
  * Wie in Notion, als Text: `2026-04-01`.
  */
 date: string, x: number, y: number, kind: StationKind, 
+/**
+ * Hier zweigt eine Linie ab oder mündet eine ein — eine Umsteigestation.
+ */
+interchange: boolean, 
 /**
  * Beschriftung über oder unter der Station — sonst überlagern sie sich.
  */

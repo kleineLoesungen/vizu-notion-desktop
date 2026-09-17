@@ -26,7 +26,7 @@ pub fn read_json(relative: &str) -> Value {
     serde_json::from_str(&text).unwrap()
 }
 
-/// Die Ersatz-IDs der drei Testdatenbanken.
+/// Die Ersatz-IDs der Testdatenbanken.
 pub struct Ids {
     ids: Value,
 }
@@ -38,7 +38,7 @@ impl Ids {
         }
     }
 
-    /// `ziele`, `projekte` oder `aufgaben`.
+    /// `ziele`, `projekte`, `aufgaben` oder `roadmap`.
     pub fn database(&self, label: &str) -> String {
         self.ids["databases"][label].as_str().unwrap().to_string()
     }
@@ -93,7 +93,7 @@ impl FixtureNotion {
         {
             return ok(page);
         }
-        for label in ["ziele", "projekte", "aufgaben"] {
+        for label in ["ziele", "projekte", "aufgaben", "roadmap"] {
             let db = self.ids.database(label);
             let ds = self.ids.data_source(label);
             if request.method == Method::Get && request.path == format!("/databases/{db}") {
@@ -125,7 +125,7 @@ impl Transport for FixtureNotion {
 
 /// Sucht eine Seite über alle festgehaltenen Stapel.
 fn find_page(id: &str) -> Option<Value> {
-    for label in ["ziele", "projekte", "aufgaben"] {
+    for label in ["ziele", "projekte", "aufgaben", "roadmap"] {
         let mut n = 1;
         while fixture_dir()
             .join(format!("2025-09-03/{label}.query.{n}.json"))

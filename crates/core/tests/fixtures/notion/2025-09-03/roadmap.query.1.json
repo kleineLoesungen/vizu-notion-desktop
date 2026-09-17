@@ -1,0 +1,1561 @@
+{
+ "has_more": false,
+ "next_cursor": null,
+ "object": "list",
+ "page_or_data_source": {},
+ "results": [
+  {
+   "archived": false,
+   "cover": null,
+   "created_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "created_time": "2026-09-15T22:05:00.000Z",
+   "icon": null,
+   "id": "00000000-0000-0000-0000-000000000040",
+   "in_trash": false,
+   "is_archived": false,
+   "is_locked": false,
+   "last_edited_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "last_edited_time": "2026-09-15T22:05:00.000Z",
+   "object": "page",
+   "parent": {
+    "data_source_id": "00000000-0000-0000-0000-000000000009",
+    "database_id": "00000000-0000-0000-0000-000000000008",
+    "type": "data_source_id"
+   },
+   "properties": {
+    "Name": {
+     "id": "title",
+     "title": [
+      {
+       "annotations": {
+        "bold": false,
+        "code": false,
+        "color": "default",
+        "italic": false,
+        "strikethrough": false,
+        "underline": false
+       },
+       "href": null,
+       "plain_text": "Kickoff",
+       "text": {
+        "content": "Kickoff",
+        "link": null
+       },
+       "type": "text"
+      }
+     ],
+     "type": "title"
+    },
+    "Nächstes": {
+     "has_more": false,
+     "id": "WGBf",
+     "relation": [
+      {
+       "id": "00000000-0000-0000-0000-000000000041"
+      }
+     ],
+     "type": "relation"
+    },
+    "Start": {
+     "date": {
+      "end": null,
+      "start": "2026-01-12",
+      "time_zone": null
+     },
+     "id": "n%5EzI",
+     "type": "date"
+    },
+    "Status": {
+     "id": "s_%3EO",
+     "status": {
+      "color": "green",
+      "description": null,
+      "id": "00000000-0000-0000-0000-00000000000e",
+      "name": "Done"
+     },
+     "type": "status"
+    },
+    "Tags": {
+     "id": "DbUD",
+     "multi_select": [
+      {
+       "color": "blue",
+       "id": "00000000-0000-0000-0000-0000000000c0",
+       "name": "Plattform"
+      }
+     ],
+     "type": "multi_select"
+    }
+   },
+   "public_url": null,
+   "url": "https://www.notion.so/Kickoff-00000000000000000000000000000040"
+  },
+  {
+   "archived": false,
+   "cover": null,
+   "created_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "created_time": "2026-09-15T22:05:00.000Z",
+   "icon": null,
+   "id": "00000000-0000-0000-0000-000000000041",
+   "in_trash": false,
+   "is_archived": false,
+   "is_locked": false,
+   "last_edited_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "last_edited_time": "2026-09-15T22:05:00.000Z",
+   "object": "page",
+   "parent": {
+    "data_source_id": "00000000-0000-0000-0000-000000000009",
+    "database_id": "00000000-0000-0000-0000-000000000008",
+    "type": "data_source_id"
+   },
+   "properties": {
+    "Name": {
+     "id": "title",
+     "title": [
+      {
+       "annotations": {
+        "bold": false,
+        "code": false,
+        "color": "default",
+        "italic": false,
+        "strikethrough": false,
+        "underline": false
+       },
+       "href": null,
+       "plain_text": "Architektur",
+       "text": {
+        "content": "Architektur",
+        "link": null
+       },
+       "type": "text"
+      }
+     ],
+     "type": "title"
+    },
+    "Nächstes": {
+     "has_more": false,
+     "id": "WGBf",
+     "relation": [
+      {
+       "id": "00000000-0000-0000-0000-000000000042"
+      },
+      {
+       "id": "00000000-0000-0000-0000-000000000046"
+      }
+     ],
+     "type": "relation"
+    },
+    "Start": {
+     "date": {
+      "end": null,
+      "start": "2026-02-09",
+      "time_zone": null
+     },
+     "id": "n%5EzI",
+     "type": "date"
+    },
+    "Status": {
+     "id": "s_%3EO",
+     "status": {
+      "color": "green",
+      "description": null,
+      "id": "00000000-0000-0000-0000-00000000000e",
+      "name": "Done"
+     },
+     "type": "status"
+    },
+    "Tags": {
+     "id": "DbUD",
+     "multi_select": [
+      {
+       "color": "blue",
+       "id": "00000000-0000-0000-0000-0000000000c0",
+       "name": "Plattform"
+      }
+     ],
+     "type": "multi_select"
+    }
+   },
+   "public_url": null,
+   "url": "https://www.notion.so/Architektur-00000000000000000000000000000041"
+  },
+  {
+   "archived": false,
+   "cover": null,
+   "created_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "created_time": "2026-09-15T22:05:00.000Z",
+   "icon": null,
+   "id": "00000000-0000-0000-0000-000000000042",
+   "in_trash": false,
+   "is_archived": false,
+   "is_locked": false,
+   "last_edited_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "last_edited_time": "2026-09-15T22:05:00.000Z",
+   "object": "page",
+   "parent": {
+    "data_source_id": "00000000-0000-0000-0000-000000000009",
+    "database_id": "00000000-0000-0000-0000-000000000008",
+    "type": "data_source_id"
+   },
+   "properties": {
+    "Name": {
+     "id": "title",
+     "title": [
+      {
+       "annotations": {
+        "bold": false,
+        "code": false,
+        "color": "default",
+        "italic": false,
+        "strikethrough": false,
+        "underline": false
+       },
+       "href": null,
+       "plain_text": "Datenmodell",
+       "text": {
+        "content": "Datenmodell",
+        "link": null
+       },
+       "type": "text"
+      }
+     ],
+     "type": "title"
+    },
+    "Nächstes": {
+     "has_more": false,
+     "id": "WGBf",
+     "relation": [
+      {
+       "id": "00000000-0000-0000-0000-000000000043"
+      }
+     ],
+     "type": "relation"
+    },
+    "Start": {
+     "date": {
+      "end": null,
+      "start": "2026-03-16",
+      "time_zone": null
+     },
+     "id": "n%5EzI",
+     "type": "date"
+    },
+    "Status": {
+     "id": "s_%3EO",
+     "status": {
+      "color": "green",
+      "description": null,
+      "id": "00000000-0000-0000-0000-00000000000e",
+      "name": "Done"
+     },
+     "type": "status"
+    },
+    "Tags": {
+     "id": "DbUD",
+     "multi_select": [
+      {
+       "color": "blue",
+       "id": "00000000-0000-0000-0000-0000000000c0",
+       "name": "Plattform"
+      }
+     ],
+     "type": "multi_select"
+    }
+   },
+   "public_url": null,
+   "url": "https://www.notion.so/Datenmodell-00000000000000000000000000000042"
+  },
+  {
+   "archived": false,
+   "cover": null,
+   "created_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "created_time": "2026-09-15T22:05:00.000Z",
+   "icon": null,
+   "id": "00000000-0000-0000-0000-000000000043",
+   "in_trash": false,
+   "is_archived": false,
+   "is_locked": false,
+   "last_edited_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "last_edited_time": "2026-09-15T22:05:00.000Z",
+   "object": "page",
+   "parent": {
+    "data_source_id": "00000000-0000-0000-0000-000000000009",
+    "database_id": "00000000-0000-0000-0000-000000000008",
+    "type": "data_source_id"
+   },
+   "properties": {
+    "Name": {
+     "id": "title",
+     "title": [
+      {
+       "annotations": {
+        "bold": false,
+        "code": false,
+        "color": "default",
+        "italic": false,
+        "strikethrough": false,
+        "underline": false
+       },
+       "href": null,
+       "plain_text": "API v1",
+       "text": {
+        "content": "API v1",
+        "link": null
+       },
+       "type": "text"
+      }
+     ],
+     "type": "title"
+    },
+    "Nächstes": {
+     "has_more": false,
+     "id": "WGBf",
+     "relation": [
+      {
+       "id": "00000000-0000-0000-0000-000000000048"
+      }
+     ],
+     "type": "relation"
+    },
+    "Start": {
+     "date": {
+      "end": null,
+      "start": "2026-05-04",
+      "time_zone": null
+     },
+     "id": "n%5EzI",
+     "type": "date"
+    },
+    "Status": {
+     "id": "s_%3EO",
+     "status": {
+      "color": "blue",
+      "description": null,
+      "id": "00000000-0000-0000-0000-00000000000c",
+      "name": "In progress"
+     },
+     "type": "status"
+    },
+    "Tags": {
+     "id": "DbUD",
+     "multi_select": [
+      {
+       "color": "blue",
+       "id": "00000000-0000-0000-0000-0000000000c0",
+       "name": "Plattform"
+      }
+     ],
+     "type": "multi_select"
+    }
+   },
+   "public_url": null,
+   "url": "https://www.notion.so/API-v1-00000000000000000000000000000043"
+  },
+  {
+   "archived": false,
+   "cover": null,
+   "created_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "created_time": "2026-09-15T22:05:00.000Z",
+   "icon": null,
+   "id": "00000000-0000-0000-0000-000000000046",
+   "in_trash": false,
+   "is_archived": false,
+   "is_locked": false,
+   "last_edited_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "last_edited_time": "2026-09-15T22:05:00.000Z",
+   "object": "page",
+   "parent": {
+    "data_source_id": "00000000-0000-0000-0000-000000000009",
+    "database_id": "00000000-0000-0000-0000-000000000008",
+    "type": "data_source_id"
+   },
+   "properties": {
+    "Name": {
+     "id": "title",
+     "title": [
+      {
+       "annotations": {
+        "bold": false,
+        "code": false,
+        "color": "default",
+        "italic": false,
+        "strikethrough": false,
+        "underline": false
+       },
+       "href": null,
+       "plain_text": "Design-System",
+       "text": {
+        "content": "Design-System",
+        "link": null
+       },
+       "type": "text"
+      }
+     ],
+     "type": "title"
+    },
+    "Nächstes": {
+     "has_more": false,
+     "id": "WGBf",
+     "relation": [
+      {
+       "id": "00000000-0000-0000-0000-000000000047"
+      }
+     ],
+     "type": "relation"
+    },
+    "Start": {
+     "date": {
+      "end": null,
+      "start": "2026-03-02",
+      "time_zone": null
+     },
+     "id": "n%5EzI",
+     "type": "date"
+    },
+    "Status": {
+     "id": "s_%3EO",
+     "status": {
+      "color": "green",
+      "description": null,
+      "id": "00000000-0000-0000-0000-00000000000e",
+      "name": "Done"
+     },
+     "type": "status"
+    },
+    "Tags": {
+     "id": "DbUD",
+     "multi_select": [
+      {
+       "color": "green",
+       "id": "00000000-0000-0000-0000-0000000000c1",
+       "name": "Produkt"
+      }
+     ],
+     "type": "multi_select"
+    }
+   },
+   "public_url": null,
+   "url": "https://www.notion.so/Design-System-00000000000000000000000000000046"
+  },
+  {
+   "archived": false,
+   "cover": null,
+   "created_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "created_time": "2026-09-15T22:05:00.000Z",
+   "icon": null,
+   "id": "00000000-0000-0000-0000-000000000047",
+   "in_trash": false,
+   "is_archived": false,
+   "is_locked": false,
+   "last_edited_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "last_edited_time": "2026-09-15T22:05:00.000Z",
+   "object": "page",
+   "parent": {
+    "data_source_id": "00000000-0000-0000-0000-000000000009",
+    "database_id": "00000000-0000-0000-0000-000000000008",
+    "type": "data_source_id"
+   },
+   "properties": {
+    "Name": {
+     "id": "title",
+     "title": [
+      {
+       "annotations": {
+        "bold": false,
+        "code": false,
+        "color": "default",
+        "italic": false,
+        "strikethrough": false,
+        "underline": false
+       },
+       "href": null,
+       "plain_text": "Web-Client",
+       "text": {
+        "content": "Web-Client",
+        "link": null
+       },
+       "type": "text"
+      }
+     ],
+     "type": "title"
+    },
+    "Nächstes": {
+     "has_more": false,
+     "id": "WGBf",
+     "relation": [
+      {
+       "id": "00000000-0000-0000-0000-000000000048"
+      }
+     ],
+     "type": "relation"
+    },
+    "Start": {
+     "date": {
+      "end": null,
+      "start": "2026-04-20",
+      "time_zone": null
+     },
+     "id": "n%5EzI",
+     "type": "date"
+    },
+    "Status": {
+     "id": "s_%3EO",
+     "status": {
+      "color": "blue",
+      "description": null,
+      "id": "00000000-0000-0000-0000-00000000000c",
+      "name": "In progress"
+     },
+     "type": "status"
+    },
+    "Tags": {
+     "id": "DbUD",
+     "multi_select": [
+      {
+       "color": "green",
+       "id": "00000000-0000-0000-0000-0000000000c1",
+       "name": "Produkt"
+      }
+     ],
+     "type": "multi_select"
+    }
+   },
+   "public_url": null,
+   "url": "https://www.notion.so/Web-Client-00000000000000000000000000000047"
+  },
+  {
+   "archived": false,
+   "cover": null,
+   "created_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "created_time": "2026-09-15T22:05:00.000Z",
+   "icon": null,
+   "id": "00000000-0000-0000-0000-000000000048",
+   "in_trash": false,
+   "is_archived": false,
+   "is_locked": false,
+   "last_edited_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "last_edited_time": "2026-09-15T22:05:00.000Z",
+   "object": "page",
+   "parent": {
+    "data_source_id": "00000000-0000-0000-0000-000000000009",
+    "database_id": "00000000-0000-0000-0000-000000000008",
+    "type": "data_source_id"
+   },
+   "properties": {
+    "Name": {
+     "id": "title",
+     "title": [
+      {
+       "annotations": {
+        "bold": false,
+        "code": false,
+        "color": "default",
+        "italic": false,
+        "strikethrough": false,
+        "underline": false
+       },
+       "href": null,
+       "plain_text": "Beta",
+       "text": {
+        "content": "Beta",
+        "link": null
+       },
+       "type": "text"
+      }
+     ],
+     "type": "title"
+    },
+    "Nächstes": {
+     "has_more": false,
+     "id": "WGBf",
+     "relation": [
+      {
+       "id": "00000000-0000-0000-0000-000000000049"
+      },
+      {
+       "id": "00000000-0000-0000-0000-00000000004a"
+      }
+     ],
+     "type": "relation"
+    },
+    "Start": {
+     "date": {
+      "end": null,
+      "start": "2026-06-15",
+      "time_zone": null
+     },
+     "id": "n%5EzI",
+     "type": "date"
+    },
+    "Status": {
+     "id": "s_%3EO",
+     "status": {
+      "color": "blue",
+      "description": null,
+      "id": "00000000-0000-0000-0000-00000000000c",
+      "name": "In progress"
+     },
+     "type": "status"
+    },
+    "Tags": {
+     "id": "DbUD",
+     "multi_select": [
+      {
+       "color": "green",
+       "id": "00000000-0000-0000-0000-0000000000c1",
+       "name": "Produkt"
+      }
+     ],
+     "type": "multi_select"
+    }
+   },
+   "public_url": null,
+   "url": "https://www.notion.so/Beta-00000000000000000000000000000048"
+  },
+  {
+   "archived": false,
+   "cover": null,
+   "created_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "created_time": "2026-09-15T22:05:00.000Z",
+   "icon": null,
+   "id": "00000000-0000-0000-0000-000000000049",
+   "in_trash": false,
+   "is_archived": false,
+   "is_locked": false,
+   "last_edited_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "last_edited_time": "2026-09-15T22:05:00.000Z",
+   "object": "page",
+   "parent": {
+    "data_source_id": "00000000-0000-0000-0000-000000000009",
+    "database_id": "00000000-0000-0000-0000-000000000008",
+    "type": "data_source_id"
+   },
+   "properties": {
+    "Name": {
+     "id": "title",
+     "title": [
+      {
+       "annotations": {
+        "bold": false,
+        "code": false,
+        "color": "default",
+        "italic": false,
+        "strikethrough": false,
+        "underline": false
+       },
+       "href": null,
+       "plain_text": "Rollout EU",
+       "text": {
+        "content": "Rollout EU",
+        "link": null
+       },
+       "type": "text"
+      }
+     ],
+     "type": "title"
+    },
+    "Nächstes": {
+     "has_more": false,
+     "id": "WGBf",
+     "relation": [
+      {
+       "id": "00000000-0000-0000-0000-00000000004b"
+      }
+     ],
+     "type": "relation"
+    },
+    "Start": {
+     "date": {
+      "end": null,
+      "start": "2026-08-03",
+      "time_zone": null
+     },
+     "id": "n%5EzI",
+     "type": "date"
+    },
+    "Status": {
+     "id": "s_%3EO",
+     "status": {
+      "color": "default",
+      "description": null,
+      "id": "00000000-0000-0000-0000-00000000000a",
+      "name": "Not started"
+     },
+     "type": "status"
+    },
+    "Tags": {
+     "id": "DbUD",
+     "multi_select": [
+      {
+       "color": "purple",
+       "id": "00000000-0000-0000-0000-0000000000c3",
+       "name": "Markt"
+      }
+     ],
+     "type": "multi_select"
+    }
+   },
+   "public_url": null,
+   "url": "https://www.notion.so/Rollout-EU-00000000000000000000000000000049"
+  },
+  {
+   "archived": false,
+   "cover": null,
+   "created_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "created_time": "2026-09-15T22:05:00.000Z",
+   "icon": null,
+   "id": "00000000-0000-0000-0000-00000000004a",
+   "in_trash": false,
+   "is_archived": false,
+   "is_locked": false,
+   "last_edited_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "last_edited_time": "2026-09-15T22:05:00.000Z",
+   "object": "page",
+   "parent": {
+    "data_source_id": "00000000-0000-0000-0000-000000000009",
+    "database_id": "00000000-0000-0000-0000-000000000008",
+    "type": "data_source_id"
+   },
+   "properties": {
+    "Name": {
+     "id": "title",
+     "title": [
+      {
+       "annotations": {
+        "bold": false,
+        "code": false,
+        "color": "default",
+        "italic": false,
+        "strikethrough": false,
+        "underline": false
+       },
+       "href": null,
+       "plain_text": "Rollout US",
+       "text": {
+        "content": "Rollout US",
+        "link": null
+       },
+       "type": "text"
+      }
+     ],
+     "type": "title"
+    },
+    "Nächstes": {
+     "has_more": false,
+     "id": "WGBf",
+     "relation": [
+      {
+       "id": "00000000-0000-0000-0000-00000000004b"
+      }
+     ],
+     "type": "relation"
+    },
+    "Start": {
+     "date": {
+      "end": null,
+      "start": "2026-09-14",
+      "time_zone": null
+     },
+     "id": "n%5EzI",
+     "type": "date"
+    },
+    "Status": {
+     "id": "s_%3EO",
+     "status": {
+      "color": "default",
+      "description": null,
+      "id": "00000000-0000-0000-0000-00000000000a",
+      "name": "Not started"
+     },
+     "type": "status"
+    },
+    "Tags": {
+     "id": "DbUD",
+     "multi_select": [
+      {
+       "color": "purple",
+       "id": "00000000-0000-0000-0000-0000000000c3",
+       "name": "Markt"
+      }
+     ],
+     "type": "multi_select"
+    }
+   },
+   "public_url": null,
+   "url": "https://www.notion.so/Rollout-US-0000000000000000000000000000004a"
+  },
+  {
+   "archived": false,
+   "cover": null,
+   "created_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "created_time": "2026-09-15T22:05:00.000Z",
+   "icon": null,
+   "id": "00000000-0000-0000-0000-00000000004b",
+   "in_trash": false,
+   "is_archived": false,
+   "is_locked": false,
+   "last_edited_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "last_edited_time": "2026-09-15T22:05:00.000Z",
+   "object": "page",
+   "parent": {
+    "data_source_id": "00000000-0000-0000-0000-000000000009",
+    "database_id": "00000000-0000-0000-0000-000000000008",
+    "type": "data_source_id"
+   },
+   "properties": {
+    "Name": {
+     "id": "title",
+     "title": [
+      {
+       "annotations": {
+        "bold": false,
+        "code": false,
+        "color": "default",
+        "italic": false,
+        "strikethrough": false,
+        "underline": false
+       },
+       "href": null,
+       "plain_text": "Version 1.0",
+       "text": {
+        "content": "Version 1.0",
+        "link": null
+       },
+       "type": "text"
+      }
+     ],
+     "type": "title"
+    },
+    "Nächstes": {
+     "has_more": false,
+     "id": "WGBf",
+     "relation": [
+      {
+       "id": "00000000-0000-0000-0000-00000000004c"
+      }
+     ],
+     "type": "relation"
+    },
+    "Start": {
+     "date": {
+      "end": null,
+      "start": "2026-11-02",
+      "time_zone": null
+     },
+     "id": "n%5EzI",
+     "type": "date"
+    },
+    "Status": {
+     "id": "s_%3EO",
+     "status": {
+      "color": "default",
+      "description": null,
+      "id": "00000000-0000-0000-0000-00000000000a",
+      "name": "Not started"
+     },
+     "type": "status"
+    },
+    "Tags": {
+     "id": "DbUD",
+     "multi_select": [
+      {
+       "color": "green",
+       "id": "00000000-0000-0000-0000-0000000000c1",
+       "name": "Produkt"
+      }
+     ],
+     "type": "multi_select"
+    }
+   },
+   "public_url": null,
+   "url": "https://www.notion.so/Version-1.0-0000000000000000000000000000004b"
+  },
+  {
+   "archived": false,
+   "cover": null,
+   "created_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "created_time": "2026-09-15T22:05:00.000Z",
+   "icon": null,
+   "id": "00000000-0000-0000-0000-00000000004c",
+   "in_trash": false,
+   "is_archived": false,
+   "is_locked": false,
+   "last_edited_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "last_edited_time": "2026-09-15T22:05:00.000Z",
+   "object": "page",
+   "parent": {
+    "data_source_id": "00000000-0000-0000-0000-000000000009",
+    "database_id": "00000000-0000-0000-0000-000000000008",
+    "type": "data_source_id"
+   },
+   "properties": {
+    "Name": {
+     "id": "title",
+     "title": [
+      {
+       "annotations": {
+        "bold": false,
+        "code": false,
+        "color": "default",
+        "italic": false,
+        "strikethrough": false,
+        "underline": false
+       },
+       "href": null,
+       "plain_text": "Mobil-App",
+       "text": {
+        "content": "Mobil-App",
+        "link": null
+       },
+       "type": "text"
+      }
+     ],
+     "type": "title"
+    },
+    "Nächstes": {
+     "has_more": false,
+     "id": "WGBf",
+     "relation": [
+      {
+       "id": "00000000-0000-0000-0000-00000000004d"
+      }
+     ],
+     "type": "relation"
+    },
+    "Start": {
+     "date": {
+      "end": null,
+      "start": "2027-01-11",
+      "time_zone": null
+     },
+     "id": "n%5EzI",
+     "type": "date"
+    },
+    "Status": {
+     "id": "s_%3EO",
+     "status": {
+      "color": "default",
+      "description": null,
+      "id": "00000000-0000-0000-0000-00000000000a",
+      "name": "Not started"
+     },
+     "type": "status"
+    },
+    "Tags": {
+     "id": "DbUD",
+     "multi_select": [
+      {
+       "color": "green",
+       "id": "00000000-0000-0000-0000-0000000000c1",
+       "name": "Produkt"
+      }
+     ],
+     "type": "multi_select"
+    }
+   },
+   "public_url": null,
+   "url": "https://www.notion.so/Mobil-App-0000000000000000000000000000004c"
+  },
+  {
+   "archived": false,
+   "cover": null,
+   "created_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "created_time": "2026-09-15T22:05:00.000Z",
+   "icon": null,
+   "id": "00000000-0000-0000-0000-00000000004d",
+   "in_trash": false,
+   "is_archived": false,
+   "is_locked": false,
+   "last_edited_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "last_edited_time": "2026-09-15T22:05:00.000Z",
+   "object": "page",
+   "parent": {
+    "data_source_id": "00000000-0000-0000-0000-000000000009",
+    "database_id": "00000000-0000-0000-0000-000000000008",
+    "type": "data_source_id"
+   },
+   "properties": {
+    "Name": {
+     "id": "title",
+     "title": [
+      {
+       "annotations": {
+        "bold": false,
+        "code": false,
+        "color": "default",
+        "italic": false,
+        "strikethrough": false,
+        "underline": false
+       },
+       "href": null,
+       "plain_text": "Version 1.1",
+       "text": {
+        "content": "Version 1.1",
+        "link": null
+       },
+       "type": "text"
+      }
+     ],
+     "type": "title"
+    },
+    "Nächstes": {
+     "has_more": false,
+     "id": "WGBf",
+     "relation": [],
+     "type": "relation"
+    },
+    "Start": {
+     "date": {
+      "end": null,
+      "start": "2027-03-01",
+      "time_zone": null
+     },
+     "id": "n%5EzI",
+     "type": "date"
+    },
+    "Status": {
+     "id": "s_%3EO",
+     "status": {
+      "color": "default",
+      "description": null,
+      "id": "00000000-0000-0000-0000-00000000000a",
+      "name": "Not started"
+     },
+     "type": "status"
+    },
+    "Tags": {
+     "id": "DbUD",
+     "multi_select": [
+      {
+       "color": "green",
+       "id": "00000000-0000-0000-0000-0000000000c1",
+       "name": "Produkt"
+      }
+     ],
+     "type": "multi_select"
+    }
+   },
+   "public_url": null,
+   "url": "https://www.notion.so/Version-1.1-0000000000000000000000000000004d"
+  },
+  {
+   "archived": false,
+   "cover": null,
+   "created_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "created_time": "2026-09-15T22:05:00.000Z",
+   "icon": null,
+   "id": "00000000-0000-0000-0000-000000000050",
+   "in_trash": false,
+   "is_archived": false,
+   "is_locked": false,
+   "last_edited_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "last_edited_time": "2026-09-15T22:05:00.000Z",
+   "object": "page",
+   "parent": {
+    "data_source_id": "00000000-0000-0000-0000-000000000009",
+    "database_id": "00000000-0000-0000-0000-000000000008",
+    "type": "data_source_id"
+   },
+   "properties": {
+    "Name": {
+     "id": "title",
+     "title": [
+      {
+       "annotations": {
+        "bold": false,
+        "code": false,
+        "color": "default",
+        "italic": false,
+        "strikethrough": false,
+        "underline": false
+       },
+       "href": null,
+       "plain_text": "Sicherheits-Audit",
+       "text": {
+        "content": "Sicherheits-Audit",
+        "link": null
+       },
+       "type": "text"
+      }
+     ],
+     "type": "title"
+    },
+    "Nächstes": {
+     "has_more": false,
+     "id": "WGBf",
+     "relation": [
+      {
+       "id": "00000000-0000-0000-0000-000000000051"
+      }
+     ],
+     "type": "relation"
+    },
+    "Start": {
+     "date": {
+      "end": null,
+      "start": "2026-05-18",
+      "time_zone": null
+     },
+     "id": "n%5EzI",
+     "type": "date"
+    },
+    "Status": {
+     "id": "s_%3EO",
+     "status": {
+      "color": "blue",
+      "description": null,
+      "id": "00000000-0000-0000-0000-00000000000c",
+      "name": "In progress"
+     },
+     "type": "status"
+    },
+    "Tags": {
+     "id": "DbUD",
+     "multi_select": [
+      {
+       "color": "orange",
+       "id": "00000000-0000-0000-0000-0000000000c2",
+       "name": "Betrieb"
+      }
+     ],
+     "type": "multi_select"
+    }
+   },
+   "public_url": null,
+   "url": "https://www.notion.so/Sicherheits-Audit-00000000000000000000000000000050"
+  },
+  {
+   "archived": false,
+   "cover": null,
+   "created_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "created_time": "2026-09-15T22:05:00.000Z",
+   "icon": null,
+   "id": "00000000-0000-0000-0000-000000000051",
+   "in_trash": false,
+   "is_archived": false,
+   "is_locked": false,
+   "last_edited_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "last_edited_time": "2026-09-15T22:05:00.000Z",
+   "object": "page",
+   "parent": {
+    "data_source_id": "00000000-0000-0000-0000-000000000009",
+    "database_id": "00000000-0000-0000-0000-000000000008",
+    "type": "data_source_id"
+   },
+   "properties": {
+    "Name": {
+     "id": "title",
+     "title": [
+      {
+       "annotations": {
+        "bold": false,
+        "code": false,
+        "color": "default",
+        "italic": false,
+        "strikethrough": false,
+        "underline": false
+       },
+       "href": null,
+       "plain_text": "Zertifizierung",
+       "text": {
+        "content": "Zertifizierung",
+        "link": null
+       },
+       "type": "text"
+      }
+     ],
+     "type": "title"
+    },
+    "Nächstes": {
+     "has_more": false,
+     "id": "WGBf",
+     "relation": [
+      {
+       "id": "00000000-0000-0000-0000-000000000052"
+      }
+     ],
+     "type": "relation"
+    },
+    "Start": {
+     "date": {
+      "end": null,
+      "start": "2026-07-06",
+      "time_zone": null
+     },
+     "id": "n%5EzI",
+     "type": "date"
+    },
+    "Status": {
+     "id": "s_%3EO",
+     "status": {
+      "color": "default",
+      "description": null,
+      "id": "00000000-0000-0000-0000-00000000000a",
+      "name": "Not started"
+     },
+     "type": "status"
+    },
+    "Tags": {
+     "id": "DbUD",
+     "multi_select": [
+      {
+       "color": "orange",
+       "id": "00000000-0000-0000-0000-0000000000c2",
+       "name": "Betrieb"
+      }
+     ],
+     "type": "multi_select"
+    }
+   },
+   "public_url": null,
+   "url": "https://www.notion.so/Zertifizierung-00000000000000000000000000000051"
+  },
+  {
+   "archived": false,
+   "cover": null,
+   "created_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "created_time": "2026-09-15T22:05:00.000Z",
+   "icon": null,
+   "id": "00000000-0000-0000-0000-000000000052",
+   "in_trash": false,
+   "is_archived": false,
+   "is_locked": false,
+   "last_edited_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "last_edited_time": "2026-09-15T22:05:00.000Z",
+   "object": "page",
+   "parent": {
+    "data_source_id": "00000000-0000-0000-0000-000000000009",
+    "database_id": "00000000-0000-0000-0000-000000000008",
+    "type": "data_source_id"
+   },
+   "properties": {
+    "Name": {
+     "id": "title",
+     "title": [
+      {
+       "annotations": {
+        "bold": false,
+        "code": false,
+        "color": "default",
+        "italic": false,
+        "strikethrough": false,
+        "underline": false
+       },
+       "href": null,
+       "plain_text": "Betriebshandbuch",
+       "text": {
+        "content": "Betriebshandbuch",
+        "link": null
+       },
+       "type": "text"
+      }
+     ],
+     "type": "title"
+    },
+    "Nächstes": {
+     "has_more": false,
+     "id": "WGBf",
+     "relation": [
+      {
+       "id": "00000000-0000-0000-0000-00000000004b"
+      }
+     ],
+     "type": "relation"
+    },
+    "Start": {
+     "date": {
+      "end": null,
+      "start": "2026-09-01",
+      "time_zone": null
+     },
+     "id": "n%5EzI",
+     "type": "date"
+    },
+    "Status": {
+     "id": "s_%3EO",
+     "status": {
+      "color": "default",
+      "description": null,
+      "id": "00000000-0000-0000-0000-00000000000a",
+      "name": "Not started"
+     },
+     "type": "status"
+    },
+    "Tags": {
+     "id": "DbUD",
+     "multi_select": [
+      {
+       "color": "orange",
+       "id": "00000000-0000-0000-0000-0000000000c2",
+       "name": "Betrieb"
+      }
+     ],
+     "type": "multi_select"
+    }
+   },
+   "public_url": null,
+   "url": "https://www.notion.so/Betriebshandbuch-00000000000000000000000000000052"
+  },
+  {
+   "archived": false,
+   "cover": null,
+   "created_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "created_time": "2026-09-15T22:05:00.000Z",
+   "icon": null,
+   "id": "00000000-0000-0000-0000-000000000055",
+   "in_trash": false,
+   "is_archived": false,
+   "is_locked": false,
+   "last_edited_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "last_edited_time": "2026-09-15T22:05:00.000Z",
+   "object": "page",
+   "parent": {
+    "data_source_id": "00000000-0000-0000-0000-000000000009",
+    "database_id": "00000000-0000-0000-0000-000000000008",
+    "type": "data_source_id"
+   },
+   "properties": {
+    "Name": {
+     "id": "title",
+     "title": [
+      {
+       "annotations": {
+        "bold": false,
+        "code": false,
+        "color": "default",
+        "italic": false,
+        "strikethrough": false,
+        "underline": false
+       },
+       "href": null,
+       "plain_text": "Messeauftritt",
+       "text": {
+        "content": "Messeauftritt",
+        "link": null
+       },
+       "type": "text"
+      }
+     ],
+     "type": "title"
+    },
+    "Nächstes": {
+     "has_more": false,
+     "id": "WGBf",
+     "relation": [],
+     "type": "relation"
+    },
+    "Start": {
+     "date": {
+      "end": null,
+      "start": "2026-10-05",
+      "time_zone": null
+     },
+     "id": "n%5EzI",
+     "type": "date"
+    },
+    "Status": {
+     "id": "s_%3EO",
+     "status": {
+      "color": "default",
+      "description": null,
+      "id": "00000000-0000-0000-0000-00000000000a",
+      "name": "Not started"
+     },
+     "type": "status"
+    },
+    "Tags": {
+     "id": "DbUD",
+     "multi_select": [
+      {
+       "color": "purple",
+       "id": "00000000-0000-0000-0000-0000000000c3",
+       "name": "Markt"
+      }
+     ],
+     "type": "multi_select"
+    }
+   },
+   "public_url": null,
+   "url": "https://www.notion.so/Messeauftritt-00000000000000000000000000000055"
+  },
+  {
+   "archived": false,
+   "cover": null,
+   "created_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "created_time": "2026-09-15T22:05:00.000Z",
+   "icon": null,
+   "id": "00000000-0000-0000-0000-000000000056",
+   "in_trash": false,
+   "is_archived": false,
+   "is_locked": false,
+   "last_edited_by": {
+    "id": "00000000-0000-0000-0000-000000000008",
+    "object": "user"
+   },
+   "last_edited_time": "2026-09-15T22:05:00.000Z",
+   "object": "page",
+   "parent": {
+    "data_source_id": "00000000-0000-0000-0000-000000000009",
+    "database_id": "00000000-0000-0000-0000-000000000008",
+    "type": "data_source_id"
+   },
+   "properties": {
+    "Name": {
+     "id": "title",
+     "title": [
+      {
+       "annotations": {
+        "bold": false,
+        "code": false,
+        "color": "default",
+        "italic": false,
+        "strikethrough": false,
+        "underline": false
+       },
+       "href": null,
+       "plain_text": "Ideensammlung",
+       "text": {
+        "content": "Ideensammlung",
+        "link": null
+       },
+       "type": "text"
+      }
+     ],
+     "type": "title"
+    },
+    "Nächstes": {
+     "has_more": false,
+     "id": "WGBf",
+     "relation": [
+      {
+       "id": "00000000-0000-0000-0000-000000000040"
+      }
+     ],
+     "type": "relation"
+    },
+    "Start": {
+     "date": null,
+     "id": "n%5EzI",
+     "type": "date"
+    },
+    "Status": {
+     "id": "s_%3EO",
+     "status": {
+      "color": "default",
+      "description": null,
+      "id": "00000000-0000-0000-0000-00000000000a",
+      "name": "Not started"
+     },
+     "type": "status"
+    },
+    "Tags": {
+     "id": "DbUD",
+     "multi_select": [],
+     "type": "multi_select"
+    }
+   },
+   "public_url": null,
+   "url": "https://www.notion.so/Ideensammlung-00000000000000000000000000000056"
+  }
+ ],
+ "type": "page_or_data_source"
+}

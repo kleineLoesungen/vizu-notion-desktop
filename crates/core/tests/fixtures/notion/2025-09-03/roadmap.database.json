@@ -1,0 +1,45 @@
+{
+ "archived": false,
+ "cover": null,
+ "created_time": "2026-09-15T22:05:12.417+00:00",
+ "data_sources": [
+  {
+   "id": "00000000-0000-0000-0000-000000000009",
+   "name": "vizu Roadmap"
+  }
+ ],
+ "database_type": null,
+ "description": [],
+ "icon": null,
+ "id": "00000000-0000-0000-0000-000000000008",
+ "in_trash": false,
+ "is_inline": false,
+ "is_locked": false,
+ "last_edited_time": "2026-09-15T22:05:14.669+00:00",
+ "object": "database",
+ "parent": {
+  "page_id": "00000000-0000-0000-0000-000000000007",
+  "type": "page_id"
+ },
+ "public_url": null,
+ "title": [
+  {
+   "annotations": {
+    "bold": false,
+    "code": false,
+    "color": "default",
+    "italic": false,
+    "strikethrough": false,
+    "underline": false
+   },
+   "href": null,
+   "plain_text": "vizu Roadmap",
+   "text": {
+    "content": "vizu Roadmap",
+    "link": null
+   },
+   "type": "text"
+  }
+ ],
+ "url": "https://www.notion.so/00000000000000000000000000000008"
+}
