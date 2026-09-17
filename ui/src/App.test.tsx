@@ -671,14 +671,25 @@ describe("Oberfläche", () => {
     expect(screen.getByText(/Ohne Datum.*Ohne Ziel/)).toBeTruthy();
   });
 
-  it("zeigt die Art jedes Diagramms in der Liste", async () => {
+  it("teilt die Liste nach Art in Aufklapp-Bereiche", async () => {
+    const user = userEvent.setup();
     templates = [template("t1", "Fahrplan")];
     sources = [{ ...overview("a", "Projekte", 12), views: ["flow", "metro"] }];
     render(<App />);
 
     const liste = await screen.findByRole("navigation", { name: "Diagramme" });
-    expect(within(liste).getByText("Mermaid")).toBeTruthy();
-    expect(within(liste).getByText("Fluss")).toBeTruthy();
-    expect(within(liste).getByText("Metro")).toBeTruthy();
+    const gruppe = (name: string) =>
+      within(liste).getByText(name).closest("details") as HTMLDetailsElement;
+
+    // Vorlagen legt man selbst an — die stehen offen. Fluss und Metro
+    // entstehen von selbst, je Quelle einer; sie beginnen zugeklappt.
+    expect(gruppe("Mermaid").open).toBe(true);
+    expect(gruppe("Fluss").open).toBe(false);
+    expect(gruppe("Metro").open).toBe(false);
+
+    await user.click(within(liste).getByText("Metro"));
+
+    expect(gruppe("Metro").open).toBe(true);
+    expect(within(liste).getByRole("button", { name: "Projekte — Metro" })).toBeTruthy();
   });
 });

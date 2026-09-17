@@ -715,6 +715,8 @@ button.small {
 .template-nav {
   display: flex;
   flex-direction: column;
+  /* Nimmt den freien Platz, teilt ihn aber mit den aufgeklappten Quellen. */
+  flex: 1;
   min-height: 0;
 }
 
@@ -1100,15 +1102,19 @@ button.destructive {
   font-size: 11px;
 }
 
-/* Die Art eines Diagramms in der Liste. */
-.kind-badge {
-  margin-left: var(--space-2);
-  padding: 0 var(--space-1);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--muted);
-  font-size: 10px;
+/* Die Diagrammliste, nach Art in Aufklapp-Bereiche geteilt. */
+.diagram-groups {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.diagram-group > summary {
+  padding: var(--space-1) var(--space-4);
+  cursor: pointer;
+  font-size: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--muted);
 }
