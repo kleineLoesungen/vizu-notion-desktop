@@ -1,0 +1,6 @@
+---
+source: crates/cli/tests/cli.rs
+expression: text
+---
+NAME                     ART       AUSGEBLENDET
+Projekte ohne Altlasten  flow      2

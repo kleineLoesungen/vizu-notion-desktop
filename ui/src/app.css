@@ -1127,6 +1127,7 @@ button.destructive {
   opacity: 1;
 }
 
+.views-section > summary,
 .hidden-section > summary {
   padding: var(--space-2) var(--space-4);
   cursor: pointer;

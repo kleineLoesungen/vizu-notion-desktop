@@ -36,6 +36,8 @@ import type {
   TemplateHelp,
   TemplateInput,
   TokenStatus,
+  View,
+  ViewInput,
 } from "./bindings";
 
 /** Ein abgelehnter Befehl. Dieselbe Form wie `error` im JSON der CLI. */
@@ -112,6 +114,14 @@ export const api = {
     /** Gibt die neue Liste zurück, damit die Oberfläche nicht nachfragt. */
     set: (entry: HiddenDiagram, hidden: boolean) =>
       call<HiddenDiagram[]>("hidden_set", { entry, hidden }),
+  },
+
+  /** Gespeicherte Ansichten: ein Diagramm samt Einstellungen. */
+  views: {
+    list: () => call<View[]>("view_list"),
+    /** `id` leer lassen heißt: neu anlegen. */
+    save: (id: string | null, input: ViewInput) => call<View>("view_save", { id, input }),
+    remove: (id: string) => call<null>("view_delete", { id }),
   },
 
   templates: {

@@ -26,6 +26,7 @@ import type {
   Template,
   TemplateHelp,
   TokenStatus,
+  View,
 } from "./bindings";
 import { ConfirmDialog } from "./components/ConfirmDialog";
 import { type DiagramChoice, DiagramList } from "./components/DiagramList";
@@ -35,12 +36,14 @@ import { FilterPanel } from "./components/FilterPanel";
 import { FlowView } from "./components/FlowView";
 import { GettingStarted } from "./components/GettingStarted";
 import { MetroView } from "./components/MetroView";
+import { SaveViewDialog } from "./components/SaveViewDialog";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { SourceDetail } from "./components/SourceDetail";
 import { SourceDialog } from "./components/SourceDialog";
 import { SourceList } from "./components/SourceList";
 import { SourceRefresh } from "./components/SourceRefresh";
 import { TemplateEditor } from "./components/TemplateEditor";
+import { ViewList } from "./components/ViewList";
 import { withNeighbours } from "./lib/graph";
 import { applyTheme, useIsDark } from "./lib/theme";
 
@@ -81,6 +84,11 @@ export function App() {
   const [templates, setTemplates] = useState<Template[]>([]);
   /** Diagramme, die aus der Liste in den Bereich „Versteckt" gerutscht sind. */
   const [hiddenDiagrams, setHiddenDiagrams] = useState<HiddenDiagram[]>([]);
+  /** Gespeicherte Ansichten — ein Diagramm samt Einstellungen. */
+  const [views, setViews] = useState<View[]>([]);
+  /** Welche Ansicht gerade offen ist; `null`, sobald man etwas anderes wählt. */
+  const [activeView, setActiveView] = useState<string | null>(null);
+  const [saveViewOpen, setSaveViewOpen] = useState(false);
   const [selection, setSelection] = useState<Selection>({ kind: "none" });
 
   const [diagram, setDiagram] = useState<Diagram | null>(null);
@@ -129,14 +137,16 @@ export function App() {
 
   const reload = useCallback(async () => {
     try {
-      const [overview, list, gone] = await Promise.all([
+      const [overview, list, gone, saved] = await Promise.all([
         api.sources.list(),
         api.templates.list(),
         api.hidden.list(),
+        api.views.list(),
       ]);
       setSources(overview);
       setTemplates(list);
       setHiddenDiagrams(gone);
+      setViews(saved);
     } catch (raw) {
       fail(raw);
     }
@@ -250,6 +260,7 @@ export function App() {
 
   /** Ein Eintrag aus der Diagrammliste — Vorlage, Fluss oder Metro. */
   function selectDiagram(choice: DiagramChoice) {
+    setActiveView(null);
     setSelection(choice);
     setDraft(null);
     setDiagram(null);
@@ -315,6 +326,53 @@ export function App() {
       }
     }
     changeHidden(next);
+  }
+
+  // --- Gespeicherte Ansichten ------------------------------------------------
+
+  /** Stellt wieder her, was die Ansicht festhält. */
+  function openView(view: View) {
+    const hide = new Set(view.hidden);
+    setActiveView(view.id);
+    setSelection({ kind: view.kind, id: view.target } as Selection);
+    setDraft(null);
+    setDiagram(null);
+    setFlow(null);
+    setMetro(null);
+    setHidden(hide);
+    setSubtitle(view.subtitle);
+    if (view.kind === "template") void draw(view.target, hide);
+    if (view.kind === "flow") void drawFlow(view.target, hide, view.subtitle);
+    if (view.kind === "metro") void drawMetro(view.target, hide);
+  }
+
+  async function saveView(name: string) {
+    if (selection.kind === "none" || selection.kind === "source") return;
+    setFieldError(null);
+    try {
+      const saved = await api.views.save(activeView, {
+        name,
+        kind: selection.kind,
+        target: selection.id,
+        hidden: [...hidden],
+        subtitle: selection.kind === "flow" ? subtitle : null,
+      });
+      setViews(await api.views.list());
+      setActiveView(saved.id);
+      setSaveViewOpen(false);
+    } catch (raw) {
+      fail(raw);
+    }
+  }
+
+  async function deleteView(view: View) {
+    try {
+      await api.views.remove(view.id);
+      setViews(await api.views.list());
+      if (activeView === view.id) setActiveView(null);
+    } catch (raw) {
+      fail(raw);
+    }
   }
 
   // --- Quellen -------------------------------------------------------------
@@ -529,6 +587,14 @@ export function App() {
   const selectedTemplate =
     selection.kind === "template" ? templates.find((t) => t.id === selection.id) : undefined;
   const fieldMessage = (field: string) => fieldError?.fieldMessage(field);
+  /** Ein Name, den man nicht erst tippen muss. */
+  const diagramTitle = (choice: DiagramChoice) => {
+    if (choice.kind === "template") {
+      return templates.find((t) => t.id === choice.id)?.title ?? "Ansicht";
+    }
+    const name = sources.find((s) => s.source.id === choice.id)?.source.name ?? "Ansicht";
+    return choice.kind === "flow" ? `Fluss: ${name}` : `Metro: ${name}`;
+  };
   /** Alle vier Schritte erledigt? Dann führt nichts mehr durch den Einstieg. */
   const ready = !!token?.origin && sources.some((s) => s.fetch !== null) && templates.length > 0;
   /** Quellname → Zeitpunkt des letzten Abrufs, für Filterfeld und Kopfzeile. */
@@ -555,6 +621,12 @@ export function App() {
           onSelect={selectDiagram}
           onHide={(choice, hide) => void hideDiagram(choice, hide)}
           onCreate={() => void editTemplate(null)}
+        />
+        <ViewList
+          views={views}
+          activeId={activeView}
+          onOpen={openView}
+          onDelete={(view) => void deleteView(view)}
         />
         {/* Quellen richtet man selten ein — eingeklappt, bis sie gebraucht werden. */}
         <details className="sources-section" open={sources.length === 0}>
@@ -651,6 +723,16 @@ export function App() {
                 <button
                   type="button"
                   className="ghost"
+                  onClick={() => {
+                    setFieldError(null);
+                    setSaveViewOpen(true);
+                  }}
+                >
+                  Ansicht speichern
+                </button>
+                <button
+                  type="button"
+                  className="ghost"
                   onClick={() => void editTemplate(selectedTemplate.id)}
                 >
                   Bearbeiten
@@ -695,6 +777,18 @@ export function App() {
                   ))}
                 </select>
               </label>
+              <div className="actions">
+                <button
+                  type="button"
+                  className="ghost"
+                  onClick={() => {
+                    setFieldError(null);
+                    setSaveViewOpen(true);
+                  }}
+                >
+                  Ansicht speichern
+                </button>
+              </div>
             </header>
             <FlowView graph={flow} onExport={(svg) => void exportSvg(svg)} />
           </section>
@@ -715,6 +809,18 @@ export function App() {
                   Ohne Datum, deshalb nicht auf der Karte: {metro.undated.join(", ")}
                 </span>
               )}
+              <div className="actions">
+                <button
+                  type="button"
+                  className="ghost"
+                  onClick={() => {
+                    setFieldError(null);
+                    setSaveViewOpen(true);
+                  }}
+                >
+                  Ansicht speichern
+                </button>
+              </div>
             </header>
             <MetroView map={metro} onExport={(svg) => void exportSvg(svg)} />
           </section>
@@ -772,6 +878,20 @@ export function App() {
             setFieldError(null);
             setSourceDialog(null);
           }}
+        />
+      )}
+
+      {saveViewOpen && selection.kind !== "none" && selection.kind !== "source" && (
+        <SaveViewDialog
+          suggestion={
+            activeView
+              ? (views.find((v) => v.id === activeView)?.name ?? "")
+              : diagramTitle(selection)
+          }
+          hiddenCount={hidden.size}
+          fieldMessage={fieldMessage}
+          onSave={(name) => void saveView(name)}
+          onClose={() => setSaveViewOpen(false)}
         />
       )}
 

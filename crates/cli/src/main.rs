@@ -81,6 +81,10 @@ fn run(cli: Cli) -> Result<()> {
             let app = App::open(paths)?;
             commands::template::render(&template, &hidden, &app, &out)
         }
+        Command::View(cmd) => {
+            let app = App::open(paths)?;
+            commands::view::run(cmd, &app, &out)
+        }
         Command::Token(cmd) => {
             let app = App::open(paths)?;
             commands::token::run(cmd, &app, &out)

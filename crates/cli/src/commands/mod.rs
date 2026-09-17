@@ -10,6 +10,7 @@ pub mod flow;
 pub mod source;
 pub mod template;
 pub mod token;
+pub mod view;
 
 use std::io::{IsTerminal, Write};
 

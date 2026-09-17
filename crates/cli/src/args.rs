@@ -116,6 +116,10 @@ pub enum Command {
         hidden: Vec<String>,
     },
 
+    /// Gespeicherte Ansichten: ein Diagramm samt Einstellungen.
+    #[command(subcommand)]
+    View(ViewCommand),
+
     /// Den Notion-Token speichern, prüfen oder löschen.
     #[command(subcommand)]
     Token(TokenCommand),
@@ -139,6 +143,61 @@ pub enum Command {
     Man {
         #[arg(long, value_name = "VERZEICHNIS", default_value = "dist/man")]
         out: PathBuf,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ViewCommand {
+    /// Alle Ansichten.
+    #[command(alias = "ls")]
+    List,
+
+    /// Zeichnet die Ansicht — Mermaid-Text, Fluss oder Metro-Karte.
+    ///
+    /// Dasselbe, was das Fenster beim Öffnen der Ansicht zeigt.
+    Show {
+        /// Name, Kennung oder ein eindeutiges Ende der Kennung.
+        #[arg(value_name = "ANSICHT")]
+        view: String,
+    },
+
+    /// Eine Ansicht speichern.
+    ///
+    /// Beispiel: `vizu-notion view add "Roadmap ohne Altlasten" --metro Projekte --hide 3dcf…`
+    Add {
+        /// Unter diesem Namen steht die Ansicht in der Liste.
+        name: String,
+
+        /// Eine Vorlage zeichnen: Kurzname oder Kennung.
+        #[arg(long, value_name = "VORLAGE", group = "diagram")]
+        template: Option<String>,
+
+        /// Den Fluss einer Quelle zeichnen.
+        #[arg(long, value_name = "QUELLE", group = "diagram")]
+        flow: Option<String>,
+
+        /// Die Metro-Karte einer Quelle zeichnen.
+        #[arg(long, value_name = "QUELLE", group = "diagram")]
+        metro: Option<String>,
+
+        /// Seiten-IDs, die nicht gezeichnet werden. Mehrfach oder mit Komma.
+        #[arg(long = "hide", value_name = "SEITEN-ID", value_delimiter = ',')]
+        hidden: Vec<String>,
+
+        /// Beim Fluss: Rolle, die unter dem Titel steht.
+        #[arg(long, value_name = "ROLLE")]
+        sub: Option<String>,
+    },
+
+    /// Eine Ansicht löschen.
+    #[command(alias = "delete")]
+    Rm {
+        #[arg(value_name = "ANSICHT")]
+        view: String,
+
+        /// Nicht nachfragen.
+        #[arg(short = 'y', long)]
+        yes: bool,
     },
 }
 

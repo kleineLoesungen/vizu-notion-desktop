@@ -605,3 +605,75 @@ fn completions_brauchen_keine_datenbank() {
     );
     assert!(String::from_utf8_lossy(&out.stdout).starts_with("#compdef vizu-notion"));
 }
+
+// --- Gespeicherte Ansichten --------------------------------------------------
+
+#[test]
+fn speichert_eine_ansicht_und_zeichnet_sie_wieder() {
+    let ctx = Ctx::new();
+    ctx.seed();
+
+    snapshot("ansichten_leer", &ctx.run(&["view", "list"]).ok().stdout);
+
+    let saved = ctx
+        .run(&[
+            "view",
+            "add",
+            "Projekte ohne Altlasten",
+            "--flow",
+            "Projekte",
+            "--hide",
+            "p1,p2",
+            "--sub",
+            "status",
+        ])
+        .ok();
+    assert!(saved.stdout.contains("Gespeichert"), "{}", saved.stdout);
+
+    snapshot("ansichten", &ctx.run(&["view", "list"]).ok().stdout);
+
+    // Dasselbe wie `flow Projekte` — nur mit dem, was die Ansicht festhält.
+    let json = ctx
+        .run(&["view", "show", "Projekte ohne Altlasten", "--json"])
+        .ok()
+        .json();
+    assert_eq!(json["nodes"], serde_json::json!([]));
+    assert!(json["subtitle_roles"].is_array(), "{json}");
+}
+
+#[test]
+fn eine_ansicht_braucht_genau_eine_diagrammart() {
+    let ctx = Ctx::new();
+    ctx.seed();
+
+    let ohne = ctx.run(&["view", "add", "Leer"]);
+    assert_eq!(ohne.code, 1, "{}", ohne.stderr);
+    assert!(ohne.stderr.contains("--template"), "{}", ohne.stderr);
+
+    // clap lässt zwei Arten gar nicht erst durch.
+    let zwei = ctx.run(&[
+        "view", "add", "Zwei", "--flow", "Projekte", "--metro", "Projekte",
+    ]);
+    assert_eq!(zwei.code, 2, "{}", zwei.stderr);
+}
+
+#[test]
+fn loescht_eine_ansicht_nur_nach_rueckfrage() {
+    let ctx = Ctx::new();
+    ctx.seed();
+    ctx.run(&["view", "add", "Roadmap", "--metro", "Projekte"])
+        .ok();
+
+    // Ohne Terminal gibt es keine Rückfrage — also einen Fehler statt eines
+    // stillen Löschens.
+    let ohne = ctx.run(&["view", "rm", "Roadmap"]);
+    assert_eq!(ohne.code, 1, "{}", ohne.stderr);
+    assert!(ohne.stderr.contains("--yes"), "{}", ohne.stderr);
+
+    let weg = ctx.run(&["view", "rm", "Roadmap", "--yes"]).ok();
+    assert!(weg.stdout.contains("Gelöscht"), "{}", weg.stdout);
+    assert!(
+        ctx.run(&["view", "list"]).ok().stdout.contains("Keine"),
+        "Ansicht ist noch da"
+    );
+}

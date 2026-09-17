@@ -22,6 +22,7 @@ use vizu_notion_core::metro::MetroMap;
 use vizu_notion_core::secret::{TokenOrigin, TokenStatus};
 use vizu_notion_core::source::Source;
 use vizu_notion_core::template::{Diagram, Template};
+use vizu_notion_core::view::View;
 use vizu_notion_core::{Config, Paths, ids, timestamp};
 
 pub struct Out {
@@ -206,6 +207,33 @@ impl Out {
             map.lines.len(),
             map.lines.iter().map(|l| l.stations.len()).sum::<usize>()
         );
+    }
+
+    pub fn views(&self, views: &[View]) {
+        if self.json {
+            self.print(views);
+            return;
+        }
+        if views.is_empty() {
+            println!("Keine Ansichten. Speichern mit:");
+            println!("  vizu-notion view add \"Roadmap\" --metro Projekte");
+            return;
+        }
+        let width = views
+            .iter()
+            .map(|v| v.name.chars().count())
+            .max()
+            .unwrap_or(4)
+            .clamp(4, 40);
+        println!("{:<width$}  {:<8}  AUSGEBLENDET", "NAME", "ART");
+        for v in views {
+            println!(
+                "{:<width$}  {:<8}  {}",
+                truncate(&v.name, width),
+                v.kind,
+                v.hidden.len()
+            );
+        }
     }
 
     pub fn templates(&self, templates: &[Template]) {

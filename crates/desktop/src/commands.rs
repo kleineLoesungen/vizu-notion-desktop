@@ -28,6 +28,7 @@ use vizu_notion_core::notion::Property;
 use vizu_notion_core::secret::{self, TokenStatus};
 use vizu_notion_core::source::{self, Source, SourceInput};
 use vizu_notion_core::template::{self, Diagram, Example, Hint, Template, TemplateInput};
+use vizu_notion_core::view::{self, View, ViewInput};
 use vizu_notion_core::{Config, Paths, notion};
 
 use crate::error::{ApiError, ApiResult};
@@ -140,6 +141,31 @@ pub async fn hidden_set(
         hidden::set(app.conn(), &entry, hidden)?;
         hidden::list(app.conn())
     })
+}
+
+// --- Gespeicherte Ansichten --------------------------------------------------
+
+#[tauri::command]
+pub async fn view_list(state: State<'_, AppState>) -> ApiResult<Vec<View>> {
+    state.with(|app| view::list(app.conn()))
+}
+
+/// Speichert eine Ansicht oder schreibt sie neu — je nachdem, ob `id` gesetzt ist.
+#[tauri::command]
+pub async fn view_save(
+    state: State<'_, AppState>,
+    id: Option<Uuid>,
+    input: ViewInput,
+) -> ApiResult<View> {
+    state.with(|app| match id {
+        Some(id) => view::update(app.conn(), id, input),
+        None => view::create(app.conn(), input),
+    })
+}
+
+#[tauri::command]
+pub async fn view_delete(state: State<'_, AppState>, id: Uuid) -> ApiResult<()> {
+    state.with(|app| view::delete(app.conn(), id))
 }
 
 #[tauri::command]

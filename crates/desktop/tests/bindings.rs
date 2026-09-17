@@ -23,6 +23,7 @@ use vizu_notion_core::rows::NodeInfo;
 use vizu_notion_core::secret::{TokenOrigin, TokenStatus};
 use vizu_notion_core::source::{ColumnMapping, Source, SourceInput};
 use vizu_notion_core::template::{Diagram, Example, Hint, Template, TemplateInput};
+use vizu_notion_core::view::{View, ViewInput};
 use vizu_notion_core::{Config, ErrorCode, FieldError, Theme};
 use vizu_notion_desktop::ApiError;
 use vizu_notion_desktop::commands::{AppInfo, TemplateHelp};
@@ -72,6 +73,8 @@ fn generate() -> String {
         decl::<Template>(&cfg),
         decl::<TemplateHelp>(&cfg),
         decl::<TemplateInput>(&cfg),
+        decl::<View>(&cfg),
+        decl::<ViewInput>(&cfg),
         decl::<Theme>(&cfg),
         decl::<TokenOrigin>(&cfg),
         decl::<TokenStatus>(&cfg),

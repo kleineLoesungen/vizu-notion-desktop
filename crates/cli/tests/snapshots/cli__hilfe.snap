@@ -13,6 +13,7 @@ Commands:
   metro        Die Metro-Karte einer Quelle zeichnen — ohne Vorlage
   template     Mermaid-Vorlagen verwalten
   render       Eine Vorlage zeichnen und den Mermaid-Text ausgeben
+  view         Gespeicherte Ansichten: ein Diagramm samt Einstellungen
   token        Den Notion-Token speichern, prüfen oder löschen
   config       Einstellungen anzeigen und ändern
   paths        Zeigt, wo die Anwendung ihre Dateien ablegt

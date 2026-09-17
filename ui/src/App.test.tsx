@@ -115,6 +115,16 @@ function diagramFor(hidden: string[]): Diagram {
 let sources: SourceOverview[];
 let templates: Template[];
 let hiddenDiagrams: { kind: string; target: string }[];
+let views: {
+  id: string;
+  name: string;
+  kind: string;
+  target: string;
+  hidden: string[];
+  subtitle: string | null;
+  created_at: string;
+  updated_at: string;
+}[];
 let calls: Call[];
 let config: Config;
 let token: TokenStatus;
@@ -243,6 +253,23 @@ function backend(cmd: string, args: Record<string, unknown> = {}): unknown {
       };
     case "token_status":
       return token;
+    case "view_list":
+      return views;
+    case "view_save": {
+      const input = args.input as { name: string; kind: string; target: string; hidden: string[] };
+      const saved = {
+        id: (args.id as string) ?? "v1",
+        ...input,
+        subtitle: null,
+        created_at: STAMP,
+        updated_at: STAMP,
+      };
+      views = [...views.filter((v) => v.id !== saved.id), saved];
+      return saved;
+    }
+    case "view_delete":
+      views = views.filter((v) => v.id !== args.id);
+      return null;
     case "hidden_list":
       return hiddenDiagrams;
     case "hidden_set": {
@@ -273,6 +300,7 @@ beforeEach(() => {
   sources = [];
   templates = [];
   hiddenDiagrams = [];
+  views = [];
   calls = [];
   drawn.length = 0;
   saved.path = null;
@@ -740,6 +768,46 @@ describe("Oberfläche", () => {
     expect(await screen.findByRole("img", { name: /Metro-Karte/ })).toBeTruthy();
     // Was kein Datum hat, steht in keiner Linie — die Karte sagt das.
     expect(screen.getByText(/Ohne Datum.*Ohne Ziel/)).toBeTruthy();
+  });
+
+  it("speichert eine Ansicht und stellt sie beim Öffnen wieder her", async () => {
+    const user = userEvent.setup();
+    sources = [{ ...overview("a", "Projekte", 12), views: ["metro"] }];
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Projekte — Metro" }));
+    await screen.findByRole("img", { name: /Metro-Karte/ });
+    // Eine Seite ausblenden — genau das soll die Ansicht festhalten.
+    await user.click(await screen.findByRole("checkbox", { name: /Website/ }));
+    await waitFor(() => expect(commands("metro_render")).toHaveLength(2));
+
+    await user.click(screen.getByRole("button", { name: "Ansicht speichern" }));
+    const feld = screen.getByRole("textbox", { name: "Name" }) as HTMLInputElement;
+    expect(feld.value).toBe("Metro: Projekte");
+    await user.click(screen.getByRole("button", { name: "Speichern" }));
+
+    await waitFor(() => expect(commands("view_save")).toHaveLength(1));
+    expect(commands("view_save")[0]?.args).toEqual({
+      id: null,
+      input: {
+        name: "Metro: Projekte",
+        kind: "metro",
+        target: "a",
+        hidden: ["p1"],
+        subtitle: null,
+      },
+    });
+
+    // Etwas anderes ansehen, dann die Ansicht öffnen: Das Ausgeblendete ist
+    // wieder ausgeblendet.
+    await user.click(screen.getByRole("button", { name: "Projekte — Metro" }));
+    await waitFor(() => expect(commands("metro_render")).toHaveLength(3));
+    expect(commands("metro_render")[2]?.args).toEqual({ id: "a", hidden: [] });
+
+    await user.click(await screen.findByRole("button", { name: "Ansicht Metro: Projekte" }));
+
+    await waitFor(() => expect(commands("metro_render")).toHaveLength(4));
+    expect(commands("metro_render")[3]?.args).toEqual({ id: "a", hidden: ["p1"] });
   });
 
   it("versteckt ein Diagramm und holt es zurück", async () => {

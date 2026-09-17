@@ -288,6 +288,29 @@ export type TemplateHelp = { examples: Array<Example>, hints: Array<Hint>, };
  */
 export type TemplateInput = { slug: string, body: string, };
 
+export type View = { id: string, name: string, 
+/**
+ * `template`, `flow` oder `metro`.
+ */
+kind: string, 
+/**
+ * Kennung der Vorlage bzw. der Quelle.
+ */
+target: string, 
+/**
+ * Seiten-IDs, die nicht gezeichnet werden.
+ */
+hidden: Array<string>, 
+/**
+ * Beim Fluss: die Rolle unter dem Titel.
+ */
+subtitle: string | null, created_at: string, updated_at: string, };
+
+/**
+ * Was von außen hereinkommt — ungeprüft.
+ */
+export type ViewInput = { name: string, kind: string, target: string, hidden: Array<string>, subtitle: string | null, };
+
 export type Theme = "system" | "light" | "dark";
 
 export type TokenOrigin = "environment" | "store";

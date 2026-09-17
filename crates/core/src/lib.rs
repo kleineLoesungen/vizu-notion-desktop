@@ -43,6 +43,7 @@ pub mod secret;
 pub mod source;
 pub mod template;
 pub mod timestamp;
+pub mod view;
 
 pub use config::{Config, Theme};
 pub use error::{Error, ErrorCode, FieldError, NotionErrorKind, Result, ValidationError};
