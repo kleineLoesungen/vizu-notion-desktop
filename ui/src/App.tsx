@@ -14,6 +14,7 @@ import { ApiError, api } from "./api";
 import type {
   AppInfo,
   Config,
+  DatabaseSchema,
   Diagram,
   FlowGraph,
   HiddenDiagram,
@@ -99,6 +100,9 @@ export function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sourceDialog, setSourceDialog] = useState<{ source: Source | null } | null>(null);
   const [properties, setProperties] = useState<Property[]>([]);
+  /** Spalten, die für den Dialog frisch bei Notion erfragt wurden. */
+  const [schema, setSchema] = useState<DatabaseSchema | null>(null);
+  const [inspecting, setInspecting] = useState(false);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [help, setHelp] = useState<TemplateHelp | null>(null);
   /** Eine Löschung, die noch bestätigt werden muss. */
@@ -383,8 +387,24 @@ export function App() {
 
   async function openSourceDialog(source: Source | null) {
     setFieldError(null);
+    setSchema(null);
     setProperties(source ? await api.sources.properties(source.id).catch(() => []) : []);
     setSourceDialog({ source });
+  }
+
+  /** Die Spalten einer Datenbank bei Notion erfragen — für die Einrichtung. */
+  async function inspectDatabase(databaseId: string) {
+    setInspecting(true);
+    setFieldError(null);
+    setBanner(null);
+    try {
+      setSchema(await api.sources.inspect(databaseId));
+    } catch (raw) {
+      setSchema(null);
+      fail(raw);
+    } finally {
+      setInspecting(false);
+    }
   }
 
   async function saveSource(input: SourceInput) {
@@ -737,6 +757,9 @@ export function App() {
         <SourceDialog
           source={sourceDialog.source}
           properties={properties}
+          schema={schema}
+          inspecting={inspecting}
+          onInspect={(databaseId) => void inspectDatabase(databaseId)}
           fieldMessage={fieldMessage}
           onSave={(input) => void saveSource(input)}
           {...(sourceDialog.source

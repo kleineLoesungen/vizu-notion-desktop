@@ -8,6 +8,18 @@ use crate::args::SourceCommand;
 use crate::commands::confirm;
 use crate::output::Out;
 
+/// „title=Name, next=Nächstes" — für die Meldung auf stderr.
+fn describe(mappings: &[ColumnMapping]) -> String {
+    if mappings.is_empty() {
+        return "keiner".to_string();
+    }
+    mappings
+        .iter()
+        .map(|m| format!("{}={}", m.role, m.property))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
 pub fn run(cmd: SourceCommand, app: &App, out: &Out) -> Result<()> {
     match cmd {
         SourceCommand::List => {
@@ -27,11 +39,28 @@ pub fn run(cmd: SourceCommand, app: &App, out: &Out) -> Result<()> {
             name,
             database,
             mappings,
+            auto,
         } => {
-            let created = source::create(
-                app.conn(),
-                SourceInput::new(name, database, to_mappings(mappings)),
-            )?;
+            let mut wanted = to_mappings(mappings);
+            if auto {
+                // Derselbe Vorschlag wie im Fenster — er steht in core.
+                let schema = fetch::inspect_with_http(app.secrets(), &database)?;
+                if !out.json {
+                    eprintln!(
+                        "„{}\u{201c}: {} Spalten, Vorschlag {}",
+                        schema.title,
+                        schema.properties.len(),
+                        describe(&schema.suggestion)
+                    );
+                }
+                // Was von Hand kam, bleibt, wie es ist.
+                for m in schema.suggestion {
+                    if !wanted.iter().any(|own| own.role == m.role) {
+                        wanted.push(m);
+                    }
+                }
+            }
+            let created = source::create(app.conn(), SourceInput::new(name, database, wanted))?;
             out.done(
                 format!(
                     "Angelegt: {}  {}\nAbrufen mit:  vizu-notion fetch {}",

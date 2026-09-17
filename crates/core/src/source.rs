@@ -169,6 +169,118 @@ fn is_role_name(role: &str) -> bool {
         && chars.all(|c| c.is_ascii_alphanumeric() || c == '_')
 }
 
+/// Ein Vorschlag für die Zuordnung, allein aus den Spalten der Datenbank.
+///
+/// Damit muss niemand raten, welche Rolle zu welcher Spalte gehört: Die
+/// Oberfläche füllt den Dialog damit vor, `source add --auto` die
+/// Kommandozeile. Geraten wird nach Art der Spalte, bei mehreren Bewerbern
+/// entscheidet der Name — „Start" ist eher das Datum als „Abgabe".
+///
+/// Vorgeschlagen wird nur, was sicher passt. Was fehlt, trägt man selbst ein;
+/// ein falscher Vorschlag wäre schlimmer als keiner.
+pub fn suggest(properties: &[notion::Property], data_source_id: &str) -> Vec<ColumnMapping> {
+    /// Spalten einer Art, die besten Namen zuerst.
+    fn pick(
+        properties: &[notion::Property],
+        kinds: &[&str],
+        hints: &[&str],
+        taken: &[String],
+    ) -> Option<String> {
+        let mut candidates: Vec<&notion::Property> = properties
+            .iter()
+            .filter(|p| kinds.contains(&p.kind.as_str()))
+            .filter(|p| !taken.contains(&p.name))
+            .collect();
+        candidates.sort_by_key(|p| {
+            let lower = p.name.to_lowercase();
+            // Der beste Treffer ist der früheste Hinweis im Namen.
+            hints
+                .iter()
+                .position(|hint| lower.contains(hint))
+                .unwrap_or(hints.len())
+        });
+        let best = candidates.first()?;
+        let lower = best.name.to_lowercase();
+        // Gibt es mehrere Spalten dieser Art und keine trägt einen passenden
+        // Namen, ist jede Wahl geraten — dann lieber keine.
+        if candidates.len() > 1 && !hints.iter().any(|hint| lower.contains(hint)) {
+            return None;
+        }
+        Some(best.name.clone())
+    }
+
+    // Eine Relation auf dieselbe Datenquelle ist ein Nachfolger oder eine
+    // Überordnung; eine auf eine andere ist etwas anderes und wird nicht
+    // vorgeschlagen.
+    let own: Vec<notion::Property> = properties
+        .iter()
+        .filter(|p| p.kind == "relation" && p.relation_to.as_deref() == Some(data_source_id))
+        .cloned()
+        .collect();
+
+    let mut mappings = Vec::new();
+    let mut taken: Vec<String> = Vec::new();
+    let mut add = |role: &str, property: Option<String>, taken: &mut Vec<String>| {
+        if let Some(property) = property {
+            taken.push(property.clone());
+            mappings.push(ColumnMapping {
+                role: role.to_string(),
+                property,
+            });
+        }
+    };
+
+    // Den Titel gibt es in jeder Notion-Datenbank genau einmal.
+    add("title", pick(properties, &["title"], &[], &[]), &mut taken);
+    add(
+        "next",
+        pick(&own, &["relation"], &["näch", "next", "folge"], &taken),
+        &mut taken,
+    );
+    add(
+        "parent",
+        pick(&own, &["relation"], &["über", "eltern", "parent"], &taken),
+        &mut taken,
+    );
+    add(
+        "date",
+        pick(
+            properties,
+            &["date"],
+            &["start", "beginn", "datum", "date"],
+            &taken,
+        ),
+        &mut taken,
+    );
+    add(
+        "tag",
+        pick(
+            properties,
+            &["multi_select"],
+            &["tag", "label", "kategorie", "bereich"],
+            &taken,
+        ),
+        &mut taken,
+    );
+    add(
+        "status",
+        pick(properties, &["status"], &["status"], &taken),
+        &mut taken,
+    );
+    add(
+        "assignee",
+        pick(
+            properties,
+            &["people"],
+            &["zuständig", "verantwort", "person", "owner"],
+            &taken,
+        ),
+        &mut taken,
+    );
+    mappings.sort_by(|a, b| a.role.cmp(&b.role));
+    mappings
+}
+
 pub fn list(conn: &Connection) -> Result<Vec<Source>> {
     let mut stmt = conn.prepare(
         "SELECT id, name, database_id, created_at, updated_at \

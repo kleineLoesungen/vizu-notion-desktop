@@ -22,7 +22,7 @@ use uuid::Uuid;
 
 use crate::error::{Error, NotionErrorKind, Result, Validator};
 use crate::notion::{self, Client, Database, Page, Transport};
-use crate::source::{self, Source};
+use crate::source::{self, ColumnMapping, Source};
 use crate::{secret, timestamp};
 
 /// Was ein Abruf von Notion mitgebracht hat, noch nicht gespeichert.
@@ -51,6 +51,52 @@ pub struct FetchStatus {
     #[serde(with = "crate::timestamp::serde_rfc3339")]
     #[ts(type = "string")]
     pub fetched_at: OffsetDateTime,
+}
+
+/// Die Spalten einer Notion-Datenbank, mit einem Vorschlag für die Zuordnung.
+///
+/// Für die Einrichtung: Beim Anlegen einer Quelle gibt es noch keinen Abruf,
+/// aus dem die Spalten kämen — hier werden sie live geholt. Zwei Anfragen, mehr
+/// nicht; die Seiten bleiben unangetastet.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+pub struct DatabaseSchema {
+    /// Wie die Datenbank in Notion heißt — als Vorschlag für den Namen.
+    pub title: String,
+    pub properties: Vec<notion::Property>,
+    /// Was core aus den Spalten für die Zuordnung ableitet.
+    pub suggestion: Vec<ColumnMapping>,
+}
+
+pub fn inspect<T: Transport>(client: &Client<T>, database_id: &str) -> Result<DatabaseSchema> {
+    let id = match notion::parse_id(database_id) {
+        Some(id) => id,
+        None => {
+            let mut v = Validator::new();
+            v.add(
+                "database_id",
+                "keine Notion-Kennung — die 32 Zeichen aus der Adresse der Datenbank einfügen",
+            );
+            v.finish()?;
+            unreachable!("finish() bricht mit dem eben gemeldeten Fehler ab")
+        }
+    };
+    let database = client.database(&id)?;
+    let data_source = database.data_sources.first().ok_or_else(|| Error::Notion {
+        kind: NotionErrorKind::Other,
+        status: 200,
+        message: format!(
+            "„{}\u{201c} hat keine Datenquelle — ist es eine verknüpfte Ansicht statt der Datenbank selbst?",
+            database.title()
+        ),
+    })?;
+    let schema = client.data_source(&data_source.id)?;
+    let properties = notion::property_kinds(&schema);
+    let suggestion = source::suggest(&properties, &data_source.id);
+    Ok(DatabaseSchema {
+        title: database.title(),
+        properties,
+        suggestion,
+    })
 }
 
 /// Holt Schema und alle Seiten einer Quelle.
@@ -174,6 +220,18 @@ pub fn fetch_with_http(
     let client = Client::new(notion::HttpTransport::new(&token));
     let known = known_titles(conn)?;
     store(conn, &download(&client, source, &known)?)
+}
+
+/// [`inspect`] mit dem Token aus dem Speicher und echtem Netz.
+pub fn inspect_with_http(
+    secrets: &dyn secret::SecretStore,
+    database_id: &str,
+) -> Result<DatabaseSchema> {
+    let token = secret::resolve(secrets)?;
+    inspect(
+        &Client::new(notion::HttpTransport::new(&token)),
+        database_id,
+    )
 }
 
 /// Seiten, deren Titel schon in der Datenbank stehen — als eigene Seite einer

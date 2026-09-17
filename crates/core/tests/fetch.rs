@@ -260,3 +260,73 @@ fn loeschen_nimmt_abruf_und_seiten_mit() {
         .unwrap();
     assert_eq!(rows, 0);
 }
+
+// --- Einrichtung: Spalten und Vorschlag --------------------------------------
+
+#[test]
+fn sieht_die_spalten_einer_datenbank_ohne_abruf_an() {
+    let ids = Ids::load();
+    let notion = FixtureNotion::new();
+    let log = notion.log();
+    let (client, _) = client(notion);
+
+    let schema = fetch::inspect(&client, &ids.database("roadmap")).unwrap();
+
+    assert_eq!(schema.title, "vizu Roadmap");
+    let namen: Vec<&str> = schema.properties.iter().map(|p| p.name.as_str()).collect();
+    assert_eq!(namen, ["Name", "Nächstes", "Start", "Status", "Tags"]);
+    // Zwei Anfragen, keine Seite: Die Einrichtung soll nicht 130 Seiten laden.
+    assert_eq!(log.lock().unwrap().len(), 2);
+}
+
+#[test]
+fn schlaegt_die_zuordnung_aus_den_spalten_vor() {
+    let ids = Ids::load();
+    let (client, _) = client(FixtureNotion::new());
+
+    let schema = fetch::inspect(&client, &ids.database("roadmap")).unwrap();
+
+    assert_eq!(
+        schema.suggestion,
+        vec![
+            ColumnMapping::new("date", "Start"),
+            ColumnMapping::new("next", "Nächstes"),
+            ColumnMapping::new("status", "Status"),
+            ColumnMapping::new("tag", "Tags"),
+            ColumnMapping::new("title", "Name"),
+        ]
+    );
+}
+
+#[test]
+fn schlaegt_keine_relation_auf_eine_andere_datenbank_vor() {
+    let ids = Ids::load();
+    let (client, _) = client(FixtureNotion::new());
+
+    // „vizu Projekte" hat zwei Relationen: „Nächstes" auf sich selbst und
+    // „Ziel" auf die Ziele. Nur die erste kann ein Nachfolger sein.
+    let schema = fetch::inspect(&client, &ids.database("projekte")).unwrap();
+
+    let next = schema.suggestion.iter().find(|m| m.role == "next");
+    assert_eq!(next.map(|m| m.property.as_str()), Some("Nächstes"));
+    assert!(
+        schema.suggestion.iter().all(|m| m.property != "Ziel"),
+        "{:?}",
+        schema.suggestion
+    );
+}
+
+#[test]
+fn eine_unlesbare_kennung_ist_ein_eingabefehler() {
+    let (client, _) = client(FixtureNotion::new());
+
+    let err = fetch::inspect(&client, "keine Kennung").unwrap_err();
+
+    assert_eq!(err.code(), ErrorCode::ValidationFailed);
+    assert!(
+        err.fields()
+            .expect("kein Eingabefehler")
+            .iter()
+            .any(|f| f.field == "database_id")
+    );
+}

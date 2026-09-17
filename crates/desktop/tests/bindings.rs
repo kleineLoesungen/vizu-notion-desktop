@@ -12,7 +12,7 @@
 //! **Neuer Typ über IPC?** Unten in `TYPES` eintragen, `#[derive(TS)]` am Typ.
 
 use ts_rs::TS;
-use vizu_notion_core::fetch::{FetchStatus, SourceOverview, ViewKind};
+use vizu_notion_core::fetch::{DatabaseSchema, FetchStatus, SourceOverview, ViewKind};
 use vizu_notion_core::flow::{FlowEdge, FlowGraph, FlowNode};
 use vizu_notion_core::hidden::HiddenDiagram;
 use vizu_notion_core::metro::{
@@ -48,6 +48,7 @@ fn generate() -> String {
         decl::<Config>(&cfg),
         decl::<ErrorCode>(&cfg),
         decl::<FetchStatus>(&cfg),
+        decl::<DatabaseSchema>(&cfg),
         decl::<FlowEdge>(&cfg),
         decl::<FlowGraph>(&cfg),
         decl::<FlowNode>(&cfg),

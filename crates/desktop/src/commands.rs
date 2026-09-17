@@ -20,7 +20,7 @@ use serde::Serialize;
 use tauri::State;
 use ts_rs::TS;
 use uuid::Uuid;
-use vizu_notion_core::fetch::{self, FetchStatus, SourceOverview};
+use vizu_notion_core::fetch::{self, DatabaseSchema, FetchStatus, SourceOverview};
 use vizu_notion_core::flow::{self, FlowGraph};
 use vizu_notion_core::hidden::{self, HiddenDiagram};
 use vizu_notion_core::metro::{self, MetroMap};
@@ -68,6 +68,26 @@ pub async fn source_fetch(state: State<'_, AppState>, id: Uuid) -> ApiResult<Fet
     .map_err(|e| ApiError::internal(format!("Abruf abgebrochen: {e}")))??;
 
     state.with(|app| fetch::store(app.conn(), &download))
+}
+
+/// Die Spalten einer Notion-Datenbank, live geholt, mit einem Vorschlag für
+/// die Zuordnung. Für den Dialog beim Anlegen — dort gibt es noch keinen
+/// Abruf, aus dem die Spalten kämen.
+///
+/// Wie `source_fetch` ohne Sperre, aber viel kürzer: zwei Anfragen, keine Seite.
+#[tauri::command]
+pub async fn database_inspect(
+    state: State<'_, AppState>,
+    database: String,
+) -> ApiResult<DatabaseSchema> {
+    let token = state.with(|app| secret::resolve(app.secrets()))?;
+    tauri::async_runtime::spawn_blocking(move || {
+        let client = notion::Client::new(notion::HttpTransport::new(&token));
+        fetch::inspect(&client, &database)
+    })
+    .await
+    .map_err(|e| ApiError::internal(format!("Abfrage abgebrochen: {e}")))?
+    .map_err(ApiError::from)
 }
 
 #[tauri::command]

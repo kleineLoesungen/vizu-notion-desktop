@@ -43,6 +43,23 @@ export type ErrorCode = "not_found" | "validation_failed" | "ambiguous_id" | "co
  */
 export type FetchStatus = { source_id: string, database_title: string, database_url: string, page_count: number, request_count: number, fetched_at: string, };
 
+/**
+ * Die Spalten einer Notion-Datenbank, mit einem Vorschlag für die Zuordnung.
+ *
+ * Für die Einrichtung: Beim Anlegen einer Quelle gibt es noch keinen Abruf,
+ * aus dem die Spalten kämen — hier werden sie live geholt. Zwei Anfragen, mehr
+ * nicht; die Seiten bleiben unangetastet.
+ */
+export type DatabaseSchema = { 
+/**
+ * Wie die Datenbank in Notion heißt — als Vorschlag für den Namen.
+ */
+title: string, properties: Array<Property>, 
+/**
+ * Was core aus den Spalten für die Zuordnung ableitet.
+ */
+suggestion: Array<ColumnMapping>, };
+
 export type FlowEdge = { from: string, to: string, };
 
 export type FlowGraph = { nodes: Array<FlowNode>, edges: Array<FlowEdge>, 
@@ -201,7 +218,13 @@ id: string,
 /**
  * `title`, `relation`, `multi_select`, …
  */
-kind: string, };
+kind: string, 
+/**
+ * Bei einer Relation: die Datenquelle, auf die sie zeigt. Nur so ist ein
+ * Verweis auf dieselbe Datenbank („Nächstes") von einem auf eine andere
+ * („Ziel") zu unterscheiden.
+ */
+relation_to: string | null, };
 
 export type Source = { id: string, name: string, 
 /**

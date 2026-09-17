@@ -196,7 +196,21 @@ function backend(cmd: string, args: Record<string, unknown> = {}): unknown {
         subtitle_roles: ["status"],
       };
     case "source_properties":
-      return [{ name: "Name", id: "title", kind: "title" }];
+      return [{ name: "Name", id: "title", kind: "title", relation_to: null }];
+    case "database_inspect":
+      return {
+        title: "vizu Projekte",
+        properties: [
+          { name: "Name", id: "title", kind: "title", relation_to: null },
+          { name: "Nächstes", id: "WGBf", kind: "relation", relation_to: "ds" },
+          { name: "Start", id: "n%5EzI", kind: "date", relation_to: null },
+        ],
+        suggestion: [
+          { role: "date", property: "Start" },
+          { role: "next", property: "Nächstes" },
+          { role: "title", property: "Name" },
+        ],
+      };
     case "template_help":
       return { examples: [], hints: [] };
     case "template_get":
@@ -509,6 +523,52 @@ describe("Oberfläche", () => {
         name: "Projekte",
         database_id: "396f66270f5d8034b55cebc685aa5e50",
         mappings: [{ role: "title", property: "Name" }],
+      },
+    });
+  });
+
+  it("holt die Spalten von Notion und füllt die Zuordnung vor", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(
+      (await screen.findAllByRole("button", { name: "Neue Quelle" }))[0] as HTMLElement,
+    );
+    await user.type(
+      screen.getByRole("textbox", { name: "Notion-Datenbank" }),
+      "396f66270f5d8034b55cebc685aa5e50",
+    );
+    await user.click(screen.getByRole("button", { name: "Spalten holen" }));
+
+    await waitFor(() => expect(commands("database_inspect")).toHaveLength(1));
+    expect(commands("database_inspect")[0]?.args).toEqual({
+      database: "396f66270f5d8034b55cebc685aa5e50",
+    });
+
+    // Der Name der Datenbank steht im leeren Namensfeld, die Zuordnung kommt
+    // aus core — drei Zeilen statt einer leeren.
+    const name = (await screen.findByRole("textbox", { name: "Name" })) as HTMLInputElement;
+    await waitFor(() => expect(name.value).toBe("vizu Projekte"));
+    const spalte = (index: number) =>
+      screen.getByRole("combobox", { name: `Spalte ${index}` }) as HTMLSelectElement;
+    expect(spalte(1).value).toBe("Start");
+    expect(spalte(2).value).toBe("Nächstes");
+    expect(spalte(3).value).toBe("Name");
+    // Die Spalten stehen zur Auswahl, statt abgetippt zu werden.
+    expect(within(spalte(1)).getByRole("option", { name: "Start (date)" })).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Speichern" }));
+
+    await waitFor(() => expect(commands("source_create")).toHaveLength(1));
+    expect(commands("source_create")[0]?.args).toEqual({
+      input: {
+        name: "vizu Projekte",
+        database_id: "396f66270f5d8034b55cebc685aa5e50",
+        mappings: [
+          { role: "date", property: "Start" },
+          { role: "next", property: "Nächstes" },
+          { role: "title", property: "Name" },
+        ],
       },
     });
   });

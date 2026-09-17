@@ -48,6 +48,10 @@ pub struct Property {
     pub id: String,
     /// `title`, `relation`, `multi_select`, …
     pub kind: String,
+    /// Bei einer Relation: die Datenquelle, auf die sie zeigt. Nur so ist ein
+    /// Verweis auf dieselbe Datenbank („Nächstes") von einem auf eine andere
+    /// („Ziel") zu unterscheiden.
+    pub relation_to: Option<String>,
 }
 
 /// Die Spalten aus der Antwort von `GET /data_sources/{id}`, nach Namen sortiert.
@@ -60,6 +64,7 @@ pub fn property_kinds(data_source: &Value) -> Vec<Property> {
             name: name.clone(),
             id: p["id"].as_str().unwrap_or_default().to_string(),
             kind: p["type"].as_str().unwrap_or_default().to_string(),
+            relation_to: p["relation"]["data_source_id"].as_str().map(String::from),
         })
         .collect();
     out.sort_by(|a, b| a.name.cmp(&b.name));

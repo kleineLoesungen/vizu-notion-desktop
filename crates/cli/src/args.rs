@@ -169,6 +169,12 @@ pub enum SourceCommand {
         /// Rolle einer Spalte zuordnen, mehrfach möglich.
         #[arg(long = "map", value_name = "ROLLE=SPALTE", value_parser = parse_mapping)]
         mappings: Vec<(String, String)>,
+
+        /// Die Zuordnung von Notion vorschlagen lassen (fragt die Spalten ab).
+        ///
+        /// Ein eigenes `--map` hat Vorrang vor dem Vorschlag.
+        #[arg(long)]
+        auto: bool,
     },
 
     /// Eine Quelle ändern. Nicht Angegebenes bleibt, wie es ist.

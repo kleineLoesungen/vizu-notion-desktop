@@ -3,18 +3,28 @@
 // Zeichnet nur: Was gültig ist, entscheidet crates/core. Die Meldungen kommen
 // von dort und stehen hier an dem Feld, zu dem sie gehören — auch bei einer
 // Rolle, denn Rust benennt das Feld `mappings.<rolle>`.
+//
+// Die Spalten kommen aus Notion: entweder aus dem letzten Abruf (`properties`)
+// oder frisch geholt (`schema`). Sobald sie bekannt sind, wählt man sie aus
+// einer Liste, statt sie abzutippen — und core schlägt die ganze Zuordnung
+// vor (`source::suggest`), damit niemand raten muss.
 
-import { useState } from "react";
-import type { ColumnMapping, Property, Source, SourceInput } from "../bindings";
+import { useEffect, useState } from "react";
+import type { ColumnMapping, DatabaseSchema, Property, Source, SourceInput } from "../bindings";
 import { Dialog } from "./Dialog";
 import { FieldMessage } from "./FieldMessage";
 
 type Props = {
   /** `null`: neue Quelle. */
   source: Source | null;
-  /** Spalten aus dem letzten Abruf, als Vorschlagsliste. */
+  /** Spalten aus dem letzten Abruf. Leer, solange nie abgerufen wurde. */
   properties: Property[];
+  /** Frisch von Notion geholt, samt Vorschlag. `null`: noch nicht geholt. */
+  schema: DatabaseSchema | null;
+  inspecting: boolean;
   fieldMessage: (field: string) => string | undefined;
+  /** Lässt App.tsx die Spalten dieser Datenbank holen. */
+  onInspect: (databaseId: string) => void;
   onSave: (input: SourceInput) => void;
   onDelete?: () => void;
   onClose: () => void;
@@ -31,10 +41,15 @@ const KNOWN_ROLES: [string, string][] = [
   ["assignee", "zuständige Person"],
 ];
 
+const EMPTY_ROW: ColumnMapping = { role: "", property: "" };
+
 export function SourceDialog({
   source,
   properties,
+  schema,
+  inspecting,
   fieldMessage,
+  onInspect,
   onSave,
   onDelete,
   onClose,
@@ -44,6 +59,27 @@ export function SourceDialog({
   const [mappings, setMappings] = useState<ColumnMapping[]>(
     source?.mappings ?? [{ role: "title", property: "" }],
   );
+
+  // Frisch geholte Spalten sind die besseren: Sie sind von jetzt, die aus dem
+  // Abruf können alt sein.
+  const columns = schema?.properties ?? properties;
+
+  // Was gerade geholt wurde, füllt den leeren Dialog von selbst. Wer schon
+  // etwas eingetragen hat, bekommt den Vorschlag nur als Knopf angeboten —
+  // ungefragt überschreiben wäre schlimmer als ein Klick mehr.
+  const untouched =
+    mappings.length === 0 ||
+    (mappings.length === 1 && mappings[0]?.role === "title" && mappings[0]?.property === "");
+  useEffect(() => {
+    if (!schema) return;
+    setName((current) => current || schema.title);
+    setMappings((current) => {
+      const leer =
+        current.length === 0 ||
+        (current.length === 1 && current[0]?.role === "title" && current[0]?.property === "");
+      return leer && schema.suggestion.length > 0 ? schema.suggestion : current;
+    });
+  }, [schema]);
 
   function change(index: number, patch: Partial<ColumnMapping>) {
     setMappings(mappings.map((m, i) => (i === index ? { ...m, ...patch } : m)));
@@ -82,6 +118,21 @@ export function SourceDialog({
             aria-describedby="database_id-error"
           />
         </label>
+        <div className="row">
+          <button
+            type="button"
+            className="ghost"
+            disabled={inspecting || databaseId.trim() === ""}
+            onClick={() => onInspect(databaseId)}
+          >
+            {inspecting ? "Frage Notion …" : "Spalten holen"}
+          </button>
+          {schema && (
+            <span className="muted">
+              „{schema.title}“ — {schema.properties.length} Spalten
+            </span>
+          )}
+        </div>
         <FieldMessage id="database_id-error" message={fieldMessage("database_id")} />
 
         <fieldset className="mapping-editor">
@@ -91,20 +142,18 @@ export function SourceDialog({
             rechts die Spalte in Notion. Eine Notion-Spalte „Nächstes“ gehört also nach rechts, die
             Rolle <code>next</code> nach links.
           </p>
-          {properties.length === 0 && (
+          {columns.length === 0 && (
             <p className="muted">
-              Noch kein Abruf — die Spaltennamen müssen deshalb genau so eingetippt werden, wie sie
-              in Notion heißen.
+              Noch keine Spalten bekannt. „Spalten holen“ fragt Notion — sonst müssen die Namen
+              genau so eingetippt werden, wie sie dort heißen.
             </p>
           )}
+          {schema && schema.suggestion.length > 0 && !untouched && (
+            <button type="button" className="ghost" onClick={() => setMappings(schema.suggestion)}>
+              Vorschlag übernehmen
+            </button>
+          )}
 
-          <datalist id="notion-properties">
-            {properties.map((p) => (
-              <option key={p.name} value={p.name}>
-                {p.kind}
-              </option>
-            ))}
-          </datalist>
           <datalist id="known-roles">
             {KNOWN_ROLES.map(([role, hint]) => (
               <option key={role} value={role}>
@@ -132,13 +181,33 @@ export function SourceDialog({
                 onChange={(e) => change(index, { role: e.target.value })}
               />
               <span aria-hidden="true">→</span>
-              <input
-                aria-label={`Spalte ${index + 1}`}
-                list="notion-properties"
-                placeholder="Nächstes"
-                value={mapping.property}
-                onChange={(e) => change(index, { property: e.target.value })}
-              />
+              {columns.length > 0 ? (
+                <select
+                  aria-label={`Spalte ${index + 1}`}
+                  value={mapping.property}
+                  onChange={(e) => change(index, { property: e.target.value })}
+                >
+                  <option value="">— Spalte wählen —</option>
+                  {/* Eine Spalte, die es in Notion nicht mehr gibt, bleibt
+                      trotzdem sichtbar — sonst verschwände sie stillschweigend
+                      aus der Zuordnung. */}
+                  {mapping.property !== "" && !columns.some((p) => p.name === mapping.property) && (
+                    <option value={mapping.property}>{mapping.property} (unbekannt)</option>
+                  )}
+                  {columns.map((p) => (
+                    <option key={p.name} value={p.name}>
+                      {p.name} ({p.kind})
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  aria-label={`Spalte ${index + 1}`}
+                  placeholder="Nächstes"
+                  value={mapping.property}
+                  onChange={(e) => change(index, { property: e.target.value })}
+                />
+              )}
               <button
                 type="button"
                 className="ghost small"
@@ -157,7 +226,7 @@ export function SourceDialog({
           <button
             type="button"
             className="ghost"
-            onClick={() => setMappings([...mappings, { role: "", property: "" }])}
+            onClick={() => setMappings([...mappings, EMPTY_ROW])}
           >
             Zeile hinzufügen
           </button>

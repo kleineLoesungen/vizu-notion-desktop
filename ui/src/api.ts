@@ -20,6 +20,7 @@ import type {
   ApiError as ApiErrorData,
   AppInfo,
   Config,
+  DatabaseSchema,
   Diagram,
   ErrorCode,
   FetchStatus,
@@ -98,6 +99,11 @@ export const api = {
       call<FlowGraph>("flow_render", { id, hidden, subtitle }),
     /** Die Metro-Karte: Linien auf einer Zeitachse aus `date`. */
     metro: (id: string, hidden: string[]) => call<MetroMap>("metro_render", { id, hidden }),
+    /**
+     * Die Spalten einer Notion-Datenbank, live — für den Dialog beim Anlegen,
+     * bevor es einen Abruf gibt. Braucht Netz und Token.
+     */
+    inspect: (database: string) => call<DatabaseSchema>("database_inspect", { database }),
   },
 
   /** Diagramme, die in der Liste nicht auftauchen sollen. */
