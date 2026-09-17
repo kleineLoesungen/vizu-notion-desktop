@@ -314,6 +314,20 @@ Risiko blockiert Phase 1–4 nicht). Befunde vorab:
   vizu-notion umschreiben, `CLAUDE.md` um Notion-Fallstricke ergänzen.
 * Bündel für macOS (`.dmg`) und Linux (`.deb`/`.AppImage`).
 
+**Stand nach der Umsetzung:**
+
+* Ansichten: `core::view` (Migration 0004), `view`-Befehle in der
+  Kommandozeile, „Ansicht speichern" im Fenster. Ohne „Zusatzquellen" — eine
+  Vorlage nennt ihre Quellen selbst, Fluss und Metro haben genau eine.
+* Symbol, README, `docs/` und `CLAUDE.md` sind umgeschrieben.
+* Gebaut auf macOS: `.app` und `.dmg`. Dabei kam heraus, dass die
+  Bündelkennung aus dem Umbenenn-Skript einen Unterstrich enthielt, den Tauri
+  ablehnt (jetzt `de.kleineloesungen.vizu-notion`).
+* **Offen:** Das Linux-Bündel (`.deb`/`.AppImage`) ist nur konfiguriert, nicht
+  gebaut — dafür braucht es einen Linux-Rechner oder CI. Und die Darstellung
+  im **gebauten** Bündel (Risiko S4: Nonce vor `style-src`) hat noch niemand
+  angesehen; im Entwicklungsbetrieb sieht man den Unterschied nicht.
+
 ---
 
 ## 5. Was bewusst nicht übernommen wird
