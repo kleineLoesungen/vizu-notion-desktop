@@ -29,7 +29,7 @@ pub fn run(cmd: TokenCommand, app: &App, out: &Out) -> Result<()> {
         }
 
         TokenCommand::Status => {
-            out.token_status(&secret::status(app.secrets()));
+            out.token_status(&app.token_status());
             Ok(())
         }
 

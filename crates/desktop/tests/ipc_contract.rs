@@ -41,7 +41,11 @@ impl Ctx {
     fn new() -> Self {
         let dir = tempfile::tempdir().unwrap();
         let secrets = std::sync::Arc::new(MemoryStore::default());
-        let core = App::open_with(Paths::under(dir.path()), Box::new(secrets.clone())).unwrap();
+        let mut core = App::open_with(Paths::under(dir.path()), Box::new(secrets.clone())).unwrap();
+        // Die Tests prüfen, was die Anwendung ohne Token tut. Steht in der
+        // Shell, in der sie laufen, ein `VIZU_NOTION_TOKEN`, wäre plötzlich
+        // einer da — und drei Tests schlügen fehl, je nach Rechner.
+        core.forget_env_token();
         Self {
             secrets,
             ..Self::with_state(dir, AppState::new(core))

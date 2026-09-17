@@ -178,6 +178,14 @@ meisten Beispiele im Netz stammen von davor.
    und lesen festgehaltene Antworten aus
    `crates/core/tests/fixtures/notion/` (siehe README dort).
 
+   **Die Umgebung wird einmal gelesen, beim Start:** `App` merkt sich
+   `VIZU_NOTION_TOKEN` in `env_token`, und `app.token()` ist die einzige
+   Stelle, an der Umgebung und Speicher zusammenkommen. Wer stattdessen
+   mitten im Programm `std::env::var` liest, baut einen Test, der davon
+   abhängt, was in der Shell des Entwicklers steht. Tests ohne Token rufen
+   `App::forget_env_token()` (`App::in_memory` hat von vornherein keinen);
+   Tests, die ein Programm starten, nehmen `.env_remove(…)`.
+
 6. **Leere Werte sind nicht `null`.** Ein leeres `status`, `formula`,
    `people` oder `rollup` kommt als Objekt mit leerem Inhalt. `rows::text_of`
    kennt die Formen; eigene Abfragen auf `value["…"]` gehen daran vorbei.

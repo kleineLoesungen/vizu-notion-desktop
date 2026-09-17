@@ -23,7 +23,7 @@
 //!     SourceInput::new("Projekte", "396f66270f5d8034b55cebc685aa5e50",
 //!                      vec![ColumnMapping::new("title", "Name")]),
 //! )?;
-//! let status = fetch::fetch_with_http(app.conn(), app.secrets(), &projekte)?;
+//! let status = fetch::fetch_with_http(app.conn(), &app.token()?, &projekte)?;
 //! # Ok::<(), vizu_notion_core::Error>(())
 //! ```
 
@@ -60,6 +60,12 @@ pub struct App {
     config: Config,
     conn: Connection,
     secrets: Box<dyn secret::SecretStore>,
+    /// `VIZU_NOTION_TOKEN`, **einmal beim Start** gelesen.
+    ///
+    /// Nicht bei jedem Zugriff: Sonst hinge das Verhalten davon ab, wann
+    /// jemand die Umgebung ändert — und in Tests davon, welche Variablen die
+    /// Shell gerade gesetzt hat, in der sie laufen.
+    env_token: Option<String>,
 }
 
 impl App {
@@ -81,6 +87,7 @@ impl App {
             config,
             conn,
             secrets,
+            env_token: secret::env_token(),
         })
     }
 
@@ -94,6 +101,8 @@ impl App {
             config: Config::default(),
             conn: db::open_in_memory()?,
             secrets: Box::new(secret::MemoryStore::default()),
+            // Ein Test soll nicht davon abhängen, was in der Shell steht.
+            env_token: None,
         })
     }
 
@@ -103,6 +112,25 @@ impl App {
 
     pub fn secrets(&self) -> &dyn secret::SecretStore {
         self.secrets.as_ref()
+    }
+
+    /// Der Notion-Token: aus der Umgebung, sonst aus dem Speicher.
+    ///
+    /// Die **einzige** Stelle, an der beide Quellen zusammenkommen — Schalen
+    /// und Fachlogik fragen hier, statt selbst in der Umgebung zu lesen.
+    pub fn token(&self) -> Result<String> {
+        secret::resolve_with(self.secrets(), self.env_token.clone())
+    }
+
+    /// Woher der Token käme, ohne ihn zu verraten.
+    pub fn token_status(&self) -> secret::TokenStatus {
+        secret::status_with(self.secrets(), self.env_token.clone())
+    }
+
+    /// Vergisst den Token aus der Umgebung — für Tests, die ihn nicht wollen.
+    #[doc(hidden)]
+    pub fn forget_env_token(&mut self) {
+        self.env_token = None;
     }
 
     pub fn paths(&self) -> &Paths {

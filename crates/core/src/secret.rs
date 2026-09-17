@@ -302,7 +302,9 @@ pub fn status_with(store: &dyn SecretStore, env: Option<String>) -> TokenStatus 
     }
 }
 
-fn env_token() -> Option<String> {
+/// `VIZU_NOTION_TOKEN`, falls gesetzt. Gelesen wird das nur beim Start —
+/// siehe [`crate::App::token`].
+pub fn env_token() -> Option<String> {
     std::env::var(ENV_TOKEN)
         .ok()
         .map(|t| t.trim().to_string())

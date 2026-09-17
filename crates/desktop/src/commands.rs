@@ -55,7 +55,7 @@ pub async fn source_get(state: State<'_, AppState>, id: Uuid) -> ApiResult<Sourc
 pub async fn source_fetch(state: State<'_, AppState>, id: Uuid) -> ApiResult<FetchStatus> {
     let (source, token, known) = state.with(|app| {
         let source = source::get(app.conn(), id)?;
-        let token = secret::resolve(app.secrets())?;
+        let token = app.token()?;
         // Titel, die schon in der Datenbank stehen, spart der Abruf sich.
         let known = fetch::known_titles(app.conn())?;
         Ok((source, token, known))
@@ -81,7 +81,7 @@ pub async fn database_inspect(
     state: State<'_, AppState>,
     database: String,
 ) -> ApiResult<DatabaseSchema> {
-    let token = state.with(|app| secret::resolve(app.secrets()))?;
+    let token = state.with(|app| app.token())?;
     tauri::async_runtime::spawn_blocking(move || {
         let client = notion::Client::new(notion::HttpTransport::new(&token));
         fetch::inspect(&client, &database)
@@ -274,14 +274,14 @@ pub async fn token_set(state: State<'_, AppState>, token: String) -> ApiResult<T
 pub async fn token_clear(state: State<'_, AppState>) -> ApiResult<TokenStatus> {
     state.with(|app| {
         secret::clear(app.secrets())?;
-        Ok(secret::status(app.secrets()))
+        Ok(app.token_status())
     })
 }
 
 /// Ob ein Token da ist und woher — nie der Token selbst.
 #[tauri::command]
 pub async fn token_status(state: State<'_, AppState>) -> ApiResult<TokenStatus> {
-    state.with(|app| Ok(secret::status(app.secrets())))
+    state.with(|app| Ok(app.token_status()))
 }
 
 // --- Einstellungen ---------------------------------------------------------

@@ -33,7 +33,7 @@ pub fn run(needles: Vec<String>, app: &App, out: &Out) -> Result<()> {
             eprintln!("Rufe „{}\u{201c} ab …", s.name);
         }
         let started = Instant::now();
-        let status = fetch::fetch_with_http(app.conn(), app.secrets(), s)?;
+        let status = fetch::fetch_with_http(app.conn(), &app.token()?, s)?;
         if !out.json {
             out.fetched_one(&s.name, &status, started.elapsed());
         }

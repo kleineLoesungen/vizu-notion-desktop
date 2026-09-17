@@ -23,7 +23,7 @@ use uuid::Uuid;
 use crate::error::{Error, NotionErrorKind, Result, Validator};
 use crate::notion::{self, Client, Database, Page, Transport};
 use crate::source::{self, ColumnMapping, Source};
-use crate::{secret, timestamp};
+use crate::timestamp;
 
 /// Was ein Abruf von Notion mitgebracht hat, noch nicht gespeichert.
 #[derive(Debug, Clone)]
@@ -211,27 +211,15 @@ pub fn store(conn: &Connection, download: &Download) -> Result<FetchStatus> {
 /// Token holen, abrufen, speichern — für Aufrufer, die nichts dazwischen tun.
 ///
 /// Die Desktop-Schale ruft [`download`] und [`store`] getrennt, siehe oben.
-pub fn fetch_with_http(
-    conn: &Connection,
-    secrets: &dyn secret::SecretStore,
-    source: &Source,
-) -> Result<FetchStatus> {
-    let token = secret::resolve(secrets)?;
-    let client = Client::new(notion::HttpTransport::new(&token));
+pub fn fetch_with_http(conn: &Connection, token: &str, source: &Source) -> Result<FetchStatus> {
+    let client = Client::new(notion::HttpTransport::new(token));
     let known = known_titles(conn)?;
     store(conn, &download(&client, source, &known)?)
 }
 
 /// [`inspect`] mit dem Token aus dem Speicher und echtem Netz.
-pub fn inspect_with_http(
-    secrets: &dyn secret::SecretStore,
-    database_id: &str,
-) -> Result<DatabaseSchema> {
-    let token = secret::resolve(secrets)?;
-    inspect(
-        &Client::new(notion::HttpTransport::new(&token)),
-        database_id,
-    )
+pub fn inspect_with_http(token: &str, database_id: &str) -> Result<DatabaseSchema> {
+    inspect(&Client::new(notion::HttpTransport::new(token)), database_id)
 }
 
 /// Seiten, deren Titel schon in der Datenbank stehen — als eigene Seite einer

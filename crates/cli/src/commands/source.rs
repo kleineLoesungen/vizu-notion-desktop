@@ -44,7 +44,7 @@ pub fn run(cmd: SourceCommand, app: &App, out: &Out) -> Result<()> {
             let mut wanted = to_mappings(mappings);
             if auto {
                 // Derselbe Vorschlag wie im Fenster — er steht in core.
-                let schema = fetch::inspect_with_http(app.secrets(), &database)?;
+                let schema = fetch::inspect_with_http(&app.token()?, &database)?;
                 if !out.json {
                     eprintln!(
                         "„{}\u{201c}: {} Spalten, Vorschlag {}",
