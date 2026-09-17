@@ -22,6 +22,7 @@ use ts_rs::TS;
 use uuid::Uuid;
 use vizu_notion_core::fetch::{self, FetchStatus, SourceOverview};
 use vizu_notion_core::flow::{self, FlowGraph};
+use vizu_notion_core::hidden::{self, HiddenDiagram};
 use vizu_notion_core::metro::{self, MetroMap};
 use vizu_notion_core::notion::Property;
 use vizu_notion_core::secret::{self, TokenStatus};
@@ -100,6 +101,25 @@ pub async fn source_properties(state: State<'_, AppState>, id: Uuid) -> ApiResul
 #[tauri::command]
 pub async fn template_list(state: State<'_, AppState>) -> ApiResult<Vec<Template>> {
     state.with(|app| template::list(app.conn()))
+}
+
+/// Welche Diagramme in der Liste versteckt sind.
+#[tauri::command]
+pub async fn hidden_list(state: State<'_, AppState>) -> ApiResult<Vec<HiddenDiagram>> {
+    state.with(|app| hidden::list(app.conn()))
+}
+
+/// Versteckt ein Diagramm (`hidden: true`) oder holt es zurück.
+#[tauri::command]
+pub async fn hidden_set(
+    state: State<'_, AppState>,
+    entry: HiddenDiagram,
+    hidden: bool,
+) -> ApiResult<Vec<HiddenDiagram>> {
+    state.with(|app| {
+        hidden::set(app.conn(), &entry, hidden)?;
+        hidden::list(app.conn())
+    })
 }
 
 #[tauri::command]

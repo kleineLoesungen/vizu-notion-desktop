@@ -1,15 +1,14 @@
 // Alle Diagramme in einer Liste: die eigenen Vorlagen und die, die eine
 // Quelle aus ihrer Zuordnung hergibt.
 //
-// Nach Art in Aufklapp-Bereiche geteilt: Fluss und Metro entstehen von selbst,
-// je Quelle einer — bei fünf Quellen sind das zehn Einträge, die man selten
-// alle sehen will. Sie starten deshalb zugeklappt, die eigenen Vorlagen offen.
+// Fluss und Metro entstehen von selbst, je Quelle eines — wer eines nie
+// braucht, versteckt es. Versteckte stehen in einem Aufklapp-Bereich darunter
+// und lassen sich von dort zurückholen. Gemerkt wird das in core, nicht hier.
 //
 // Zeichnet nur. Welche Ansichten eine Quelle kann, entscheidet core
 // (`fetch::views`) — hier steht nur, wie sie heißen.
 
-import { useState } from "react";
-import type { SourceOverview, Template } from "../bindings";
+import type { HiddenDiagram, SourceOverview, Template } from "../bindings";
 
 /** Was ausgewählt wurde: eine Vorlage oder eine Ansicht einer Quelle. */
 export type DiagramChoice =
@@ -17,31 +16,31 @@ export type DiagramChoice =
   | { kind: "flow"; id: string }
   | { kind: "metro"; id: string };
 
-type Kind = DiagramChoice["kind"];
-
 type Props = {
   templates: Template[];
   sources: SourceOverview[];
   selected: DiagramChoice | null;
+  /** Aus core: was nicht in der Liste stehen soll. */
+  hiddenDiagrams: HiddenDiagram[];
   onSelect: (choice: DiagramChoice) => void;
+  onHide: (choice: DiagramChoice, hidden: boolean) => void;
   onCreate: () => void;
 };
 
-/** Die Art steht als Überschrift über ihrer Gruppe. */
-const KIND_LABEL: Record<Kind, string> = { template: "Mermaid", flow: "Fluss", metro: "Metro" };
-const ORDER: Kind[] = ["template", "flow", "metro"];
+/** Die Art steht als kleine Marke neben dem Namen. */
+const KIND_LABEL = { template: "Mermaid", flow: "Fluss", metro: "Metro" } as const;
 
 type Entry = DiagramChoice & { title: string; hint: string };
 
-export function DiagramList({ templates, sources, selected, onSelect, onCreate }: Props) {
-  // Die Gruppe der gewählten Ansicht steht offen, sonst sähe man nicht, was
-  // gerade gezeichnet wird. Danach entscheidet die Bedienung.
-  const [open, setOpen] = useState<Record<Kind, boolean>>(() => ({
-    template: selected === null || selected.kind === "template",
-    flow: selected?.kind === "flow",
-    metro: selected?.kind === "metro",
-  }));
-
+export function DiagramList({
+  templates,
+  sources,
+  selected,
+  hiddenDiagrams,
+  onSelect,
+  onHide,
+  onCreate,
+}: Props) {
   const entries: Entry[] = [
     ...templates.map((template) => ({
       kind: "template" as const,
@@ -59,6 +58,44 @@ export function DiagramList({ templates, sources, selected, onSelect, onCreate }
     ),
   ];
 
+  const isHidden = (entry: Entry) =>
+    hiddenDiagrams.some((h) => h.kind === entry.kind && h.target === entry.id);
+  const shown = entries.filter((entry) => !isHidden(entry));
+  const gone = entries.filter(isHidden);
+
+  /** Eine Zeile: der Name zum Auswählen, daneben der Knopf zum Verstecken. */
+  const row = (entry: Entry, hidden: boolean) => (
+    <li key={`${entry.kind}-${entry.id}`} className="diagram-item">
+      <button
+        type="button"
+        className="source-item"
+        // Ohne eigenen Namen läse ein Bildschirmleser „ProjekteFluss“:
+        // Titel und Marke stehen ohne Leerzeichen nebeneinander.
+        aria-label={`${entry.title} — ${KIND_LABEL[entry.kind]}`}
+        aria-current={
+          selected?.kind === entry.kind && selected.id === entry.id ? "true" : undefined
+        }
+        onClick={() => onSelect({ kind: entry.kind, id: entry.id })}
+      >
+        <span className="source-title">
+          {entry.title}
+          <span className="kind-badge">{KIND_LABEL[entry.kind]}</span>
+        </span>
+        <span className="source-excerpt">{entry.hint}</span>
+      </button>
+      <button
+        type="button"
+        className="ghost small"
+        aria-label={`${entry.title} — ${KIND_LABEL[entry.kind]} ${
+          hidden ? "einblenden" : "verstecken"
+        }`}
+        onClick={() => onHide({ kind: entry.kind, id: entry.id }, !hidden)}
+      >
+        {hidden ? "Einblenden" : "Verstecken"}
+      </button>
+    </li>
+  );
+
   return (
     <nav className="template-nav" aria-label="Diagramme">
       <div className="sidebar-head-inline">
@@ -74,49 +111,16 @@ export function DiagramList({ templates, sources, selected, onSelect, onCreate }
           selbst, sobald eine Quelle die passenden Rollen hat.
         </p>
       ) : (
-        <div className="diagram-groups">
-          {ORDER.map((kind) => {
-            const group = entries.filter((entry) => entry.kind === kind);
-            // Eine leere Gruppe ist kein Bereich, den man aufklappen möchte —
-            // außer bei Mermaid: Dort führt „Neu" hin.
-            if (group.length === 0 && kind !== "template") return null;
-            return (
-              <details
-                key={kind}
-                className="diagram-group"
-                open={open[kind]}
-                onToggle={(e) => setOpen({ ...open, [kind]: e.currentTarget.open })}
-              >
-                <summary>
-                  {KIND_LABEL[kind]}
-                  <span className="muted"> {group.length}</span>
-                </summary>
-                <ul className="source-list">
-                  {group.map((entry) => (
-                    <li key={`${entry.kind}-${entry.id}`}>
-                      <button
-                        type="button"
-                        className="source-item"
-                        // Ohne eigenen Namen läse ein Bildschirmleser nur den
-                        // Titel vor — „Projekte" gibt es als Fluss und Metro.
-                        aria-label={`${entry.title} — ${KIND_LABEL[entry.kind]}`}
-                        aria-current={
-                          selected?.kind === entry.kind && selected.id === entry.id
-                            ? "true"
-                            : undefined
-                        }
-                        onClick={() => onSelect({ kind: entry.kind, id: entry.id })}
-                      >
-                        <span className="source-title">{entry.title}</span>
-                        <span className="source-excerpt">{entry.hint}</span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </details>
-            );
-          })}
-        </div>
+        <ul className="source-list">{shown.map((entry) => row(entry, false))}</ul>
+      )}
+
+      {gone.length > 0 && (
+        <details className="hidden-section">
+          <summary>
+            Versteckt<span className="muted"> {gone.length}</span>
+          </summary>
+          <ul className="source-list">{gone.map((entry) => row(entry, true))}</ul>
+        </details>
       )}
     </nav>
   );

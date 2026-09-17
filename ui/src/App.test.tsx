@@ -114,6 +114,7 @@ function diagramFor(hidden: string[]): Diagram {
 
 let sources: SourceOverview[];
 let templates: Template[];
+let hiddenDiagrams: { kind: string; target: string }[];
 let calls: Call[];
 let config: Config;
 let token: TokenStatus;
@@ -228,6 +229,15 @@ function backend(cmd: string, args: Record<string, unknown> = {}): unknown {
       };
     case "token_status":
       return token;
+    case "hidden_list":
+      return hiddenDiagrams;
+    case "hidden_set": {
+      const entry = args.entry as { kind: string; target: string };
+      hiddenDiagrams = (args.hidden as boolean)
+        ? [...hiddenDiagrams, entry]
+        : hiddenDiagrams.filter((h) => !(h.kind === entry.kind && h.target === entry.target));
+      return hiddenDiagrams;
+    }
     case "template_list":
       return templates;
     case "diagram_render":
@@ -248,6 +258,7 @@ function backend(cmd: string, args: Record<string, unknown> = {}): unknown {
 beforeEach(() => {
   sources = [];
   templates = [];
+  hiddenDiagrams = [];
   calls = [];
   drawn.length = 0;
   saved.path = null;
@@ -671,25 +682,50 @@ describe("Oberfläche", () => {
     expect(screen.getByText(/Ohne Datum.*Ohne Ziel/)).toBeTruthy();
   });
 
-  it("teilt die Liste nach Art in Aufklapp-Bereiche", async () => {
+  it("versteckt ein Diagramm und holt es zurück", async () => {
     const user = userEvent.setup();
     templates = [template("t1", "Fahrplan")];
     sources = [{ ...overview("a", "Projekte", 12), views: ["flow", "metro"] }];
     render(<App />);
 
     const liste = await screen.findByRole("navigation", { name: "Diagramme" });
-    const gruppe = (name: string) =>
-      within(liste).getByText(name).closest("details") as HTMLDetailsElement;
+    expect(within(liste).getByRole("button", { name: "Projekte — Fluss" })).toBeTruthy();
 
-    // Vorlagen legt man selbst an — die stehen offen. Fluss und Metro
-    // entstehen von selbst, je Quelle einer; sie beginnen zugeklappt.
-    expect(gruppe("Mermaid").open).toBe(true);
-    expect(gruppe("Fluss").open).toBe(false);
-    expect(gruppe("Metro").open).toBe(false);
+    await user.click(within(liste).getByRole("button", { name: "Projekte — Fluss verstecken" }));
 
-    await user.click(within(liste).getByText("Metro"));
-
-    expect(gruppe("Metro").open).toBe(true);
+    await waitFor(() => expect(commands("hidden_set")).toHaveLength(1));
+    expect(commands("hidden_set")[0]?.args).toEqual({
+      entry: { kind: "flow", target: "a" },
+      hidden: true,
+    });
+    // Aus der Liste heraus, aber nicht weg: Der Bereich „Versteckt" hat ihn.
+    const versteckt = within(liste).getByText("Versteckt").closest("details") as HTMLElement;
+    expect(within(versteckt).getByRole("button", { name: "Projekte — Fluss" })).toBeTruthy();
+    // Metro und die Vorlage stehen weiter oben in der Liste.
     expect(within(liste).getByRole("button", { name: "Projekte — Metro" })).toBeTruthy();
+
+    await user.click(
+      within(versteckt).getByRole("button", { name: "Projekte — Fluss einblenden" }),
+    );
+
+    await waitFor(() => expect(commands("hidden_set")).toHaveLength(2));
+    expect(commands("hidden_set")[1]?.args).toEqual({
+      entry: { kind: "flow", target: "a" },
+      hidden: false,
+    });
+    expect(within(liste).queryByText("Versteckt")).toBeNull();
+  });
+
+  it("schließt das Diagramm, das gerade versteckt wird", async () => {
+    const user = userEvent.setup();
+    sources = [{ ...overview("a", "Projekte", 12), views: ["metro"] }];
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Projekte — Metro" }));
+    expect(await screen.findByRole("img", { name: /Metro-Karte/ })).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "Projekte — Metro verstecken" }));
+
+    await waitFor(() => expect(screen.queryByRole("img", { name: /Metro-Karte/ })).toBeNull());
   });
 });

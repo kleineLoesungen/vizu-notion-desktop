@@ -32,6 +32,7 @@ pub mod db;
 pub mod error;
 pub mod fetch;
 pub mod flow;
+pub mod hidden;
 pub mod ids;
 pub mod metro;
 pub mod notion;

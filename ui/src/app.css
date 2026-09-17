@@ -1102,19 +1102,48 @@ button.destructive {
   font-size: 11px;
 }
 
-/* Die Diagrammliste, nach Art in Aufklapp-Bereiche geteilt. */
-.diagram-groups {
+/* --- Diagrammliste --------------------------------------------------------- */
+
+.diagram-item {
   display: flex;
-  flex-direction: column;
-  min-height: 0;
-  overflow-y: auto;
+  align-items: center;
 }
 
-.diagram-group > summary {
-  padding: var(--space-1) var(--space-4);
+.diagram-item > .source-item {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Der Knopf zum Verstecken stünde sonst in jeder Zeile im Weg. Unsichtbar,
+   aber vorhanden: Er bleibt anwählbar und ein Bildschirmleser liest ihn. */
+.diagram-item > button.small {
+  opacity: 0;
+  flex-shrink: 0;
+}
+
+.diagram-item:hover > button.small,
+.diagram-item > button.small:focus-visible,
+.hidden-section .diagram-item > button.small {
+  opacity: 1;
+}
+
+.hidden-section > summary {
+  padding: var(--space-2) var(--space-4);
   cursor: pointer;
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--muted);
+}
+
+/* Die Art eines Diagramms in der Liste. */
+.kind-badge {
+  margin-left: var(--space-2);
+  padding: 0 var(--space-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }

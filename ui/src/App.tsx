@@ -16,6 +16,7 @@ import type {
   Config,
   Diagram,
   FlowGraph,
+  HiddenDiagram,
   MetroMap,
   Property,
   Source,
@@ -77,6 +78,8 @@ const PREVIEW_DELAY_MS = 400;
 export function App() {
   const [sources, setSources] = useState<SourceOverview[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
+  /** Diagramme, die aus der Liste in den Bereich „Versteckt" gerutscht sind. */
+  const [hiddenDiagrams, setHiddenDiagrams] = useState<HiddenDiagram[]>([]);
   const [selection, setSelection] = useState<Selection>({ kind: "none" });
 
   const [diagram, setDiagram] = useState<Diagram | null>(null);
@@ -122,9 +125,14 @@ export function App() {
 
   const reload = useCallback(async () => {
     try {
-      const [overview, list] = await Promise.all([api.sources.list(), api.templates.list()]);
+      const [overview, list, gone] = await Promise.all([
+        api.sources.list(),
+        api.templates.list(),
+        api.hidden.list(),
+      ]);
       setSources(overview);
       setTemplates(list);
+      setHiddenDiagrams(gone);
     } catch (raw) {
       fail(raw);
     }
@@ -251,6 +259,22 @@ export function App() {
       void drawFlow(choice.id, new Set(), null);
     } else {
       void drawMetro(choice.id, new Set());
+    }
+  }
+
+  /** Ein Diagramm aus der Liste nehmen oder zurückholen. */
+  async function hideDiagram(choice: DiagramChoice, hide: boolean) {
+    try {
+      setHiddenDiagrams(await api.hidden.set({ kind: choice.kind, target: choice.id }, hide));
+      // Was versteckt wird, bleibt nicht offen stehen.
+      if (hide && selection.kind === choice.kind && selection.id === choice.id) {
+        setSelection({ kind: "none" });
+        setDiagram(null);
+        setFlow(null);
+        setMetro(null);
+      }
+    } catch (raw) {
+      fail(raw);
     }
   }
 
@@ -507,7 +531,9 @@ export function App() {
           templates={templates}
           sources={sources}
           selected={selection.kind === "none" || selection.kind === "source" ? null : selection}
+          hiddenDiagrams={hiddenDiagrams}
           onSelect={selectDiagram}
+          onHide={(choice, hide) => void hideDiagram(choice, hide)}
           onCreate={() => void editTemplate(null)}
         />
         {/* Quellen richtet man selten ein — eingeklappt, bis sie gebraucht werden. */}

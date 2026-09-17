@@ -105,6 +105,19 @@ kind: string, body: string, };
 export type FieldError = { field: string, message: string, };
 
 /**
+ * Ein verstecktes Diagramm.
+ */
+export type HiddenDiagram = { 
+/**
+ * `template`, `flow` oder `metro`.
+ */
+kind: string, 
+/**
+ * Kennung der Vorlage bzw. der Quelle.
+ */
+target: string, };
+
+/**
  * Eine Zeile des Spickzettels.
  */
 export type Hint = { syntax: string, meaning: string, };

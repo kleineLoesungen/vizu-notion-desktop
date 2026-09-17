@@ -25,6 +25,7 @@ import type {
   FetchStatus,
   FieldError,
   FlowGraph,
+  HiddenDiagram,
   MetroMap,
   Property,
   Source,
@@ -97,6 +98,14 @@ export const api = {
       call<FlowGraph>("flow_render", { id, hidden, subtitle }),
     /** Die Metro-Karte: Linien auf einer Zeitachse aus `date`. */
     metro: (id: string, hidden: string[]) => call<MetroMap>("metro_render", { id, hidden }),
+  },
+
+  /** Diagramme, die in der Liste nicht auftauchen sollen. */
+  hidden: {
+    list: () => call<HiddenDiagram[]>("hidden_list"),
+    /** Gibt die neue Liste zurück, damit die Oberfläche nicht nachfragt. */
+    set: (entry: HiddenDiagram, hidden: boolean) =>
+      call<HiddenDiagram[]>("hidden_set", { entry, hidden }),
   },
 
   templates: {

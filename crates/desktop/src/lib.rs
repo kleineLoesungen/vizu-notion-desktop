@@ -64,6 +64,8 @@ pub fn configure<R: Runtime>(builder: tauri::Builder<R>, state: AppState) -> tau
             commands::source_update,
             commands::source_delete,
             commands::source_properties,
+            commands::hidden_list,
+            commands::hidden_set,
             commands::template_list,
             commands::template_get,
             commands::template_save,

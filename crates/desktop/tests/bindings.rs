@@ -14,6 +14,7 @@
 use ts_rs::TS;
 use vizu_notion_core::fetch::{FetchStatus, SourceOverview, ViewKind};
 use vizu_notion_core::flow::{FlowEdge, FlowGraph, FlowNode};
+use vizu_notion_core::hidden::HiddenDiagram;
 use vizu_notion_core::metro::{
     MetroLine, MetroMap, MetroPoint, MetroStation, MetroTick, MetroZone, StationKind,
 };
@@ -53,6 +54,7 @@ fn generate() -> String {
         decl::<Diagram>(&cfg),
         decl::<Example>(&cfg),
         decl::<FieldError>(&cfg),
+        decl::<HiddenDiagram>(&cfg),
         decl::<Hint>(&cfg),
         decl::<MetroLine>(&cfg),
         decl::<MetroMap>(&cfg),
