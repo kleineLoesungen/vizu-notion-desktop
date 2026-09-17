@@ -503,6 +503,28 @@ input[type="color"] {
   margin: 0;
 }
 
+/* Alles rechts der Überschrift in einer Reihe, mit gleichen Abständen.
+   Ohne diesen Behälter verteilt `space-between` die Bedienelemente über die
+   ganze Breite, und jedes `.actions` brächte seinen Abstand nach oben mit. */
+.head-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+/* Was zusammengehört, steht enger beieinander als der Rest. */
+.head-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.diagram-note {
+  margin: 0;
+}
+
 .detail-facts {
   display: grid;
   grid-template-columns: max-content 1fr;

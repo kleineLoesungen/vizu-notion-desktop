@@ -47,6 +47,25 @@ import { ViewList } from "./components/ViewList";
 import { withNeighbours } from "./lib/graph";
 import { applyTheme, useIsDark } from "./lib/theme";
 
+const DELETE_TITLE = {
+  source: "Quelle löschen",
+  template: "Diagramm löschen",
+  view: "Ansicht löschen",
+} as const;
+
+/** Was verloren geht — und was bleibt. */
+function deleteMessage(what: { kind: keyof typeof DELETE_TITLE; name: string }): string {
+  const name = `„${what.name}“`;
+  switch (what.kind) {
+    case "source":
+      return `${name} wird gelöscht, mitsamt den abgerufenen Seiten. Vorlagen, die diese Quelle benutzen, zeichnen danach nicht mehr.`;
+    case "template":
+      return `${name} wird gelöscht. Die Daten der Quellen bleiben.`;
+    default:
+      return `${name} wird gelöscht. Das Diagramm selbst bleibt — nur die gespeicherten Einstellungen sind weg.`;
+  }
+}
+
 type Selection =
   | { kind: "none" }
   | { kind: "source"; id: string }
@@ -115,7 +134,10 @@ export function App() {
   const [help, setHelp] = useState<TemplateHelp | null>(null);
   /** Eine Löschung, die noch bestätigt werden muss. */
   const [confirmDelete, setConfirmDelete] = useState<
-    { kind: "source"; name: string } | { kind: "template"; name: string } | null
+    | { kind: "source"; name: string }
+    | { kind: "template"; name: string }
+    | { kind: "view"; name: string; id: string }
+    | null
   >(null);
 
   // Zwei Sorten Fehler, wie überall im Kit: mit Feldern an die Felder,
@@ -365,13 +387,15 @@ export function App() {
     }
   }
 
-  async function deleteView(view: View) {
+  async function deleteView(id: string) {
     try {
-      await api.views.remove(view.id);
+      await api.views.remove(id);
       setViews(await api.views.list());
-      if (activeView === view.id) setActiveView(null);
+      if (activeView === id) setActiveView(null);
+      setConfirmDelete(null);
     } catch (raw) {
       fail(raw);
+      setConfirmDelete(null);
     }
   }
 
@@ -626,7 +650,7 @@ export function App() {
           views={views}
           activeId={activeView}
           onOpen={openView}
-          onDelete={(view) => void deleteView(view)}
+          onDelete={(view) => setConfirmDelete({ kind: "view", name: view.name, id: view.id })}
         />
         {/* Quellen richtet man selten ein — eingeklappt, bis sie gebraucht werden. */}
         <details className="sources-section" open={sources.length === 0}>
@@ -712,7 +736,7 @@ export function App() {
           <section className="diagram-page">
             <header className="detail-head">
               <h1>{selectedTemplate.title}</h1>
-              <div className="actions">
+              <div className="head-tools">
                 {drawing && <span className="muted">Zeichne …</span>}
                 <SourceRefresh
                   names={selectedTemplate.sources}
@@ -753,31 +777,31 @@ export function App() {
           <section className="diagram-page">
             <header className="detail-head">
               <h1>Fluss: {sources.find((s) => s.source.id === selection.id)?.source.name}</h1>
-              <SourceRefresh
-                names={namesOf(selection.id)}
-                fetched={fetchedAt}
-                busy={fetchingAll}
-                onFetch={() => void fetchForDiagram([selection.id])}
-              />
-              <label className="inline-field">
-                Zweite Zeile
-                <select
-                  value={subtitle ?? ""}
-                  onChange={(e) => {
-                    const role = e.target.value || null;
-                    setSubtitle(role);
-                    void drawFlow(selection.id, hidden, role);
-                  }}
-                >
-                  <option value="">keine</option>
-                  {flow.subtitle_roles.map((role) => (
-                    <option key={role} value={role}>
-                      {role}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="actions">
+              <div className="head-tools">
+                <SourceRefresh
+                  names={namesOf(selection.id)}
+                  fetched={fetchedAt}
+                  busy={fetchingAll}
+                  onFetch={() => void fetchForDiagram([selection.id])}
+                />
+                <label className="inline-field">
+                  Zweite Zeile
+                  <select
+                    value={subtitle ?? ""}
+                    onChange={(e) => {
+                      const role = e.target.value || null;
+                      setSubtitle(role);
+                      void drawFlow(selection.id, hidden, role);
+                    }}
+                  >
+                    <option value="">keine</option>
+                    {flow.subtitle_roles.map((role) => (
+                      <option key={role} value={role}>
+                        {role}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <button
                   type="button"
                   className="ghost"
@@ -798,18 +822,13 @@ export function App() {
           <section className="diagram-page">
             <header className="detail-head">
               <h1>Metro: {sources.find((s) => s.source.id === selection.id)?.source.name}</h1>
-              <SourceRefresh
-                names={namesOf(selection.id)}
-                fetched={fetchedAt}
-                busy={fetchingAll}
-                onFetch={() => void fetchForDiagram([selection.id])}
-              />
-              {metro.undated.length > 0 && (
-                <span className="muted">
-                  Ohne Datum, deshalb nicht auf der Karte: {metro.undated.join(", ")}
-                </span>
-              )}
-              <div className="actions">
+              <div className="head-tools">
+                <SourceRefresh
+                  names={namesOf(selection.id)}
+                  fetched={fetchedAt}
+                  busy={fetchingAll}
+                  onFetch={() => void fetchForDiagram([selection.id])}
+                />
                 <button
                   type="button"
                   className="ghost"
@@ -822,6 +841,11 @@ export function App() {
                 </button>
               </div>
             </header>
+            {metro.undated.length > 0 && (
+              <p className="muted diagram-note">
+                Ohne Datum, deshalb nicht auf der Karte: {metro.undated.join(", ")}
+              </p>
+            )}
             <MetroView map={metro} onExport={(svg) => void exportSvg(svg)} />
           </section>
         )}
@@ -897,16 +921,14 @@ export function App() {
 
       {confirmDelete && (
         <ConfirmDialog
-          title={confirmDelete.kind === "source" ? "Quelle löschen" : "Diagramm löschen"}
-          message={
-            confirmDelete.kind === "source"
-              ? `„${confirmDelete.name}“ wird gelöscht, mitsamt den abgerufenen Seiten. Vorlagen, die diese Quelle benutzen, zeichnen danach nicht mehr.`
-              : `„${confirmDelete.name}“ wird gelöscht. Die Daten der Quellen bleiben.`
-          }
+          title={DELETE_TITLE[confirmDelete.kind]}
+          message={deleteMessage(confirmDelete)}
           confirmLabel="Endgültig löschen"
-          onConfirm={() =>
-            void (confirmDelete.kind === "source" ? deleteSource() : deleteTemplate())
-          }
+          onConfirm={() => {
+            if (confirmDelete.kind === "source") void deleteSource();
+            else if (confirmDelete.kind === "template") void deleteTemplate();
+            else void deleteView(confirmDelete.id);
+          }}
           onCancel={() => setConfirmDelete(null)}
         />
       )}

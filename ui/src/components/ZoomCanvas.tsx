@@ -113,7 +113,6 @@ export function ZoomCanvas({ contentWidth, contentHeight, tools, children }: Pro
         {tools}
       </div>
 
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: Zoomfläche, die Bedienung steht als Knopf daneben */}
       <div
         ref={canvas}
         className="diagram-canvas"

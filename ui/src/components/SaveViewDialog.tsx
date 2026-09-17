@@ -37,7 +37,6 @@ export function SaveViewDialog({ suggestion, hiddenCount, fieldMessage, onSave, 
         </p>
         <label>
           Name
-          {/* biome-ignore lint/a11y/noAutofocus: der Dialog hat genau ein Feld */}
           <input
             autoFocus
             value={name}

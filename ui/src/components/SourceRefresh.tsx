@@ -24,7 +24,7 @@ export function SourceRefresh({ names, fetched, busy, onFetch }: Props) {
   }
 
   return (
-    <div className="actions">
+    <div className="head-group">
       <span className="muted">
         {oldest ? `Daten vom ${formatDateTime(oldest)}` : "Quellen noch nicht abgerufen"}
       </span>

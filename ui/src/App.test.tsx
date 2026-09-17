@@ -810,6 +810,35 @@ describe("Oberfläche", () => {
     expect(commands("metro_render")[3]?.args).toEqual({ id: "a", hidden: ["p1"] });
   });
 
+  it("fragt nach, bevor eine Ansicht gelöscht wird", async () => {
+    const user = userEvent.setup();
+    views = [
+      {
+        id: "v1",
+        name: "Roadmap",
+        kind: "metro",
+        target: "a",
+        hidden: [],
+        subtitle: null,
+        created_at: STAMP,
+        updated_at: STAMP,
+      },
+    ];
+    sources = [{ ...overview("a", "Projekte", 12), views: ["metro"] }];
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Ansicht Roadmap löschen" }));
+
+    // Erst die Rückfrage, noch kein Befehl.
+    expect(await screen.findByText("Ansicht löschen")).toBeTruthy();
+    expect(commands("view_delete")).toHaveLength(0);
+
+    await user.click(screen.getByRole("button", { name: "Endgültig löschen" }));
+
+    await waitFor(() => expect(commands("view_delete")).toHaveLength(1));
+    expect(commands("view_delete")[0]?.args).toEqual({ id: "v1" });
+  });
+
   it("versteckt ein Diagramm und holt es zurück", async () => {
     const user = userEvent.setup();
     templates = [template("t1", "Fahrplan")];

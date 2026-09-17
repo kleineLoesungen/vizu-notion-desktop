@@ -110,7 +110,92 @@ sources:
 ---
 flowchart LR
 {{#each (join-rows QUELLE "parent" ZWEITE "title" "z")}}
-  {{title}} --> {{z_title}}
+{{#if z_title}}  {{title}} --> {{z_title}}
+{{/if}}
+{{/each}}
+"##,
+        ),
+        (
+            r##"Anzahl je Status"##,
+            r##"pie"##,
+            r##"---
+title: "Verteilung"
+sources:
+  - QUELLE
+---
+pie showData
+  title Anzahl je Status
+{{#each (group QUELLE "status")}}
+  "{{this.status}}" : {{len items}}
+{{/each}}
+"##,
+        ),
+        (
+            r##"Termine auf einer Achse"##,
+            r##"timeline"##,
+            r##"---
+title: "Termine"
+sources:
+  - QUELLE
+---
+timeline
+  title Termine
+{{#each QUELLE}}
+{{#if date}}  {{this.date}} : {{this.title}}
+{{/if}}
+{{/each}}
+"##,
+        ),
+        (
+            r##"Karten je Status"##,
+            r##"kanban"##,
+            r##"---
+title: "Tafel"
+sources:
+  - QUELLE
+---
+kanban
+{{#each (group QUELLE "status")}}
+  {{classId "status" status}}["{{this.status}}"]
+{{#group-item}}
+    {{classId "title" title}}["{{this.title}}"]
+{{/group-item}}
+{{/each}}
+"##,
+        ),
+        (
+            r##"Gedankenkarte aus der Überordnung"##,
+            r##"mindmap"##,
+            r##"---
+title: "Gedankenkarte"
+sources:
+  - QUELLE
+---
+mindmap
+  root)QUELLE(
+{{#each (group QUELLE "parent")}}
+    {{this.parent}}
+{{#group-item}}
+      {{this.title}}
+{{/group-item}}
+{{/each}}
+"##,
+        ),
+        (
+            r##"Zustände und Übergänge"##,
+            r##"stateDiagram-v2"##,
+            r##"---
+title: "Übergänge"
+sources:
+  - QUELLE
+---
+stateDiagram-v2
+{{#each QUELLE}}
+  state "{{this.title}}" as {{classId "title" title}}
+{{/each}}
+{{#each QUELLE}}
+{{#if next}}  {{classId "title" title}} --> {{classId "title" next}}
+{{/if}}
 {{/each}}
 "##,
         ),
@@ -160,8 +245,12 @@ pub fn cheat_sheet() -> Vec<Hint> {
             r##"eine von zehn unterscheidbaren Farben"##,
         ),
         (
+            r##"{{len items}}"##,
+            r##"Anzahl der Zeilen einer Gruppe — für Kreisdiagramme"##,
+        ),
+        (
             r##"{{classId "feld" feld}}"##,
-            r##"nur die Kennung — für classDef-Zeilen"##,
+            r##"nur die Kennung — für classDef-Zeilen und fremde Diagrammarten"##,
         ),
         (
             r##"{{nodeId "feld" feld}}"##,
