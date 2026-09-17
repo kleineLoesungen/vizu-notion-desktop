@@ -411,6 +411,23 @@ describe("Oberfläche", () => {
     expect(drawn[0]).toContain("Website");
   });
 
+  it("holt vom Diagramm aus die Quellen und zeichnet danach neu", async () => {
+    const user = userEvent.setup();
+    templates = [template("t1", "Fahrplan")];
+    // Die Vorlage benutzt „Projekte"; „Aufgaben" gehört nicht dazu.
+    sources = [overview("a", "Projekte", 12), overview("b", "Aufgaben", 130)];
+    render(<App />);
+    await user.click(await screen.findByRole("button", { name: "Fahrplan — Mermaid" }));
+    await waitFor(() => expect(commands("diagram_render")).toHaveLength(1));
+
+    await user.click(screen.getByRole("button", { name: "Quelle abrufen" }));
+
+    await waitFor(() => expect(commands("source_fetch")).toHaveLength(1));
+    expect(commands("source_fetch")[0]?.args).toEqual({ id: "a" });
+    // Mit frischen Daten zeigt das Diagramm sonst den alten Stand.
+    await waitFor(() => expect(commands("diagram_render")).toHaveLength(2));
+  });
+
   it("blendet einen Knoten aus und lässt in Rust neu zeichnen", async () => {
     const user = userEvent.setup();
     templates = [template("t1", "Fahrplan")];

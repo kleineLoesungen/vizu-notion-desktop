@@ -275,10 +275,14 @@ struct Chain<'a> {
 
 /// Zerlegt die Seiten in Ketten.
 ///
-/// Anfang ist, worauf niemand zeigt. Danach immer dem ersten Nachfolger
-/// nach — verzweigt eine Seite, beginnt für den zweiten Nachfolger eine eigene
-/// Linie. Was in einem Kreis steckt und nie als Anfang auftaucht, bildet eine
-/// eigene Linie ab der ersten noch unbesuchten Seite; sonst fehlte sie ganz.
+/// Anfang ist, worauf niemand zeigt. Danach geht es dem Nachfolger nach, der
+/// im selben Band liegt — sonst dem frühesten. Alle weiteren Nachfolger
+/// zweigen ab und beginnen eine eigene Linie. Was in einem Kreis steckt und
+/// nie als Anfang auftaucht, bildet eine eigene Linie ab der ersten noch
+/// unbesuchten Seite; sonst fehlte sie ganz.
+///
+/// Die Wahl hängt **nicht** daran, in welcher Reihenfolge Notion die Seiten
+/// liefert: Sonst sähe dieselbe Datenbank nach jedem Abruf anders aus.
 fn chains<'a>(
     pages: &[&'a Page],
     source: &Source,
@@ -303,12 +307,18 @@ fn chains<'a>(
     };
 
     // Seiten ohne Datum kommen nicht auf die Karte; sie sollen aber auch keine
-    // Kette zerreißen — deshalb fallen sie hier vorher heraus.
-    let placed: Vec<&Page> = pages
+    // Kette zerreißen — deshalb fallen sie hier vorher heraus. Sortiert nach
+    // Datum, damit die Karte nicht von der Reihenfolge des Abrufs abhängt.
+    let mut placed: Vec<&Page> = pages
         .iter()
         .copied()
         .filter(|p| dated.contains_key(p.id.as_str()))
         .collect();
+    placed.sort_by(|a, b| {
+        dated[a.id.as_str()]
+            .cmp(&dated[b.id.as_str()])
+            .then_with(|| a.id.cmp(&b.id))
+    });
     let by_id: BTreeMap<&str, &Page> = placed.iter().map(|p| (p.id.as_str(), *p)).collect();
 
     let mut has_incoming: HashSet<String> = HashSet::new();
@@ -344,10 +354,21 @@ fn chains<'a>(
             }
             chain.push(current);
             let following = successors(current);
+            // Die Linie läuft dort weiter, wo sie im selben Band bleibt;
+            // sonst beim frühesten Nachfolger. Das hält eine Linie in ihrem
+            // Band und macht die Wahl unabhängig vom Abruf.
+            let here = band(current, source);
             let next = following
                 .iter()
-                .find(|id| !used.contains(*id))
-                .and_then(|id| by_id.get(id.as_str()).copied());
+                .filter(|id| !used.contains(*id))
+                .filter_map(|id| by_id.get(id.as_str()).copied())
+                .min_by_key(|page| {
+                    (
+                        band(page, source) != here,
+                        dated[page.id.as_str()],
+                        page.id.clone(),
+                    )
+                });
             // Alle weiteren Nachfolger zweigen hier ab.
             for other in &following {
                 if next.is_none_or(|n| &n.id != other) {
@@ -370,15 +391,18 @@ fn chains<'a>(
         // Die Linie heißt wie ihre erste Station, das Band wie deren `tag`
         // oder — wenn es keinen gibt — wie ihr `parent`.
         let label = rows::page_title(chain[0], source);
-        let zone = ["tag", "parent"]
-            .iter()
-            .find_map(|role| {
-                source
-                    .property(role)
-                    .and_then(|property| chain[0].properties.get(property))
-                    .map(rows::text_of)
-                    .filter(|text| !text.is_empty())
-            })
+        // Eine Linie kann durch mehrere Bänder laufen. Sie liegt in dem, in
+        // dem die meisten ihrer Stationen zu Hause sind — bei Gleichstand in
+        // dem ihrer ersten.
+        let mut counted: BTreeMap<String, usize> = BTreeMap::new();
+        for page in &chain {
+            *counted.entry(band(page, source)).or_default() += 1;
+        }
+        let first_band = band(chain[0], source);
+        let zone = counted
+            .into_iter()
+            .max_by_key(|(name, count)| (*count, name == &first_band))
+            .map(|(name, _)| name)
             .unwrap_or_default();
         chains.push(Chain {
             label,
@@ -389,6 +413,20 @@ fn chains<'a>(
         });
     }
     chains
+}
+
+/// Das Band einer Seite: ihr `tag`, sonst ihr `parent`, sonst nichts.
+fn band(page: &Page, source: &Source) -> String {
+    ["tag", "parent"]
+        .iter()
+        .find_map(|role| {
+            source
+                .property(role)
+                .and_then(|property| page.properties.get(property))
+                .map(rows::text_of)
+                .filter(|text| !text.is_empty())
+        })
+        .unwrap_or_default()
 }
 
 /// Bänder hinter zusammenhängenden Spuren mit demselben Schlüssel.

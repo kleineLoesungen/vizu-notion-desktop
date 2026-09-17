@@ -37,8 +37,8 @@ import { SettingsDialog } from "./components/SettingsDialog";
 import { SourceDetail } from "./components/SourceDetail";
 import { SourceDialog } from "./components/SourceDialog";
 import { SourceList } from "./components/SourceList";
+import { SourceRefresh } from "./components/SourceRefresh";
 import { TemplateEditor } from "./components/TemplateEditor";
-import { formatDateTime } from "./lib/format";
 import { withNeighbours } from "./lib/graph";
 import { applyTheme, useIsDark } from "./lib/theme";
 
@@ -299,12 +299,40 @@ export function App() {
       await reload();
       setToken(await api.token.status());
       // Das Diagramm zeigt jetzt veraltete Daten.
-      if (selection.kind === "template") await draw(selection.id, hidden);
+      await redraw();
     } catch (raw) {
       fail(raw);
     } finally {
       setBusyId(null);
     }
+  }
+
+  /** Die Quellen, aus denen das gewählte Diagramm gezeichnet ist. */
+  async function fetchForDiagram(ids: string[]) {
+    setFetchingAll(true);
+    setBanner(null);
+    try {
+      // Nacheinander: Notion begrenzt die Anfragen ohnehin auf drei je Sekunde.
+      for (const id of ids) {
+        setBusyId(id);
+        await api.sources.fetch(id);
+      }
+      await reload();
+      await redraw();
+    } catch (raw) {
+      fail(raw);
+      await reload();
+    } finally {
+      setBusyId(null);
+      setFetchingAll(false);
+    }
+  }
+
+  /** Dasselbe noch einmal zeichnen, mit den frisch geholten Daten. */
+  async function redraw() {
+    if (selection.kind === "template") await draw(selection.id, hidden);
+    if (selection.kind === "flow") await drawFlow(selection.id, hidden, subtitle);
+    if (selection.kind === "metro") await drawMetro(selection.id, hidden);
   }
 
   async function fetchAll() {
@@ -317,7 +345,7 @@ export function App() {
         await api.sources.fetch(source.id);
       }
       await reload();
-      if (selection.kind === "template") await draw(selection.id, hidden);
+      await redraw();
     } catch (raw) {
       fail(raw);
       await reload();
@@ -463,14 +491,13 @@ export function App() {
   const fetchedAt: Record<string, string | null> = Object.fromEntries(
     sources.map(({ source, fetch }) => [source.name, fetch?.fetched_at ?? null]),
   );
-  /** Der älteste Abruf der beteiligten Quellen — so alt sind die Daten. */
-  const oldestFetch = selectedTemplate?.sources
-    .map((name) => fetchedAt[name] ?? null)
-    .reduce<string | null | undefined>(
-      (oldest, at) =>
-        oldest === null || at === null ? null : !oldest || at < oldest ? at : oldest,
-      undefined,
-    );
+  /** Eine Vorlage nennt ihre Quellen beim Namen, abgerufen wird über die Kennung. */
+  const idsOf = (names: string[]) =>
+    sources.filter(({ source }) => names.includes(source.name)).map(({ source }) => source.id);
+  const namesOf = (id: string) => {
+    const found = sources.find((s) => s.source.id === id)?.source.name;
+    return found ? [found] : [];
+  };
 
   return (
     <div className="app">
@@ -568,13 +595,13 @@ export function App() {
             <header className="detail-head">
               <h1>{selectedTemplate.title}</h1>
               <div className="actions">
-                <span className="muted">
-                  {drawing
-                    ? "Zeichne …"
-                    : oldestFetch
-                      ? `Daten vom ${formatDateTime(oldestFetch)}`
-                      : "Quellen noch nicht abgerufen"}
-                </span>
+                {drawing && <span className="muted">Zeichne …</span>}
+                <SourceRefresh
+                  names={selectedTemplate.sources}
+                  fetched={fetchedAt}
+                  busy={fetchingAll}
+                  onFetch={() => void fetchForDiagram(idsOf(selectedTemplate.sources))}
+                />
                 <button
                   type="button"
                   className="ghost"
@@ -598,6 +625,12 @@ export function App() {
           <section className="diagram-page">
             <header className="detail-head">
               <h1>Fluss: {sources.find((s) => s.source.id === selection.id)?.source.name}</h1>
+              <SourceRefresh
+                names={namesOf(selection.id)}
+                fetched={fetchedAt}
+                busy={fetchingAll}
+                onFetch={() => void fetchForDiagram([selection.id])}
+              />
               <label className="inline-field">
                 Zweite Zeile
                 <select
@@ -625,6 +658,12 @@ export function App() {
           <section className="diagram-page">
             <header className="detail-head">
               <h1>Metro: {sources.find((s) => s.source.id === selection.id)?.source.name}</h1>
+              <SourceRefresh
+                names={namesOf(selection.id)}
+                fetched={fetchedAt}
+                busy={fetchingAll}
+                onFetch={() => void fetchForDiagram([selection.id])}
+              />
               {metro.undated.length > 0 && (
                 <span className="muted">
                   Ohne Datum, deshalb nicht auf der Karte: {metro.undated.join(", ")}

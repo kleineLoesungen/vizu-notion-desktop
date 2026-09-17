@@ -136,6 +136,51 @@ fn abzweigung_und_einmuendung_haengen_an_einer_station() {
 }
 
 #[test]
+fn die_linie_folgt_dem_nachfolger_im_selben_band() {
+    let (app, source) = app_mit_roadmap();
+    let map = metro::build(app.conn(), source.id, &HashSet::new()).unwrap();
+
+    // „Architektur" hat zwei Nachfolger: „Datenmodell" (Plattform, wie sie
+    // selbst) und „Design-System" (Produkt). Die Linie bleibt im Band, die
+    // andere zweigt ab. Welche Reihenfolge Notion liefert, spielt keine
+    // Rolle — sonst sähe dieselbe Datenbank nach jedem Abruf anders aus.
+    let titel = |line: &metro::MetroLine| -> Vec<String> {
+        line.stations.iter().map(|s| s.title.clone()).collect()
+    };
+    let haupt = map
+        .lines
+        .iter()
+        .find(|l| l.label == "Kickoff")
+        .expect("keine Linie ab „Kickoff“");
+    assert_eq!(
+        titel(haupt),
+        [
+            "Kickoff",
+            "Architektur",
+            "Datenmodell",
+            "API v1",
+            "Beta",
+            "Rollout EU",
+            "Version 1.0",
+            "Mobil-App",
+            "Version 1.1",
+        ]
+    );
+
+    // Jede Linie liegt in dem Band, in dem die meisten ihrer Stationen sind.
+    for line in &map.lines {
+        let y = line.stations[0].y;
+        assert!(
+            map.zones
+                .iter()
+                .any(|z| z.y <= y && y <= z.y + z.height || z.label.is_empty()),
+            "Linie {} liegt in keinem Band",
+            line.label
+        );
+    }
+}
+
+#[test]
 fn die_roadmap_spannt_ueber_zwei_jahre() {
     let (app, source) = app_mit_roadmap();
     let map = metro::build(app.conn(), source.id, &HashSet::new()).unwrap();

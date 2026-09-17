@@ -71,46 +71,64 @@ export function MetroView({ map, onExport }: Props) {
             ))}
           </g>
 
-          {map.lines.map((line) => (
-            <g key={`${line.label}-${line.stations[0]?.id}`} className="metro-line">
-              <polyline points={path(line)} stroke={line.color} />
-              {line.stations.map((station) => (
-                <g
-                  key={station.id}
-                  className={`metro-station${station.interchange ? " interchange" : ""}`}
+          {/* In drei Durchgängen, nicht Linie für Linie: Sonst deckt die
+              zuletzt gezeichnete Linie die Stationen und Beschriftungen der
+              vorherigen zu. Erst alle Linien, dann alle Stationen, dann alle
+              Beschriftungen — die stehen damit immer obenauf. */}
+          <g className="metro-line">
+            {map.lines.map((line) => (
+              <polyline
+                key={`${line.label}-${line.stations[0]?.id}`}
+                points={path(line)}
+                stroke={line.color}
+              />
+            ))}
+          </g>
+
+          {map.lines.map((line) =>
+            line.stations.map((station) => (
+              <g
+                key={station.id}
+                className={`metro-station${station.interchange ? " interchange" : ""}`}
+              >
+                <circle
+                  cx={station.x}
+                  cy={station.y}
+                  r={station.interchange ? R + 2 : R}
+                  stroke={station.interchange ? undefined : line.color}
+                  // Anfang und Ende voll, alles dazwischen offen — so sieht
+                  // man, wo eine Linie beginnt und wo sie endet. Eine
+                  // Umsteigestation gehört keiner Linie allein, sie bleibt
+                  // offen (siehe app.css).
+                  className={filled(station) && !station.interchange ? "filled" : ""}
+                  fill={filled(station) && !station.interchange ? line.color : undefined}
+                />
+              </g>
+            )),
+          )}
+
+          {map.lines.map((line) =>
+            line.stations.map((station) => (
+              <g key={station.id} className="metro-station">
+                {/* Über der Station steht der Titel oben und das Datum
+                    darunter; unter ihr umgekehrt herum. Beides zusammen
+                    hält Abstand zur Linie. */}
+                <text
+                  x={station.x}
+                  y={station.y + (station.label_above ? -LABEL_GAP - 14 : LABEL_GAP + 8)}
                 >
-                  <circle
-                    cx={station.x}
-                    cy={station.y}
-                    r={station.interchange ? R + 2 : R}
-                    stroke={station.interchange ? undefined : line.color}
-                    // Anfang und Ende voll, alles dazwischen offen — so sieht
-                    // man, wo eine Linie beginnt und wo sie endet. Eine
-                    // Umsteigestation gehört keiner Linie allein, sie bleibt
-                    // offen (siehe app.css).
-                    className={filled(station) && !station.interchange ? "filled" : ""}
-                    fill={filled(station) && !station.interchange ? line.color : undefined}
-                  />
-                  {/* Über der Station steht der Titel oben und das Datum
-                      darunter; unter ihr umgekehrt herum. Beides zusammen
-                      hält Abstand zur Linie. */}
-                  <text
-                    x={station.x}
-                    y={station.y + (station.label_above ? -LABEL_GAP - 14 : LABEL_GAP + 8)}
-                  >
-                    {station.title}
-                  </text>
-                  <text
-                    className="metro-date"
-                    x={station.x}
-                    y={station.y + (station.label_above ? -LABEL_GAP : LABEL_GAP + 22)}
-                  >
-                    {station.date}
-                  </text>
-                </g>
-              ))}
-            </g>
-          ))}
+                  {station.title}
+                </text>
+                <text
+                  className="metro-date"
+                  x={station.x}
+                  y={station.y + (station.label_above ? -LABEL_GAP : LABEL_GAP + 22)}
+                >
+                  {station.date}
+                </text>
+              </g>
+            )),
+          )}
         </svg>
       </div>
     </ZoomCanvas>
