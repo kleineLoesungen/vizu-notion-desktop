@@ -5,7 +5,7 @@ Jeder Ordner ist ein Fall: `template.mmd` (Vorlage wie in der Webapp),
 
 `expected.mmd` stammt **nicht** aus diesem Repo, sondern aus der
 Original-Logik der Webapp
-[vizu-notion-local](https://github.com/kleineLoesungen/vizu-notion-local):
+vizu-notion-local:
 `server/utils/templates.ts` und die Nachbearbeitung aus
 `server/routes/api/mermaid/[templateId].get.ts`, mit handlebars 4.7.9 und
 gray-matter 4.0.3. Das Skript dazu liegt als `referenz.ts.txt` daneben.

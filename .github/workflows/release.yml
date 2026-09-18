@@ -1,0 +1,117 @@
+# Fertige Pakete für alle, die nicht selbst bauen wollen.
+#
+# Ausgelöst von einem Versionsschild (`git tag v0.2.0 && git push --tags`).
+# Gebaut wird auf beiden Zielsystemen, denn ein Bündel entsteht nur dort, wo
+# es laufen soll: macOS auf macOS, Linux auf Linux.
+#
+# Ubuntu 22.04 mit Absicht: Ein Binary läuft nur mit einer glibc, die
+# mindestens so neu ist wie die, gegen die es gebaut wurde. Auf 24.04 gebaut,
+# startete es auf älteren Systemen nicht mehr.
+#
+# Signiert wird hier nichts — siehe docs/RELEASE.md. Der Entwurf des Releases
+# bleibt deshalb ein Entwurf, bis ein Mensch ihn ansieht und veröffentlicht.
+
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  # Zum Ausprobieren ohne Schild: baut, hängt aber nichts an ein Release.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bundle:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            name: macos-arm64
+          - os: ubuntu-22.04
+            name: linux-x86_64
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: WebKitGTK und Werkzeuge (nur Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libxdo-dev libssl-dev \
+            libayatana-appindicator3-dev librsvg2-dev build-essential
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      # Die Fassung steht in rust-toolchain.toml; rustup liest sie von selbst.
+      - name: Rust
+        run: rustup show
+
+      - uses: Swatinem/rust-cache@v2
+
+      - run: npm ci
+
+      - name: Bündel bauen
+        run: npm run tauri build
+
+      - name: Kommandozeile packen
+        run: ./scripts/package-cli.sh
+
+      # Die Bündel liegen je nach System woanders; hier landet alles an einem
+      # Ort, damit der nächste Schritt nichts suchen muss.
+      - name: Ergebnisse einsammeln
+        shell: bash
+        run: |
+          mkdir -p upload
+          find target/release/bundle -type f \
+            \( -name '*.dmg' -o -name '*.deb' -o -name '*.AppImage' \) \
+            -exec cp {} upload/ \;
+          cp dist/*.tar.gz upload/
+          ls -lh upload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: upload/*
+          if-no-files-found: error
+
+  release:
+    needs: bundle
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: pakete
+
+      # Als Entwurf: Was unsigniert ist, soll jemand bewusst veröffentlichen.
+      - name: Release anlegen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > notiz.md <<'ENDE'
+          Pakete für macOS (Apple Silicon) und Linux (x86_64), dazu die
+          Kommandozeile mit Handbuchseiten und Vervollständigungen.
+
+          **macOS:** Die Programme sind nicht signiert. Beim ersten Start meldet
+          das System „beschädigt". Das hebt auf:
+
+              xattr -dr com.apple.quarantine "/Applications/Vizu Notion.app"
+
+          **Linux:** `.deb` installieren oder das `.AppImage` ausführbar machen.
+
+          Alles Weitere in docs/RELEASE.md.
+          ENDE
+          gh release create "${GITHUB_REF_NAME}" \
+            --draft \
+            --title "${GITHUB_REF_NAME}" \
+            --notes-file notiz.md \
+            pakete/*/*

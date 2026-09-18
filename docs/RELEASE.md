@@ -121,6 +121,48 @@ Start — nur unter `#[cfg(target_os = "linux")]`, und nur dort.
 
 ---
 
+## Fertige Pakete veröffentlichen
+
+Wer die Anwendung benutzen will, soll sie nicht erst übersetzen müssen. Die
+Pakete gehören aber **nicht ins Repository**: Sie sind groß, mit jedem Commit
+veraltet, und git behält jede Fassung für immer. Der Ort dafür ist ein
+**Release auf GitHub**.
+
+`.github/workflows/release.yml` baut auf beiden Systemen — ein Bündel entsteht
+nur dort, wo es laufen soll — und hängt die Ergebnisse an einen Entwurf:
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+Danach unter *Releases* den Entwurf ansehen und veröffentlichen. Dass er ein
+Entwurf bleibt, ist Absicht: Was unsigniert ist, soll ein Mensch bewusst
+freigeben.
+
+Gebaut wird auf **Ubuntu 22.04**, nicht auf der neuesten Fassung: Ein Binary
+läuft nur mit einer glibc, die mindestens so neu ist wie die, gegen die es
+gebaut wurde. Auf 24.04 gebaut, startete es auf älteren Systemen nicht mehr.
+
+Es entstehen je Lauf:
+
+| Datei | Für |
+|---|---|
+| `Vizu Notion_<version>_aarch64.dmg` | macOS auf Apple Silicon |
+| `vizu-notion_<version>_amd64.deb` | Debian, Ubuntu |
+| `Vizu Notion_<version>_amd64.AppImage` | andere Linux-Systeme |
+| `vizu-notion-cli-<version>-<os>-<arch>.tar.gz` | nur die Kommandozeile |
+
+**Was fehlt, und was das für Benutzer heißt:**
+
+* **Kein Intel-Mac und kein ARM-Linux.** Nachrüstbar über weitere Einträge in
+  der Matrix (`macos-13` für Intel) oder `bundle-macos-universal`.
+* **Nicht signiert.** macOS meldet beim ersten Start „beschädigt"; es hilft
+  `xattr -dr com.apple.quarantine "/Applications/Vizu Notion.app"`. Wer das
+  vermeiden will, braucht ein Entwicklerkonto und die Schritte oben —
+  die Schlüssel gehören dann als Secrets in die Actions.
+* **Kein Auto-Update.** Eine neue Fassung holt man sich selbst.
+
 ## Was dieses Kit nicht mitbringt
 
 * **Kein Auto-Update.** `tauri-plugin-updater` braucht einen

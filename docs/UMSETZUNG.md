@@ -1,6 +1,6 @@
 # Umsetzungsplan: vizu-notion-local als Desktop-Anwendung
 
-Vorlage ist die Webapp [vizu-notion-local](https://github.com/kleineLoesungen/vizu-notion-local)
+Vorlage ist die Webapp vizu-notion-local
 (Nuxt 4, Vue 3, rund 7.000 Zeilen). Ziel ist dieselbe Kernfunktion auf dem
 Stack dieses Repos (`core` · `cli` · `desktop` · `ui/`, siehe `CLAUDE.md`):
 

@@ -8,10 +8,8 @@ liegen danach lokal in SQLite — gezeichnet wird ohne Netz.
 Dieselbe Fachlogik bedient ein Kommandozeilenwerkzeug: `vizu-notion render
 fahrplan` liefert denselben Mermaid-Text, den das Fenster anzeigt.
 
-Nachfolger der Webapp
-[vizu-notion-local](https://github.com/kleineLoesungen/vizu-notion-local).
-Bestehende `.mmd`-Vorlagen und `sources.json` laufen unverändert weiter — die
-Ausgabe ist bytegleich, und ein Test hält das fest.
+Vorhandene `.mmd`-Vorlagen und eine `sources.json` lassen sich einlesen und
+laufen unverändert weiter (`template import`, `source import`).
 
 ---
 
@@ -60,7 +58,7 @@ holen" im Quellen-Dialog prüft sie und schlägt die Zuordnung gleich vor.
 | **Fluss** | Ohne Vorlage: Knoten und Pfeile entlang der Rolle `next`, angeordnet in core. |
 | **Metro-Karte** | Zeitachse aus `date`, Linien entlang `next`, Bänder aus `tag`, mit Abzweigungen und Umsteigestationen. |
 | **Filtern** | Einzelne Seiten ausblenden, „nur Verwandte" zeigen, je Quelle aufklappen. |
-| **Ansichten** | Das Eingestellte unter einem Namen sichern und wieder öffnen — der Ersatz für die Teilen-Links der Webapp. |
+| **Ansichten** | Das Eingestellte — Diagramm, ausgeblendete Seiten — unter einem Namen sichern und wieder öffnen. |
 | **Ausgeben** | SVG speichern; auf der Kommandozeile Mermaid-Text oder JSON. |
 
 ---
@@ -95,7 +93,7 @@ crates/
 │   ├── src/notion/            Notion-API: Transport, Takt, Modelle
 │   ├── src/fetch.rs           Abrufen, zwischenspeichern, Schema ansehen
 │   ├── src/secret.rs          Der Notion-Token
-│   ├── src/template/          Mermaid aus Vorlagen — bytegleich zur Webapp
+│   ├── src/template/          Mermaid aus Vorlagen, mit Handlebars
 │   ├── src/flow.rs            Flussdiagramm: Graph und Anordnung
 │   ├── src/metro.rs           Metro-Karte: Ketten, Zeitachse, Bänder
 │   ├── src/view.rs            Gespeicherte Ansichten
@@ -136,8 +134,14 @@ just bundle-macos-universal   # Apple Silicon + Intel in einem Bündel
 just package-cli              # die Kommandozeile als Tarball
 ```
 
-Ergebnisse unter `target/release/bundle/` bzw. `dist/`. Signieren und
-Notarisieren: [docs/RELEASE.md](docs/RELEASE.md).
+Ergebnisse unter `target/release/bundle/` bzw. `dist/`.
+
+**Fertige Pakete** entstehen von selbst: Ein Versionsschild (`git tag v0.2.0 &&
+git push --tags`) lässt GitHub Actions auf macOS und Linux bauen und hängt
+`.dmg`, `.deb`, `.AppImage` und den CLI-Tarball an einen Release-Entwurf. Sie
+sind **nicht signiert** — macOS meldet deshalb beim ersten Start „beschädigt",
+was `xattr -dr com.apple.quarantine "/Applications/Vizu Notion.app"` aufhebt.
+Alles dazu: [docs/RELEASE.md](docs/RELEASE.md).
 
 ---
 
@@ -167,7 +171,7 @@ git cherry-pick <sha>
 | Datei | Inhalt |
 |---|---|
 | [CLAUDE.md](CLAUDE.md) | Die Regeln. Tauri-2-Fallstricke, Notion-Eigenheiten, Schichtregel |
-| [docs/UMSETZUNG.md](docs/UMSETZUNG.md) | Der Plan: Phasen, Entscheidungen, was von der Webapp übernommen wurde |
+| [docs/UMSETZUNG.md](docs/UMSETZUNG.md) | Der Plan: Phasen, Entscheidungen, Herkunft der Vorlagensprache |
 | [docs/CLI.md](docs/CLI.md) | Befehle, Rückgabewerte, JSON-Format |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Warum die Schichten so geschnitten sind, wie die IPC-Grenze aussieht |
 | [docs/RECIPES.md](docs/RECIPES.md) | npm-Paket einbinden, neuer Befehl, neue Ressource, Plugin, Hintergrundarbeit |
