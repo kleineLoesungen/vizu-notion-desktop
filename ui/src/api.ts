@@ -27,6 +27,8 @@ import type {
   FieldError,
   FlowGraph,
   HiddenDiagram,
+  Inserted,
+  InsertInput,
   MetroMap,
   Property,
   Source,
@@ -133,6 +135,11 @@ export const api = {
     remove: (id: string) => call<null>("template_delete", { id }),
     /** Zeichnet aus dem Zwischenspeicher — ohne Netz, deshalb schnell. */
     render: (id: string, hidden: string[]) => call<Diagram>("diagram_render", { id, hidden }),
+    /**
+     * Setzt einen Baustein ein, ohne den Aufbau der Vorlage zu zerbrechen —
+     * die Regeln dafür stehen in core (`template::assemble`).
+     */
+    insert: (input: InsertInput) => call<Inserted>("template_insert", { input }),
     /** Beispiele und Spickzettel — sie stehen in core, nicht im Webview. */
     help: () => call<TemplateHelp>("template_help"),
     /** Dasselbe für einen Text, der noch nicht gespeichert ist. */

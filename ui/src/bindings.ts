@@ -165,6 +165,25 @@ target: string, };
  */
 export type Hint = { syntax: string, meaning: string, };
 
+/**
+ * Was der Editor schickt.
+ */
+export type InsertInput = { body: string, 
+/**
+ * Schreibmarke in UTF-16-Einheiten, wie `selectionStart` im Textfeld.
+ */
+cursor: number, snippet: string, 
+/**
+ * Quellen, die der Baustein benutzt — der Kopf muss sie nennen.
+ */
+sources: Array<string>, };
+
+/**
+ * Die Vorlage danach, und wo die Schreibmarke hingehört: hinter das
+ * Eingesetzte.
+ */
+export type Inserted = { body: string, cursor: number, };
+
 export type MetroLine = { label: string, color: string, stations: Array<MetroStation>, 
 /**
  * Woher die Linie abzweigt: die Station, deren zweiter Nachfolger sie

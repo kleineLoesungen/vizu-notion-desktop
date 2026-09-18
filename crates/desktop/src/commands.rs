@@ -27,7 +27,9 @@ use vizu_notion_core::metro::{self, MetroMap};
 use vizu_notion_core::notion::Property;
 use vizu_notion_core::secret::{self, TokenStatus};
 use vizu_notion_core::source::{self, Source, SourceInput};
-use vizu_notion_core::template::{self, Block, Diagram, Example, Hint, Template, TemplateInput};
+use vizu_notion_core::template::{
+    self, Block, Diagram, Example, Hint, InsertInput, Inserted, Template, TemplateInput,
+};
 use vizu_notion_core::view::{self, View, ViewInput};
 use vizu_notion_core::{Config, Paths, notion};
 
@@ -189,6 +191,14 @@ pub async fn template_save(
 #[tauri::command]
 pub async fn template_delete(state: State<'_, AppState>, id: Uuid) -> ApiResult<()> {
     state.with(|app| template::delete(app.conn(), id))
+}
+
+/// Setzt einen Baustein so in eine Vorlage, dass ihr Aufbau hält: Kopf und
+/// Diagrammart kommen dazu, wenn sie fehlen, eine benutzte Quelle unter
+/// `sources`, und in den Kopf selbst wird nichts gesetzt.
+#[tauri::command]
+pub async fn template_insert(input: InsertInput) -> ApiResult<Inserted> {
+    Ok(template::insert(input))
 }
 
 /// Beispiele und Spickzettel zur Vorlagensprache — für den Editor.

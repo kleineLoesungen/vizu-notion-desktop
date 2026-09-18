@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../api";
-import { formatDateTime } from "./format";
+import { failingLines, formatDateTime } from "./format";
 import { EMPTY_VALUE, filterableRoles, setValueVisible, valuesOf } from "./graph";
 import { fillFromSuggestion } from "./mapping";
 import { externalHref, markdownToHtml } from "./markdown";
@@ -183,5 +183,22 @@ describe("Nach Feldwert filtern", () => {
   it("bietet den Titel nicht als Filter an, Gruppenbildner zuerst", () => {
     const mitTitel = [seite("x", { title: ["x"], zeta: ["1"], status: ["Done"], tag: ["Web"] })];
     expect(filterableRoles(mitTitel)).toEqual(["status", "tag", "zeta"]);
+  });
+});
+
+describe("Mermaid-Fehler", () => {
+  const text = 'flowchart LR\n  a["A"] --> b[""]\n  c["C"]\n  d["D"]';
+
+  it("zeigt die gescheiterte Zeile mit ihren Nachbarn", () => {
+    expect(failingLines(text, "Parse error on line 2:\n...")).toEqual([
+      { number: 1, text: "flowchart LR", failing: false },
+      { number: 2, text: '  a["A"] --> b[""]', failing: true },
+      { number: 3, text: '  c["C"]', failing: false },
+    ]);
+  });
+
+  it("nennt die Meldung keine Zeile, gibt es keinen Ausschnitt", () => {
+    expect(failingLines(text, "No diagram type detected")).toBeNull();
+    expect(failingLines(text, "Parse error on line 99")).toBeNull();
   });
 });

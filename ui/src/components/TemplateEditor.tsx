@@ -5,7 +5,7 @@
 // deshalb nicht davon abweichen.
 
 import { useRef } from "react";
-import type { Diagram, TemplateHelp } from "../bindings";
+import type { Diagram, Inserted, InsertInput, TemplateHelp } from "../bindings";
 import { DiagramView } from "./DiagramView";
 import { FieldMessage } from "./FieldMessage";
 import { type SourceFields, TemplateHelper } from "./TemplateHelper";
@@ -25,6 +25,8 @@ type Props = {
   help: TemplateHelp | null;
   onSlugChange: (slug: string) => void;
   onBodyChange: (body: string) => void;
+  /** Lässt core einen Baustein einsetzen — mit Kopf und `sources`. */
+  onAssemble: (input: InsertInput) => Promise<Inserted | null>;
   onSave: () => void;
   onDelete?: () => void;
   onClose: () => void;
@@ -49,12 +51,32 @@ export function TemplateEditor({
   help,
   onSlugChange,
   onBodyChange,
+  onAssemble,
   onSave,
   onDelete,
   onClose,
 }: Props) {
   const text = useRef<HTMLTextAreaElement>(null);
   const names = sources.map((s) => s.name);
+
+  /** Die Schreibmarke nach dem Neuzeichnen setzen, damit man weiterschreiben kann. */
+  function moveCursor(at: number) {
+    const area = text.current;
+    if (!area) return;
+    requestAnimationFrame(() => {
+      area.focus();
+      area.setSelectionRange(at, at);
+    });
+  }
+
+  /** Ein Baustein: core setzt ihn ein und ergänzt, was der Aufbau braucht. */
+  async function insertBlock(snippet: string, blockSources: string[]) {
+    const cursor = text.current?.selectionStart ?? body.length;
+    const result = await onAssemble({ body, cursor, snippet, sources: blockSources });
+    if (!result) return;
+    onBodyChange(result.body);
+    moveCursor(result.cursor);
+  }
 
   /** Setzt Text an der Schreibmarke ein — oder ersetzt, was markiert ist. */
   function insert(snippet: string) {
@@ -129,6 +151,7 @@ export function TemplateEditor({
             blocks={help?.blocks ?? []}
             body={body}
             onInsert={insert}
+            onInsertBlock={(snippet, used) => void insertBlock(snippet, used)}
           />
 
           <label className="grow">

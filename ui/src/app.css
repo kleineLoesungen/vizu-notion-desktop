@@ -653,6 +653,21 @@ input[type="color"] {
   overflow-x: auto;
 }
 
+/* Die gescheiterte Zeile im erzeugten Text, mit ihren Nachbarn. */
+.diagram-excerpt {
+  margin: var(--space-2) 0 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  white-space: pre;
+  overflow-x: auto;
+  color: var(--muted);
+}
+
+.diagram-excerpt .failing {
+  color: var(--danger);
+  font-weight: 600;
+}
+
 .diagram-source {
   max-height: 40vh;
   overflow: auto;

@@ -16,10 +16,16 @@ type Props = {
   blocks: Block[];
   /** Der Vorlagentext — um die Quelle vorzuwählen, die er schon nennt. */
   body: string;
+  /** Ein Feld: einfach an die Schreibmarke. */
   onInsert: (text: string) => void;
+  /**
+   * Ein Baustein: über core, damit Kopf, Diagrammart und `sources` stimmen
+   * (`template::assemble`). `sources` sind die Quellen, die er benutzt.
+   */
+  onInsertBlock: (snippet: string, sources: string[]) => void;
 };
 
-export function TemplateHelper({ sources, blocks, body, onInsert }: Props) {
+export function TemplateHelper({ sources, blocks, body, onInsert, onInsertBlock }: Props) {
   // Vorgewählt ist die erste Quelle, die im Text schon vorkommt: Wer an
   // „Projekte" schreibt, will die Felder von „Projekte" sehen.
   const named = sources.find((s) => body.includes(s.name)) ?? sources[0];
@@ -46,11 +52,12 @@ export function TemplateHelper({ sources, blocks, body, onInsert }: Props) {
 
   function insertBlock() {
     if (!block || !source) return;
-    onInsert(
+    onInsertBlock(
       block.body
         .replaceAll("QUELLE", source.name)
         .replaceAll("ZWEITE", secondValue)
         .replaceAll("FELD", fieldValue),
+      block.needs_second ? [source.name, secondValue] : [source.name],
     );
   }
 
@@ -105,7 +112,9 @@ export function TemplateHelper({ sources, blocks, body, onInsert }: Props) {
             <button
               type="button"
               className="chip"
-              onClick={() => onInsert(`{{#each ${source.name}}}\n  \n{{/each}}\n`)}
+              onClick={() =>
+                onInsertBlock(`{{#each ${source.name}}}\n  \n{{/each}}\n`, [source.name])
+              }
             >
               #each {source.name}
             </button>

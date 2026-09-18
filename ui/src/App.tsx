@@ -530,7 +530,11 @@ export function App() {
     setFieldError(null);
     setSelection({ kind: "none" });
     if (id === null) {
-      setDraft({ id: null, slug: "", body: NEW_TEMPLATE, saved: "" });
+      // Mit der ersten eingerichteten Quelle statt des Platzhalters: Sonst
+      // begann jede neue Vorlage mit „Quelle QUELLE gibt es nicht".
+      const first = sources[0]?.source.name;
+      const body = first ? NEW_TEMPLATE.replaceAll("QUELLE", first) : NEW_TEMPLATE;
+      setDraft({ id: null, slug: "", body, saved: "" });
       return;
     }
     try {
@@ -731,6 +735,14 @@ export function App() {
             help={help}
             fieldMessage={fieldMessage}
             onSlugChange={(slug) => setDraft({ ...draft, slug })}
+            onAssemble={async (input) => {
+              try {
+                return await api.templates.insert(input);
+              } catch (raw) {
+                fail(raw);
+                return null;
+              }
+            }}
             onBodyChange={(body) => setDraft({ ...draft, body })}
             onSave={() => void saveTemplate()}
             {...(draft.id

@@ -22,7 +22,9 @@ use vizu_notion_core::notion::Property;
 use vizu_notion_core::rows::NodeInfo;
 use vizu_notion_core::secret::{TokenOrigin, TokenStatus};
 use vizu_notion_core::source::{ColumnMapping, Source, SourceInput};
-use vizu_notion_core::template::{Block, Diagram, Example, Hint, Template, TemplateInput};
+use vizu_notion_core::template::{
+    Block, Diagram, Example, Hint, InsertInput, Inserted, Template, TemplateInput,
+};
 use vizu_notion_core::view::{View, ViewInput};
 use vizu_notion_core::{Config, ErrorCode, FieldError, Theme};
 use vizu_notion_desktop::ApiError;
@@ -59,6 +61,8 @@ fn generate() -> String {
         decl::<FieldError>(&cfg),
         decl::<HiddenDiagram>(&cfg),
         decl::<Hint>(&cfg),
+        decl::<InsertInput>(&cfg),
+        decl::<Inserted>(&cfg),
         decl::<MetroLine>(&cfg),
         decl::<MetroMap>(&cfg),
         decl::<MetroPoint>(&cfg),

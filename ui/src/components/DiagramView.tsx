@@ -5,6 +5,7 @@
 // Verschieben.
 
 import { useEffect, useRef, useState } from "react";
+import { failingLines } from "../lib/format";
 import { renderDiagram, svgFile } from "../lib/mermaid";
 import { ZoomCanvas } from "./ZoomCanvas";
 
@@ -53,6 +54,8 @@ export function DiagramView({ mermaid, dark, onExport }: Props) {
     };
   }, [mermaid, dark]);
 
+  const excerpt = error ? failingLines(mermaid, error) : null;
+
   const tools = onExport && (
     <button
       type="button"
@@ -72,6 +75,17 @@ export function DiagramView({ mermaid, dark, onExport }: Props) {
       {error && (
         <div className="diagram-error" role="alert">
           {`Mermaid nimmt das Diagramm nicht an:\n${error}`}
+          {excerpt && (
+            // Die Zeile im erzeugten Text, an der es scheitert — daran sieht
+            // man meist sofort, welches Feld der Vorlage den Wert geliefert hat.
+            <pre className="diagram-excerpt">
+              {excerpt.map((line) => (
+                <span key={line.number} className={line.failing ? "failing" : undefined}>
+                  {`${String(line.number).padStart(3)} │ ${line.text}\n`}
+                </span>
+              ))}
+            </pre>
+          )}
         </div>
       )}
       {error && (

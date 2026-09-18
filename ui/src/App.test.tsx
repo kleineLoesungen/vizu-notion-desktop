@@ -270,6 +270,13 @@ function backend(cmd: string, args: Record<string, unknown> = {}): unknown {
           { role: "title", property: "Name" },
         ],
       };
+    case "template_insert": {
+      // Keine eigenen Regeln: Die Attrappe hängt nur an. Wie core einsetzt,
+      // prüft crates/core/tests/assemble.rs.
+      const input = args.input as { body: string; snippet: string };
+      const body = input.body + input.snippet;
+      return { body, cursor: body.length };
+    }
     case "template_help":
       return {
         examples: [],
@@ -796,7 +803,8 @@ describe("Oberfläche", () => {
     await user.click(within(felder).getByRole("button", { name: "title" }));
     expect(textfeld.value).toBe("{{next}}{{this.title}}");
 
-    // Ein Baustein bekommt Quelle und Feld eingesetzt.
+    // Ein Baustein geht an core — mit Text, Schreibmarke und benutzter
+    // Quelle —, und was zurückkommt, steht im Textfeld.
     await user.clear(textfeld);
     await user.selectOptions(
       screen.getByRole("combobox", { name: "Baustein" }),
@@ -804,9 +812,36 @@ describe("Oberfläche", () => {
     );
     await user.selectOptions(screen.getByRole("combobox", { name: "Feld" }), "next");
     await user.click(screen.getByRole("button", { name: "Einfügen" }));
-    expect(textfeld.value).toBe(
-      "{{#each Projekte}}\n  {{#if next}}{{title}} --> {{next}}{{/if}}\n{{/each}}\n",
+
+    await waitFor(() => expect(commands("template_insert")).toHaveLength(1));
+    expect(commands("template_insert")[0]?.args).toEqual({
+      input: {
+        body: "",
+        cursor: 0,
+        snippet: "{{#each Projekte}}\n  {{#if next}}{{title}} --> {{next}}{{/if}}\n{{/each}}\n",
+        sources: ["Projekte"],
+      },
+    });
+    await waitFor(() =>
+      expect(textfeld.value).toBe(
+        "{{#each Projekte}}\n  {{#if next}}{{title}} --> {{next}}{{/if}}\n{{/each}}\n",
+      ),
     );
+  });
+
+  it("beginnt eine neue Vorlage mit der ersten Quelle, nicht mit einem Platzhalter", async () => {
+    const user = userEvent.setup();
+    sources = [overview("a", "Projekte", 12)];
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Neu" }));
+
+    const textfeld = (await screen.findByRole("textbox", {
+      name: "Vorlage",
+    })) as HTMLTextAreaElement;
+    expect(textfeld.value).toContain("  - Projekte\n");
+    expect(textfeld.value).toContain("{{#each Projekte}}");
+    expect(textfeld.value).not.toContain("QUELLE");
   });
 
   it("speichert eine Vorlage mit Kurznamen", async () => {

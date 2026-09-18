@@ -17,6 +17,7 @@
 //! Gezeichnet wird nicht hier: `core` erzeugt den Text, die Oberfläche gibt
 //! ihn an mermaid.js, die Kommandozeile schreibt ihn auf stdout.
 
+pub mod assemble;
 pub mod examples;
 mod helpers;
 mod parse;
@@ -32,8 +33,9 @@ use serde::Serialize;
 use serde_json::{Map, Value};
 use ts_rs::TS;
 
+pub use assemble::{InsertInput, Inserted, insert};
 pub use examples::{Block, Example, Hint};
-pub use parse::Meta;
+pub use parse::{Meta, meta as parse_meta};
 pub use store::{Template, TemplateInput, create, delete, get, import_mmd, list, resolve, update};
 
 use crate::error::{Result, Validator};
