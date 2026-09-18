@@ -579,9 +579,12 @@ describe("Oberfläche", () => {
     await waitFor(() => expect(name.value).toBe("vizu Projekte"));
     const spalte = (index: number) =>
       screen.getByRole("combobox", { name: `Spalte ${index}` }) as HTMLSelectElement;
-    expect(spalte(1).value).toBe("Start");
-    expect(spalte(2).value).toBe("Nächstes");
-    expect(spalte(3).value).toBe("Name");
+    // Die vorhandene Zeile „title" wird gefüllt, die übrigen Rollen kommen
+    // dazu — ohne einen Knopf „Vorschlag übernehmen".
+    expect(spalte(1).value).toBe("Name");
+    expect(spalte(2).value).toBe("Start");
+    expect(spalte(3).value).toBe("Nächstes");
+    expect(screen.queryByRole("button", { name: "Vorschlag übernehmen" })).toBeNull();
     // Die Spalten stehen zur Auswahl, statt abgetippt zu werden.
     expect(within(spalte(1)).getByRole("option", { name: "Start (date)" })).toBeTruthy();
 
@@ -593,9 +596,9 @@ describe("Oberfläche", () => {
         name: "vizu Projekte",
         database_id: "396f66270f5d8034b55cebc685aa5e50",
         mappings: [
+          { role: "title", property: "Name" },
           { role: "date", property: "Start" },
           { role: "next", property: "Nächstes" },
-          { role: "title", property: "Name" },
         ],
       },
     });

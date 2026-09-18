@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../api";
 import { formatDateTime } from "./format";
+import { fillFromSuggestion } from "./mapping";
 import { externalHref, markdownToHtml } from "./markdown";
 import { svgFile } from "./mermaid";
 import { isLightColor } from "./theme";
@@ -82,5 +83,48 @@ describe("ApiError", () => {
     const err = ApiError.from("command note_craete not found");
     expect(err.code).toBe("internal_error");
     expect(err.isValidation).toBe(false);
+  });
+});
+
+describe("Vorschlag für die Zuordnung", () => {
+  const vorschlag = [
+    { role: "date", property: "Start" },
+    { role: "next", property: "Nächstes" },
+    { role: "title", property: "Name" },
+  ];
+
+  it("füllt eine leere Spalte und hängt fehlende Rollen an", () => {
+    const neu = fillFromSuggestion([{ role: "title", property: "" }], vorschlag);
+    expect(neu).toEqual([
+      { role: "title", property: "Name" },
+      { role: "date", property: "Start" },
+      { role: "next", property: "Nächstes" },
+    ]);
+  });
+
+  it("überschreibt nichts, was schon eingetragen ist", () => {
+    const neu = fillFromSuggestion(
+      [
+        { role: "title", property: "Titel" },
+        { role: "date", property: "Fällig" },
+      ],
+      vorschlag,
+    );
+    expect(neu).toEqual([
+      { role: "title", property: "Titel" },
+      { role: "date", property: "Fällig" },
+      { role: "next", property: "Nächstes" },
+    ]);
+  });
+
+  it("zweimal eingearbeitet ist wie einmal", () => {
+    const einmal = fillFromSuggestion([{ role: "title", property: "" }], vorschlag);
+    expect(fillFromSuggestion(einmal, vorschlag)).toEqual(einmal);
+  });
+
+  it("behält eigene Rollen, die der Vorschlag nicht kennt", () => {
+    const neu = fillFromSuggestion([{ role: "owner", property: "Verantwortlich" }], vorschlag);
+    expect(neu[0]).toEqual({ role: "owner", property: "Verantwortlich" });
+    expect(neu).toHaveLength(4);
   });
 });

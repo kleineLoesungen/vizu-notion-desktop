@@ -11,6 +11,7 @@
 
 import { useEffect, useState } from "react";
 import type { ColumnMapping, DatabaseSchema, Property, Source, SourceInput } from "../bindings";
+import { fillFromSuggestion } from "../lib/mapping";
 import { Dialog } from "./Dialog";
 import { FieldMessage } from "./FieldMessage";
 
@@ -64,21 +65,13 @@ export function SourceDialog({
   // Abruf können alt sein.
   const columns = schema?.properties ?? properties;
 
-  // Was gerade geholt wurde, füllt den leeren Dialog von selbst. Wer schon
-  // etwas eingetragen hat, bekommt den Vorschlag nur als Knopf angeboten —
-  // ungefragt überschreiben wäre schlimmer als ein Klick mehr.
-  const untouched =
-    mappings.length === 0 ||
-    (mappings.length === 1 && mappings[0]?.role === "title" && mappings[0]?.property === "");
+  // Was gerade geholt wurde, arbeitet sich von selbst ein: leerer Name und
+  // leere Spalten werden gefüllt, fehlende Rollen kommen dazu. Überschrieben
+  // wird nichts, was schon eingetragen ist — deshalb braucht es keinen Knopf.
   useEffect(() => {
     if (!schema) return;
     setName((current) => current || schema.title);
-    setMappings((current) => {
-      const leer =
-        current.length === 0 ||
-        (current.length === 1 && current[0]?.role === "title" && current[0]?.property === "");
-      return leer && schema.suggestion.length > 0 ? schema.suggestion : current;
-    });
+    setMappings((current) => fillFromSuggestion(current, schema.suggestion));
   }, [schema]);
 
   function change(index: number, patch: Partial<ColumnMapping>) {
@@ -99,16 +92,6 @@ export function SourceDialog({
           });
         }}
       >
-        <label>
-          Name
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            aria-describedby="name-error"
-          />
-        </label>
-        <FieldMessage id="name-error" message={fieldMessage("name")} />
-
         <label>
           Link zur Notion-Datenbank
           <input
@@ -146,6 +129,17 @@ export function SourceDialog({
         </div>
         <FieldMessage id="database_id-error" message={fieldMessage("database_id")} />
 
+        {/* Nach dem Link: Den Namen schlägt die Datenbank selbst vor. */}
+        <label>
+          Name
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            aria-describedby="name-error"
+          />
+        </label>
+        <FieldMessage id="name-error" message={fieldMessage("name")} />
+
         <fieldset className="mapping-editor">
           <legend>Zuordnung</legend>
           <p className="muted">
@@ -158,11 +152,6 @@ export function SourceDialog({
               Noch keine Spalten bekannt. „Spalten holen“ fragt Notion — sonst müssen die Namen
               genau so eingetippt werden, wie sie dort heißen.
             </p>
-          )}
-          {schema && schema.suggestion.length > 0 && !untouched && (
-            <button type="button" className="ghost" onClick={() => setMappings(schema.suggestion)}>
-              Vorschlag übernehmen
-            </button>
           )}
 
           <datalist id="known-roles">
