@@ -542,25 +542,28 @@ describe("Oberfläche", () => {
     await waitFor(() => expect(commands("diagram_render")).toHaveLength(2));
   });
 
-  it("blendet eine ganze Gruppe über ihren Feldwert aus", async () => {
+  it("blendet eine ganze Gruppe über ihren Feldwert aus — je Quelle", async () => {
     const user = userEvent.setup();
     templates = [template("t1", "Fahrplan")];
     render(<App />);
     await user.click(await screen.findByRole("button", { name: "Fahrplan — Mermaid" }));
 
-    const nachFeld = await screen.findByRole("region", { name: "Nach Feld filtern" });
-    expect(within(nachFeld).getByRole("combobox", { name: "Nach Feld" })).toHaveProperty(
+    // Der Filter steht in der Gruppe seiner Quelle — „Ziele" hat kein Feld
+    // mit Werten und deshalb keinen.
+    const projekte = await screen.findByRole("region", { name: "Projekte nach Feld filtern" });
+    expect(screen.queryByRole("region", { name: "Ziele nach Feld filtern" })).toBeNull();
+    expect(within(projekte).getByRole("combobox", { name: "Gruppen nach" })).toHaveProperty(
       "value",
       "status",
     );
 
-    await user.click(within(nachFeld).getByRole("checkbox", { name: /Aktiv/ }));
+    await user.click(within(projekte).getByRole("checkbox", { name: /Aktiv/ }));
 
-    // Alle Seiten mit Status „Aktiv" — hier eine — gehen als ausgeblendet
-    // nach Rust; gezeichnet wird dort.
+    // Alle Seiten von „Projekte" mit Status „Aktiv" — hier eine — gehen als
+    // ausgeblendet nach Rust; gezeichnet wird dort.
     await waitFor(() => expect(commands("diagram_render")).toHaveLength(2));
     expect(commands("diagram_render")[1]?.args).toEqual({ id: "t1", hidden: ["p1"] });
-    expect(within(nachFeld).getByRole("checkbox", { name: /Aktiv/ })).toHaveProperty(
+    expect(within(projekte).getByRole("checkbox", { name: /Aktiv/ })).toHaveProperty(
       "checked",
       false,
     );

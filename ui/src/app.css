@@ -928,17 +928,26 @@ button.destructive {
 
 /* Nach Feld: eine Gruppe im Diagramm ist ein Feldwert. Abgesetzt von der
    Knotenliste darunter, weil es eine Ebene gröber filtert. */
+/* Innerhalb einer Quelle: erst die Gruppen, dann die einzelnen Seiten. */
 .filter-values {
   display: grid;
-  gap: var(--space-2);
-  padding-bottom: var(--space-3);
-  border-bottom: 1px solid var(--border);
+  gap: var(--space-1);
+  margin: var(--space-2) 0;
+  padding: var(--space-2);
+  background: var(--surface-2);
+  border-radius: var(--radius);
 }
 
 .filter-role {
-  display: grid;
-  gap: var(--space-1);
-  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 12px;
+}
+
+.filter-role select {
+  flex: 1;
+  min-width: 0;
 }
 
 .filter-values ul {

@@ -338,8 +338,11 @@ export function App() {
   }
 
   /** Eine ganze Gruppe — alle Seiten mit diesem Feldwert — ein- oder ausblenden. */
-  function setValueShown(role: string, value: string, visible: boolean) {
-    changeHidden(setValueVisible(nodes, hidden, role, value, visible));
+  function setValueShown(source: string, role: string, value: string, visible: boolean) {
+    // Nur die Seiten dieser Quelle: „status" einer zweiten Quelle ist eine
+    // andere Spalte, auch wenn die Rolle gleich heißt.
+    const own = nodes.filter((n) => n.source === source);
+    changeHidden(setValueVisible(own, hidden, role, value, visible));
   }
 
   function setSourceVisible(source: string, visible: boolean) {
