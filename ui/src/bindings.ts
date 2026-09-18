@@ -228,7 +228,14 @@ export type NodeInfo = { id: string, title: string, source: string,
 /**
  * Seiten-IDs, auf die diese Seite über irgendeine Relation zeigt.
  */
-relations: Array<string>, };
+relations: Array<string>, 
+/**
+ * Rolle → Werte, so wie das Diagramm sie zeigt. Eine Gruppe im
+ * Diagramm ist ein solcher Wert; das Filterfeld blendet darüber ganze
+ * Gruppen aus. Relationen haben so viele Werte wie Ziele, alles andere
+ * einen — oder keinen, wenn die Spalte leer ist.
+ */
+fields: { [key in string]: Array<string> }, };
 
 /**
  * Eine Spalte aus dem Schema einer Datenquelle.

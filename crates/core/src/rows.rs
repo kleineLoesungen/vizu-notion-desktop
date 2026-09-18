@@ -45,6 +45,47 @@ pub struct NodeInfo {
     pub source: String,
     /// Seiten-IDs, auf die diese Seite über irgendeine Relation zeigt.
     pub relations: Vec<String>,
+    /// Rolle → Werte, so wie das Diagramm sie zeigt. Eine Gruppe im
+    /// Diagramm ist ein solcher Wert; das Filterfeld blendet darüber ganze
+    /// Gruppen aus. Relationen haben so viele Werte wie Ziele, alles andere
+    /// einen — oder keinen, wenn die Spalte leer ist.
+    pub fields: BTreeMap<String, Vec<String>>,
+}
+
+/// Eine Seite fürs Filterfeld — dieselbe Form in Vorlage, Fluss und Metro.
+pub fn node_info(page: &Page, source: &Source, titles: &BTreeMap<String, String>) -> NodeInfo {
+    let mut fields = BTreeMap::new();
+    for mapping in &source.mappings {
+        let Some(value) = page.properties.get(&mapping.property) else {
+            continue;
+        };
+        let values: Vec<String> = if value["type"] == "relation" {
+            value["relation"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(|t| t["id"].as_str())
+                .map(|id| titles.get(id).cloned().unwrap_or_else(|| id.to_string()))
+                .collect()
+        } else {
+            // Derselbe Text wie in der Vorlage: Eine Mehrfachauswahl bleibt
+            // „Web, Mobil" — genau so bildet `group` daraus eine Gruppe.
+            let text = text_of(value);
+            if text.is_empty() {
+                Vec::new()
+            } else {
+                vec![text]
+            }
+        };
+        fields.insert(mapping.role.clone(), values);
+    }
+    NodeInfo {
+        id: page.id.clone(),
+        title: page_title(page, source),
+        source: source.name.clone(),
+        relations: relation_targets(page),
+        fields,
+    }
 }
 
 /// Die Zeilen aller genannten Quellen aus dem Zwischenspeicher.
@@ -77,12 +118,7 @@ pub fn context(
     for (source, pages) in &pages_by_source {
         let mut rows = Vec::new();
         for page in pages {
-            nodes.push(NodeInfo {
-                id: page.id.clone(),
-                title: page_title(page, source),
-                source: source.name.clone(),
-                relations: relation_targets(page),
-            });
+            nodes.push(node_info(page, source, &titles));
             if hidden.contains(&page.id) {
                 continue;
             }
@@ -111,7 +147,7 @@ fn unknown_source(name: &str, all: &[Source]) -> crate::Error {
 }
 
 /// Seiten-ID → Titel, aus allen Quellen und aus `page_titles`.
-fn known_titles(conn: &Connection) -> Result<BTreeMap<String, String>> {
+pub(crate) fn known_titles(conn: &Connection) -> Result<BTreeMap<String, String>> {
     let mut out = BTreeMap::new();
     // Zuerst die fremden, dann die eigenen: Kennt eine Quelle die Seite
     // selbst, gilt deren Titel.

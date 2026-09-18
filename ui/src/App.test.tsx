@@ -96,18 +96,42 @@ function template(id: string, title: string): Template {
 /** Zwei Projekte, das erste zeigt auf das zweite. */
 function diagramFor(hidden: string[]): Diagram {
   const nodes = [
-    { id: "p1", title: "Website", source: "Projekte", relations: ["p2"] },
-    { id: "p2", title: "Launch", source: "Projekte", relations: [] },
-    { id: "z1", title: "Wachstum", source: "Ziele", relations: [] },
+    {
+      id: "p1",
+      title: "Website",
+      source: "Projekte",
+      relations: ["p2"],
+      fields: { status: ["Aktiv"] },
+    },
+    {
+      id: "p2",
+      title: "Launch",
+      source: "Projekte",
+      relations: [],
+      fields: { status: ["Geplant"] },
+    },
+    { id: "z1", title: "Wachstum", source: "Ziele", relations: [], fields: {} },
   ].filter((n) => !hidden.includes(n.id));
   return {
     title: "Fahrplan",
     mermaid: `flowchart TD\n${nodes.map((n) => `  ${n.id}["${n.title}"]`).join("\n")}`,
     // Ausgeblendete Knoten bleiben in der Liste — das Filterfeld braucht sie.
     nodes: [
-      { id: "p1", title: "Website", source: "Projekte", relations: ["p2"] },
-      { id: "p2", title: "Launch", source: "Projekte", relations: [] },
-      { id: "z1", title: "Wachstum", source: "Ziele", relations: [] },
+      {
+        id: "p1",
+        title: "Website",
+        source: "Projekte",
+        relations: ["p2"],
+        fields: { status: ["Aktiv"] },
+      },
+      {
+        id: "p2",
+        title: "Launch",
+        source: "Projekte",
+        relations: [],
+        fields: { status: ["Geplant"] },
+      },
+      { id: "z1", title: "Wachstum", source: "Ziele", relations: [], fields: {} },
     ],
   };
 }
@@ -185,8 +209,20 @@ function backend(cmd: string, args: Record<string, unknown> = {}): unknown {
         width: 1440,
         height: 144,
         all_nodes: [
-          { id: "p1", title: "Website", source: "Projekte", relations: ["p2"] },
-          { id: "p2", title: "Launch", source: "Projekte", relations: [] },
+          {
+            id: "p1",
+            title: "Website",
+            source: "Projekte",
+            relations: ["p2"],
+            fields: { status: ["Aktiv"] },
+          },
+          {
+            id: "p2",
+            title: "Launch",
+            source: "Projekte",
+            relations: [],
+            fields: { status: ["Geplant"] },
+          },
         ],
         undated: ["Ohne Ziel"],
       };
@@ -200,8 +236,20 @@ function backend(cmd: string, args: Record<string, unknown> = {}): unknown {
         width: 180,
         height: 184,
         all_nodes: [
-          { id: "p1", title: "Website", source: "Projekte", relations: ["p2"] },
-          { id: "p2", title: "Launch", source: "Projekte", relations: [] },
+          {
+            id: "p1",
+            title: "Website",
+            source: "Projekte",
+            relations: ["p2"],
+            fields: { status: ["Aktiv"] },
+          },
+          {
+            id: "p2",
+            title: "Launch",
+            source: "Projekte",
+            relations: [],
+            fields: { status: ["Geplant"] },
+          },
         ],
         subtitle_roles: ["status"],
       };
@@ -492,6 +540,30 @@ describe("Oberfläche", () => {
     expect(commands("source_fetch")[0]?.args).toEqual({ id: "a" });
     // Mit frischen Daten zeigt das Diagramm sonst den alten Stand.
     await waitFor(() => expect(commands("diagram_render")).toHaveLength(2));
+  });
+
+  it("blendet eine ganze Gruppe über ihren Feldwert aus", async () => {
+    const user = userEvent.setup();
+    templates = [template("t1", "Fahrplan")];
+    render(<App />);
+    await user.click(await screen.findByRole("button", { name: "Fahrplan — Mermaid" }));
+
+    const nachFeld = await screen.findByRole("region", { name: "Nach Feld filtern" });
+    expect(within(nachFeld).getByRole("combobox", { name: "Nach Feld" })).toHaveProperty(
+      "value",
+      "status",
+    );
+
+    await user.click(within(nachFeld).getByRole("checkbox", { name: /Aktiv/ }));
+
+    // Alle Seiten mit Status „Aktiv" — hier eine — gehen als ausgeblendet
+    // nach Rust; gezeichnet wird dort.
+    await waitFor(() => expect(commands("diagram_render")).toHaveLength(2));
+    expect(commands("diagram_render")[1]?.args).toEqual({ id: "t1", hidden: ["p1"] });
+    expect(within(nachFeld).getByRole("checkbox", { name: /Aktiv/ })).toHaveProperty(
+      "checked",
+      false,
+    );
   });
 
   it("blendet einen Knoten aus und lässt in Rust neu zeichnen", async () => {

@@ -130,14 +130,10 @@ pub fn build(conn: &Connection, source_id: Uuid, hidden: &HashSet<String>) -> Re
     let source = source::get(conn, source_id)?;
     let pages = fetch::pages(conn, source_id)?;
 
+    let titles = rows::known_titles(conn)?;
     let mut all_nodes = Vec::new();
     for page in &pages {
-        all_nodes.push(NodeInfo {
-            id: page.id.clone(),
-            title: rows::page_title(page, &source),
-            source: source.name.clone(),
-            relations: rows::relation_targets(page),
-        });
+        all_nodes.push(rows::node_info(page, &source, &titles));
     }
 
     let visible: Vec<&Page> = pages.iter().filter(|p| !hidden.contains(&p.id)).collect();

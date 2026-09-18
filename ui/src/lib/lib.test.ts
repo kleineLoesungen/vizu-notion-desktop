@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../api";
 import { formatDateTime } from "./format";
+import { EMPTY_VALUE, filterableRoles, setValueVisible, valuesOf } from "./graph";
 import { fillFromSuggestion } from "./mapping";
 import { externalHref, markdownToHtml } from "./markdown";
 import { svgFile } from "./mermaid";
@@ -136,5 +137,51 @@ describe("Vorschlag für die Zuordnung", () => {
     const neu = fillFromSuggestion([{ role: "owner", property: "Verantwortlich" }], vorschlag);
     expect(neu[0]).toEqual({ role: "owner", property: "Verantwortlich" });
     expect(neu).toHaveLength(4);
+  });
+});
+
+describe("Nach Feldwert filtern", () => {
+  const seite = (id: string, fields: Record<string, string[]>) => ({
+    id,
+    title: id,
+    source: "Projekte",
+    relations: [],
+    fields,
+  });
+  const seiten = [
+    seite("a", { status: ["Done"], parent: ["Wachstum"] }),
+    seite("b", { status: ["Done"], parent: ["Wachstum", "Qualität"] }),
+    seite("c", { status: ["Offen"], parent: [] }),
+  ];
+
+  it("zählt die Werte einer Rolle, die leere Spalte zuletzt", () => {
+    expect(valuesOf(seiten, "parent", new Set())).toEqual([
+      { value: "Qualität", total: 1, visible: 1 },
+      { value: "Wachstum", total: 2, visible: 2 },
+      { value: EMPTY_VALUE, total: 1, visible: 1 },
+    ]);
+  });
+
+  it("blendet eine ganze Gruppe aus und wieder ein", () => {
+    const weg = setValueVisible(seiten, new Set(), "status", "Done", false);
+    expect([...weg].sort()).toEqual(["a", "b"]);
+    expect(setValueVisible(seiten, weg, "status", "Done", true).size).toBe(0);
+  });
+
+  it("nimmt beim Ausblenden auch Seiten mit weiteren Werten mit", () => {
+    // b hat zwei Ziele. Bliebe es sichtbar, stünde es weiter in der Gruppe
+    // „Wachstum" — die Gruppe verschwände nicht.
+    const weg = setValueVisible(seiten, new Set(), "parent", "Wachstum", false);
+    expect([...weg].sort()).toEqual(["a", "b"]);
+    // Das Häkchen zeigt, was noch zu sehen ist: von „Qualität" nichts mehr.
+    const qualitaet = valuesOf(seiten, "parent", weg).find((v) => v.value === "Qualität");
+    expect(qualitaet?.visible).toBe(0);
+    // Wieder einblenden holt beide zurück.
+    expect(setValueVisible(seiten, weg, "parent", "Qualität", true)).toEqual(new Set(["a"]));
+  });
+
+  it("bietet den Titel nicht als Filter an, Gruppenbildner zuerst", () => {
+    const mitTitel = [seite("x", { title: ["x"], zeta: ["1"], status: ["Done"], tag: ["Web"] })];
+    expect(filterableRoles(mitTitel)).toEqual(["status", "tag", "zeta"]);
   });
 });

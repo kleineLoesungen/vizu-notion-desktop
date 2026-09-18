@@ -44,7 +44,7 @@ import { SourceList } from "./components/SourceList";
 import { SourceRefresh } from "./components/SourceRefresh";
 import { TemplateEditor } from "./components/TemplateEditor";
 import { ViewList } from "./components/ViewList";
-import { withNeighbours } from "./lib/graph";
+import { setValueVisible, withNeighbours } from "./lib/graph";
 import { applyTheme, useIsDark } from "./lib/theme";
 
 const DELETE_TITLE = {
@@ -335,6 +335,11 @@ export function App() {
   function onlyRelated(id: string) {
     const keep = withNeighbours(nodes, id);
     changeHidden(new Set(nodes.map((n) => n.id).filter((n) => !keep.has(n))));
+  }
+
+  /** Eine ganze Gruppe — alle Seiten mit diesem Feldwert — ein- oder ausblenden. */
+  function setValueShown(role: string, value: string, visible: boolean) {
+    changeHidden(setValueVisible(nodes, hidden, role, value, visible));
   }
 
   function setSourceVisible(source: string, visible: boolean) {
@@ -882,6 +887,7 @@ export function App() {
           onToggle={toggleNode}
           onOnlyRelated={onlyRelated}
           onSetSource={setSourceVisible}
+          onSetValue={setValueShown}
           onReset={() => changeHidden(new Set())}
         />
       )}

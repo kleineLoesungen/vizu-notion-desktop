@@ -926,6 +926,42 @@ button.destructive {
   font-size: 12px;
 }
 
+/* Nach Feld: eine Gruppe im Diagramm ist ein Feldwert. Abgesetzt von der
+   Knotenliste darunter, weil es eine Ebene gröber filtert. */
+.filter-values {
+  display: grid;
+  gap: var(--space-2);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.filter-role {
+  display: grid;
+  gap: var(--space-1);
+  font-weight: 500;
+}
+
+.filter-values ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.filter-values label {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Die Anzahl rechtsbündig, Ziffern gleich breit — so stehen sie untereinander. */
+.filter-count {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
 .filter-panel input[type="search"] {
   width: 100%;
 }
@@ -1013,27 +1049,67 @@ button.destructive {
 .template-helper {
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: var(--space-2) var(--space-3);
-  display: grid;
-  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3) var(--space-3);
 }
 
 .template-helper > summary {
   cursor: pointer;
   font-weight: 500;
+  padding-bottom: var(--space-2);
 }
 
-.helper-row {
+/* Zwei feste Spalten: Beschriftung links, Inhalt rechts. Vorher lag alles in
+   Reihen mit flex-wrap und sprang je nach Breite in neue Zeilen. */
+.helper-grid {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: var(--space-3) var(--space-3);
+  align-items: start;
+}
+
+.helper-caption {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  /* Auf Höhe der Mitte des ersten Bedienelements daneben. */
+  padding-top: 7px;
+}
+
+.helper-cell {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.helper-cell > select {
+  width: 100%;
+}
+
+.helper-line {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
-  gap: var(--space-2) var(--space-3);
+  align-items: center;
+  gap: var(--space-2);
 }
 
-.helper-row label {
-  display: grid;
+/* `.editor-text label` stapelt Beschriftung und Feld übereinander — hier
+   stehen sie nebeneinander, in einer Zeile mit dem Knopf. */
+.template-helper label.inline-label {
+  flex-direction: row;
+  align-items: center;
   gap: var(--space-1);
-  font-weight: 500;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.template-helper label.inline-label select {
+  color: var(--text);
+}
+
+.insert-button {
+  margin-left: auto;
 }
 
 .field-chips {

@@ -7,7 +7,7 @@
 import { useState } from "react";
 import type { NodeInfo } from "../bindings";
 import { formatDateTime } from "../lib/format";
-import { bySource, sameTitleCount } from "../lib/graph";
+import { bySource, filterableRoles, sameTitleCount, valuesOf } from "../lib/graph";
 
 type Props = {
   nodes: NodeInfo[];
@@ -17,6 +17,8 @@ type Props = {
   onToggle: (id: string) => void;
   onOnlyRelated: (id: string) => void;
   onSetSource: (source: string, visible: boolean) => void;
+  /** Alle Seiten mit diesem Wert ein- oder ausblenden — eine ganze Gruppe. */
+  onSetValue: (role: string, value: string, visible: boolean) => void;
   onReset: () => void;
 };
 
@@ -27,11 +29,19 @@ export function FilterPanel({
   onToggle,
   onOnlyRelated,
   onSetSource,
+  onSetValue,
   onReset,
 }: Props) {
   const [search, setSearch] = useState("");
   const needle = search.trim().toLowerCase();
   const groups = bySource(nodes);
+
+  // Gruppen im Diagramm sind Feldwerte. Vorgewählt ist die Rolle, die am
+  // ehesten Gruppen bildet (status, tag, parent — in dieser Folge).
+  const roles = filterableRoles(nodes);
+  const [chosenRole, setChosenRole] = useState<string | null>(null);
+  const role = chosenRole && roles.includes(chosenRole) ? chosenRole : roles[0];
+  const values = role ? valuesOf(nodes, role, hidden) : [];
 
   return (
     <aside className="filter-panel" aria-label="Knoten filtern">
@@ -41,6 +51,41 @@ export function FilterPanel({
           Alle zeigen
         </button>
       </div>
+
+      {role && (
+        <section className="filter-values" aria-label="Nach Feld filtern">
+          <label className="filter-role">
+            Nach Feld
+            <select value={role} onChange={(e) => setChosenRole(e.target.value)}>
+              {roles.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </label>
+          <ul>
+            {values.map((v) => (
+              <li key={v.value}>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={v.visible > 0}
+                    // Teils zu sehen — etwa weil einzelne Seiten darunter
+                    // ausgeblendet sind — zeigt das Kästchen halb gefüllt.
+                    ref={(box) => {
+                      if (box) box.indeterminate = v.visible > 0 && v.visible < v.total;
+                    }}
+                    onChange={() => onSetValue(role, v.value, v.visible === 0)}
+                  />
+                  <span className="filter-title">{v.value}</span>
+                  <span className="muted filter-count">{v.total}</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <input
         type="search"

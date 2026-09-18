@@ -85,17 +85,13 @@ pub fn build(
     let source = source::get(conn, source_id)?;
     let pages = fetch::pages(conn, source_id)?;
 
+    let known = rows::known_titles(conn)?;
     let mut all_nodes = Vec::new();
     let mut titles: BTreeMap<String, String> = BTreeMap::new();
     for page in &pages {
-        let title = rows::page_title(page, &source);
-        titles.insert(page.id.clone(), title.clone());
-        all_nodes.push(NodeInfo {
-            id: page.id.clone(),
-            title,
-            source: source.name.clone(),
-            relations: rows::relation_targets(page),
-        });
+        let node = rows::node_info(page, &source, &known);
+        titles.insert(page.id.clone(), node.title.clone());
+        all_nodes.push(node);
     }
 
     // Kanten entstehen nur aus der Rolle `next` — `parent` zeigt auf eine

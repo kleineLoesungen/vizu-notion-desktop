@@ -291,3 +291,33 @@ fn einzelne_werte_werden_wie_in_javascript_zu_text() {
         ""
     );
 }
+
+// --- Feldwerte fürs Filterfeld -------------------------------------------------
+
+#[test]
+fn jede_seite_bringt_ihre_feldwerte_fuers_filterfeld_mit() {
+    let app = app_mit_daten();
+    let (_, nodes) = rows::context(app.conn(), &["Projekte".to_string()], &HashSet::new()).unwrap();
+
+    let seite = |titel: &str| {
+        nodes
+            .iter()
+            .find(|n| n.title == titel)
+            .unwrap_or_else(|| panic!("{titel} fehlt"))
+    };
+
+    // Eine Mehrfachauswahl bleibt ein Wert — derselbe, aus dem `group` im
+    // Diagramm eine Gruppe macht.
+    let app_seite = seite("App 🚀");
+    assert_eq!(app_seite.fields["tag"], vec!["Mobil, Kunde"]);
+
+    // Eine Relation hat so viele Werte wie Ziele, als Titel.
+    let q3 = seite("Q3 \"Review\" & [Plan]");
+    assert_eq!(q3.fields["parent"].len(), 3, "{:?}", q3.fields["parent"]);
+    assert!(q3.fields["parent"].iter().all(|t| !t.starts_with("0000")));
+
+    // Eine leere Spalte hat keinen Wert, nicht einen leeren.
+    let ohne = seite("Ohne Ziel");
+    assert!(ohne.fields["parent"].is_empty());
+    assert!(ohne.fields["date"].is_empty());
+}
