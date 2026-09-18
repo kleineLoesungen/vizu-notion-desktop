@@ -43,8 +43,10 @@ Quelle, Abruf, Diagramm.
 3. Den Token in der Anwendung unter *Einstellungen* speichern — er liegt im
    Schlüsselbund des Systems, nicht in einer Datei.
 
-Die Kennung der Datenbank sind die 32 Zeichen aus ihrer Adresse; „Spalten
-holen" im Quellen-Dialog prüft sie und schlägt die Zuordnung gleich vor.
+Für die Quelle genügt der **Link zur Datenbank**: in Notion oben rechts
+••• → „Link kopieren" und im Quellen-Dialog einfügen. Die Anwendung holt dann
+von selbst die Spalten und schlägt die Zuordnung vor. Die Kennung allein geht
+auch.
 
 ---
 
@@ -69,7 +71,7 @@ Dieselbe Anwendung, dieselbe Datenbank:
 
 ```bash
 just cli token set                                    # Token speichern
-just cli source add Projekte --database <ID> --auto   # Zuordnung vorschlagen lassen
+just cli source add Projekte --database <LINK> --auto # Link aus Notion, Zuordnung vorschlagen lassen
 just cli fetch                                        # von Notion holen
 just cli render fahrplan                              # Mermaid-Text auf stdout
 just cli metro Projekte --json | jq '.lines | length'

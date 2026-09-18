@@ -136,6 +136,11 @@ input[type="color"] {
   border-color: var(--danger);
 }
 
+.field-hint {
+  margin: calc(var(--space-1) * -1) 0 0;
+  font-size: 12px;
+}
+
 .field-message {
   color: var(--danger);
   margin: var(--space-1) 0 0;

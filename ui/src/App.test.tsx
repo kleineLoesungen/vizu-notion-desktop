@@ -538,7 +538,7 @@ describe("Oberfläche", () => {
     );
     await user.type(screen.getByRole("textbox", { name: "Name" }), "Projekte");
     await user.type(
-      screen.getByRole("textbox", { name: "Notion-Datenbank" }),
+      screen.getByRole("textbox", { name: "Link zur Notion-Datenbank" }),
       "396f66270f5d8034b55cebc685aa5e50",
     );
     // Ein Feld mit Vorschlagsliste ist in ARIA eine combobox, kein textbox.
@@ -563,7 +563,7 @@ describe("Oberfläche", () => {
       (await screen.findAllByRole("button", { name: "Neue Quelle" }))[0] as HTMLElement,
     );
     await user.type(
-      screen.getByRole("textbox", { name: "Notion-Datenbank" }),
+      screen.getByRole("textbox", { name: "Link zur Notion-Datenbank" }),
       "396f66270f5d8034b55cebc685aa5e50",
     );
     await user.click(screen.getByRole("button", { name: "Spalten holen" }));
@@ -599,6 +599,24 @@ describe("Oberfläche", () => {
         ],
       },
     });
+  });
+
+  it("holt die Spalten von selbst, sobald ein Link eingefügt wird", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(
+      (await screen.findAllByRole("button", { name: "Neue Quelle" }))[0] as HTMLElement,
+    );
+    const link =
+      "https://app.notion.com/p/396f66270f5d8034b55cebc685aa5e50?v=189a030d54c64c7da4248eaf948307d1&source=copy_link";
+    await user.click(screen.getByRole("textbox", { name: "Link zur Notion-Datenbank" }));
+    await user.paste(link);
+
+    // Kein Klick auf „Spalten holen" nötig — und der Link geht unverändert
+    // nach Rust: Die Kennung herauszulösen ist Sache von core.
+    await waitFor(() => expect(commands("database_inspect")).toHaveLength(1));
+    expect(commands("database_inspect")[0]?.args).toEqual({ database: link });
   });
 
   it("zeigt einen Fehler an der Rolle, zu der er gehört", async () => {

@@ -110,14 +110,25 @@ export function SourceDialog({
         <FieldMessage id="name-error" message={fieldMessage("name")} />
 
         <label>
-          Notion-Datenbank
+          Link zur Notion-Datenbank
           <input
             value={databaseId}
-            placeholder="Kennung oder Adresse aus Notion"
+            placeholder="https://app.notion.com/p/…"
             onChange={(e) => setDatabaseId(e.target.value)}
-            aria-describedby="database_id-error"
+            // Wer einen Link einfügt, will die Spalten sehen — der Klick auf
+            // „Spalten holen" wäre nur ein Schritt mehr. Beim Tippen nicht:
+            // Da wäre jeder Zwischenstand eine Anfrage an Notion.
+            onPaste={(e) => {
+              const pasted = e.clipboardData.getData("text").trim();
+              if (pasted !== "" && !inspecting) onInspect(pasted);
+            }}
+            aria-describedby="database_id-hint database_id-error"
           />
         </label>
+        <p id="database_id-hint" className="muted field-hint">
+          In Notion die Datenbank öffnen, oben rechts ••• → „Link kopieren“ und hier einfügen. Die
+          Kennung allein geht auch.
+        </p>
         <div className="row">
           <button
             type="button"

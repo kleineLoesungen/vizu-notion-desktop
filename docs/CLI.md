@@ -46,9 +46,11 @@ vizu-notion source edit Projekte --map date=Start --unmap next
 vizu-notion source rm Projekte --yes
 ```
 
-* **`--database`** nimmt alles, was man aus Notion kopieren kann: die 32
-  Zeichen, eine UUID mit Bindestrichen, `Projekte-396f…` oder die ganze
-  Adresse. Die Ansicht hinter `?v=` wird abgeschnitten.
+* **`--database`** nimmt alles, was man aus Notion kopieren kann — am
+  einfachsten den Link aus „Link kopieren" (`https://app.notion.com/p/…`),
+  aber auch die 32 Zeichen, eine UUID mit Bindestrichen oder `Projekte-396f…`.
+  Alles ab `?` fällt weg: Hinter `?v=` steht die Kennung der *Ansicht*, die
+  ebenfalls 32 Zeichen hat und leicht mit der Datenbank verwechselt würde.
 * **`--map ROLLE=SPALTE`** ordnet eine Notion-Spalte einer Rolle zu. Rollen sind
   Buchstaben, Ziffern und `_` (`title`, `next`, `parent`, `tag`, `status`,
   `date`) — genau so heißen sie in Vorlagen. `id` ist vergeben: das ist immer

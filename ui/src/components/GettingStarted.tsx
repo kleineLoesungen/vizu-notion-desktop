@@ -46,7 +46,7 @@ export function GettingStarted({
       done: hasSource,
       hint: "Eine Notion-Datenbank unter einem Namen, mit der Zuordnung ihrer Spalten. Die Datenbank muss in Notion mit der Integration geteilt sein.",
       action: { label: "Neue Quelle", onClick: onCreateSource },
-      command: "vizu-notion source add Projekte --database <ID> --map title=Name",
+      command: "vizu-notion source add Projekte --database <LINK> --auto",
     },
     {
       title: "Daten abrufen",

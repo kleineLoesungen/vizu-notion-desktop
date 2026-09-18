@@ -67,6 +67,11 @@ mod tests {
             "https://www.notion.so/team/Projekte-396f66270f5d8034b55cebc685aa5e50",
             "https://www.notion.so/396f66270f5d8034b55cebc685aa5e50?v=0123456789abcdef0123456789abcdef",
             "https://app.notion.com/p/396f66270f5d8034b55cebc685aa5e50/",
+            // So kommt es aus „Link kopieren": mit Ansicht und Herkunft. Hinter
+            // `?v=` steht ebenfalls eine 32-stellige Kennung — die der Ansicht.
+            // Sie darf nicht gewinnen.
+            "https://app.notion.com/p/396f66270f5d8034b55cebc685aa5e50?v=189a030d54c64c7da4248eaf948307d1",
+            "https://app.notion.com/p/396f66270f5d8034b55cebc685aa5e50?v=189a030d54c64c7da4248eaf948307d1&source=copy_link",
         ] {
             assert_eq!(parse_id(raw).as_deref(), Some(ID), "{raw}");
         }
