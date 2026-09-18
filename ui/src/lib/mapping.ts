@@ -11,7 +11,9 @@ import type { ColumnMapping } from "../bindings";
 /**
  * * Eine Rolle mit eingetragener Spalte bleibt, wie sie ist.
  * * Eine Rolle ohne Spalte bekommt die vorgeschlagene.
- * * Eine Rolle, die noch fehlt, kommt hinten dazu.
+ * * Eine Rolle, die noch fehlt, kommt hinten dazu — außer ihre Spalte steht
+ *   schon unter einer anderen Rolle. Wer „Start" selbst als `date`
+ *   eingetragen hat, will sie nicht zusätzlich als `start` sehen.
  *
  * Die Reihenfolge der vorhandenen Zeilen bleibt — wer gerade in einer Zeile
  * tippt, soll sie nicht wandern sehen.
@@ -26,7 +28,8 @@ export function fillFromSuggestion(
       ? { ...row, property: suggested.get(row.role) ?? "" }
       : row,
   );
-  const present = new Set(filled.map((row) => row.role));
-  const missing = suggestion.filter((m) => !present.has(m.role));
+  const roles = new Set(filled.map((row) => row.role));
+  const columns = new Set(filled.map((row) => row.property).filter((p) => p.trim() !== ""));
+  const missing = suggestion.filter((m) => !roles.has(m.role) && !columns.has(m.property));
   return [...filled, ...missing];
 }

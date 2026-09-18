@@ -122,6 +122,16 @@ describe("Vorschlag für die Zuordnung", () => {
     expect(fillFromSuggestion(einmal, vorschlag)).toEqual(einmal);
   });
 
+  it("nimmt keine Spalte doppelt, die schon unter anderer Rolle steht", () => {
+    const neu = fillFromSuggestion(
+      [{ role: "beginn", property: "Start" }],
+      [...vorschlag, { role: "start", property: "Start" }],
+    );
+    expect(neu.filter((m) => m.property === "Start")).toEqual([
+      { role: "beginn", property: "Start" },
+    ]);
+  });
+
   it("behält eigene Rollen, die der Vorschlag nicht kennt", () => {
     const neu = fillFromSuggestion([{ role: "owner", property: "Verantwortlich" }], vorschlag);
     expect(neu[0]).toEqual({ role: "owner", property: "Verantwortlich" });

@@ -250,3 +250,54 @@ fn import_meldet_unbekannte_felder_statt_sie_zu_ueberlesen() {
     let err = source::import_webapp_json(app.conn(), text).unwrap_err();
     assert_eq!(fields(&err), ["file"]);
 }
+
+// --- Vorschlag: Rollennamen aus Spaltennamen ----------------------------------
+
+fn spalte(name: &str, kind: &str) -> vizu_notion_core::notion::Property {
+    vizu_notion_core::notion::Property {
+        name: name.to_string(),
+        id: name.to_string(),
+        kind: kind.to_string(),
+        relation_to: None,
+    }
+}
+
+#[test]
+fn eine_spalte_ohne_sonderrolle_bekommt_eine_rolle_aus_ihrem_namen() {
+    let vorschlag = source::suggest(
+        &[
+            spalte("Name", "title"),
+            spalte("Verantwortlich Person", "rich_text"),
+            spalte("Größe (m²)", "number"),
+            spalte("2. Prüfung", "checkbox"),
+            spalte("id", "rich_text"),
+            spalte("ID", "number"),
+            spalte("—", "url"),
+        ],
+        "ds",
+    );
+    let rolle = |spalte: &str| {
+        vorschlag
+            .iter()
+            .find(|m| m.property == spalte)
+            .map(|m| m.role.as_str())
+            .unwrap_or_else(|| panic!("{spalte} fehlt: {vorschlag:?}"))
+    };
+
+    assert_eq!(rolle("Name"), "title");
+    assert_eq!(rolle("Verantwortlich Person"), "verantwortlich_person");
+    // Umlaute umgeschrieben, Zeichen ohne Buchstaben fallen weg.
+    assert_eq!(rolle("Größe (m²)"), "groesse_m");
+    // Vorn keine Ziffer — so will es die Prüfung einer Rolle.
+    assert_eq!(rolle("2. Prüfung"), "f_2_pruefung");
+    // `id` ist die Seiten-ID; zwei Spalten, die so hießen, bekommen Nummern.
+    assert_eq!(rolle("id"), "id_2");
+    assert_eq!(rolle("ID"), "id_3");
+    // Ein Name ganz ohne Buchstaben wird nicht zur leeren Rolle.
+    assert_eq!(rolle("—"), "feld");
+
+    // Und alles davon besteht die Prüfung.
+    SourceInput::new("Test", "396f66270f5d8034b55cebc685aa5e50", vorschlag)
+        .clean()
+        .unwrap();
+}

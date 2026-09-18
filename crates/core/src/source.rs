@@ -176,8 +176,9 @@ fn is_role_name(role: &str) -> bool {
 /// Kommandozeile. Geraten wird nach Art der Spalte, bei mehreren Bewerbern
 /// entscheidet der Name — „Start" ist eher das Datum als „Abgabe".
 ///
-/// Vorgeschlagen wird nur, was sicher passt. Was fehlt, trägt man selbst ein;
-/// ein falscher Vorschlag wäre schlimmer als keiner.
+/// Die **Sonderrollen** (`title`, `next`, `date`, `tag` …) bekommt eine Spalte
+/// nur, wenn sie sicher passt — ein falscher `next` wäre schlimmer als keiner.
+/// Jede übrige Spalte kommt trotzdem dazu, unter einer Rolle aus ihrem Namen.
 pub fn suggest(properties: &[notion::Property], data_source_id: &str) -> Vec<ColumnMapping> {
     /// Spalten einer Art, die besten Namen zuerst.
     fn pick(
@@ -278,7 +279,60 @@ pub fn suggest(properties: &[notion::Property], data_source_id: &str) -> Vec<Col
         &mut taken,
     );
     mappings.sort_by(|a, b| a.role.cmp(&b.role));
+
+    // Jede übrige Spalte bekommt auch eine Zeile, mit einer Rolle aus ihrem
+    // Namen. Sonst sähe man im Dialog „4 Spalten" und darunter nur eine
+    // Zeile — und in Vorlagen wären die übrigen Spalten nicht zu erreichen.
+    let mut roles: Vec<String> = mappings.iter().map(|m| m.role.clone()).collect();
+    for property in properties {
+        if taken.contains(&property.name) {
+            continue;
+        }
+        let role = role_for(&property.name, &roles);
+        roles.push(role.clone());
+        mappings.push(ColumnMapping {
+            role,
+            property: property.name.clone(),
+        });
+    }
     mappings
+}
+
+/// Ein Rollenname aus einem Spaltennamen: „Verantwortlich" → `verantwortlich`,
+/// „Start Datum" → `start_datum`, „Größe" → `groesse`.
+///
+/// Er muss durch [`SourceInput::clean`] kommen (Buchstaben, Ziffern und `_`,
+/// nicht mit einer Ziffer vorn), darf nicht `id` heißen und keine schon
+/// vergebene Rolle wiederholen — dann bekommt er eine Nummer.
+fn role_for(column: &str, taken: &[String]) -> String {
+    let mut out = String::new();
+    for c in column.to_lowercase().chars() {
+        match c {
+            'ä' => out.push_str("ae"),
+            'ö' => out.push_str("oe"),
+            'ü' => out.push_str("ue"),
+            'ß' => out.push_str("ss"),
+            c if c.is_ascii_alphanumeric() => out.push(c),
+            _ if !out.ends_with('_') => out.push('_'),
+            _ => {}
+        }
+    }
+    let mut base = out.trim_matches('_').to_string();
+    if base.is_empty() {
+        base = "feld".to_string();
+    }
+    if base.starts_with(|c: char| c.is_ascii_digit()) {
+        base = format!("f_{base}");
+    }
+    let free =
+        |candidate: &str| candidate != RESERVED_ROLE && !taken.iter().any(|r| r == candidate);
+    if free(&base) {
+        return base;
+    }
+    (2..)
+        .map(|n| format!("{base}_{n}"))
+        .find(|candidate| free(candidate))
+        .expect("irgendeine Nummer ist frei")
 }
 
 pub fn list(conn: &Connection) -> Result<Vec<Source>> {

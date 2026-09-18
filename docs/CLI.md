@@ -59,7 +59,11 @@ vizu-notion source rm Projekte --yes
   ab: `title` ist die Titelspalte, `next` eine Relation auf dieselbe Datenbank,
   `date` ein Datum, `tag` eine Mehrfachauswahl. Bei mehreren Bewerbern
   entscheidet der Name; wo die Wahl geraten wäre, wird nichts vorgeschlagen.
-  Ein eigenes `--map` hat Vorrang. Braucht Netz und Token — es ist derselbe
+  Jede übrige Spalte kommt unter einer Rolle aus ihrem Namen dazu
+  („Verantwortlich" → `verantwortlich`), damit Vorlagen sie erreichen. Ein
+  eigenes `--map` hat Vorrang — auch eine Spalte, die dort unter einer anderen
+  Rolle steht, kommt nicht doppelt. `source inspect <LINK>` zeigt den
+  Vorschlag, ohne etwas anzulegen. Braucht Netz und Token — es ist derselbe
   Vorschlag, den der Dialog im Fenster anbietet.
 * **`edit`** ersetzt nur, was genannt wird. Zeigt eine Quelle danach auf eine
   **andere** Datenbank, werden die zwischengespeicherten Seiten verworfen.

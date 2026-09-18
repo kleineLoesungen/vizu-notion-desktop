@@ -307,13 +307,49 @@ fn schlaegt_keine_relation_auf_eine_andere_datenbank_vor() {
     // „Ziel" auf die Ziele. Nur die erste kann ein Nachfolger sein.
     let schema = fetch::inspect(&client, &ids.database("projekte")).unwrap();
 
-    let next = schema.suggestion.iter().find(|m| m.role == "next");
-    assert_eq!(next.map(|m| m.property.as_str()), Some("Nächstes"));
-    assert!(
-        schema.suggestion.iter().all(|m| m.property != "Ziel"),
-        "{:?}",
-        schema.suggestion
+    let rolle = |spalte: &str| {
+        schema
+            .suggestion
+            .iter()
+            .find(|m| m.property == spalte)
+            .map(|m| m.role.clone())
+    };
+    assert_eq!(rolle("Nächstes").as_deref(), Some("next"));
+    // „Ziel" kommt dazu — aber unter seinem eigenen Namen, nie als `next`
+    // oder `parent`.
+    assert_eq!(rolle("Ziel").as_deref(), Some("ziel"));
+}
+
+#[test]
+fn jede_spalte_bekommt_eine_zeile() {
+    let ids = Ids::load();
+    let (client, _) = client(FixtureNotion::new());
+
+    // „vizu Projekte" hat sieben Spalten. Wer im Dialog „7 Spalten" liest,
+    // soll darunter auch sieben Zeilen sehen — nicht nur die Sonderrollen.
+    let schema = fetch::inspect(&client, &ids.database("projekte")).unwrap();
+
+    let mut spalten: Vec<&str> = schema.properties.iter().map(|p| p.name.as_str()).collect();
+    let mut zugeordnet: Vec<&str> = schema
+        .suggestion
+        .iter()
+        .map(|m| m.property.as_str())
+        .collect();
+    spalten.sort_unstable();
+    zugeordnet.sort_unstable();
+    assert_eq!(zugeordnet, spalten, "keine Spalte doppelt, keine vergessen");
+
+    // Die Sonderrollen stehen vorn, die übrigen tragen ihren Namen.
+    let rollen: Vec<&str> = schema.suggestion.iter().map(|m| m.role.as_str()).collect();
+    assert_eq!(
+        rollen,
+        ["date", "next", "status", "tag", "title", "phase", "ziel"]
     );
+
+    // Und alles davon besteht die Prüfung einer Quelle.
+    SourceInput::new("Projekte", ids.database("projekte"), schema.suggestion)
+        .clean()
+        .unwrap();
 }
 
 #[test]

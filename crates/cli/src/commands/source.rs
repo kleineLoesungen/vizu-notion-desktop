@@ -58,9 +58,14 @@ pub fn run(cmd: SourceCommand, app: &App, out: &Out) -> Result<()> {
                         describe(&schema.suggestion)
                     );
                 }
-                // Was von Hand kam, bleibt, wie es ist.
+                // Was von Hand kam, bleibt, wie es ist — auch eine Spalte, die
+                // mit `--map` unter einer anderen Rolle steht, kommt nicht
+                // doppelt. Dieselbe Regel wie im Dialog (ui/src/lib/mapping.ts).
                 for m in schema.suggestion {
-                    if !wanted.iter().any(|own| own.role == m.role) {
+                    let known = wanted
+                        .iter()
+                        .any(|own| own.role == m.role || own.property == m.property);
+                    if !known {
                         wanted.push(m);
                     }
                 }
