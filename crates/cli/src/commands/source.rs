@@ -27,6 +27,11 @@ pub fn run(cmd: SourceCommand, app: &App, out: &Out) -> Result<()> {
             Ok(())
         }
 
+        SourceCommand::Inspect { database } => {
+            out.schema(&fetch::inspect_with_http(&app.token()?, &database)?);
+            Ok(())
+        }
+
         SourceCommand::Show { source: needle } => {
             let id = source::resolve(app.conn(), &needle)?;
             let found = source::get(app.conn(), id)?;

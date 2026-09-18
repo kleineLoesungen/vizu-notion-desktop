@@ -16,7 +16,7 @@ use std::cmp::Ordering;
 use std::time::Duration;
 
 use time::macros::format_description;
-use vizu_notion_core::fetch::{FetchStatus, SourceOverview};
+use vizu_notion_core::fetch::{DatabaseSchema, FetchStatus, SourceOverview};
 use vizu_notion_core::flow::FlowGraph;
 use vizu_notion_core::metro::MetroMap;
 use vizu_notion_core::secret::{TokenOrigin, TokenStatus};
@@ -73,6 +73,43 @@ impl Out {
                 pages,
                 at
             );
+        }
+    }
+
+    /// Was `source inspect` in Notion sieht: Spalten mit Art und der Vorschlag.
+    pub fn schema(&self, schema: &DatabaseSchema) {
+        if self.json {
+            self.print(schema);
+            return;
+        }
+        println!("{}", schema.title);
+        println!("{}", "─".repeat(schema.title.chars().count().max(3)));
+        let width = schema
+            .properties
+            .iter()
+            .map(|p| p.name.chars().count())
+            .max()
+            .unwrap_or(5)
+            .clamp(5, 40);
+        println!("{:<width$}  ART", "SPALTE");
+        for p in &schema.properties {
+            // Bei einer Relation zählt, wohin sie zeigt: nur eine auf dieselbe
+            // Datenbank kann `next` oder `parent` sein.
+            let target = match &p.relation_to {
+                Some(to) if *to == schema.data_source_id => "  → dieselbe Datenbank",
+                Some(_) => "  → andere Datenbank",
+                None => "",
+            };
+            println!("{:<width$}  {}{}", truncate(&p.name, width), p.kind, target);
+        }
+        println!();
+        if schema.suggestion.is_empty() {
+            println!("Vorschlag: keiner");
+        } else {
+            println!("Vorschlag:");
+            for m in &schema.suggestion {
+                println!("  {:<8}  →  {}", m.role, m.property);
+            }
         }
     }
 

@@ -54,7 +54,12 @@ export type DatabaseSchema = {
 /**
  * Wie die Datenbank in Notion heißt — als Vorschlag für den Namen.
  */
-title: string, properties: Array<Property>, 
+title: string, 
+/**
+ * Die eigene Datenquelle. Eine Relation, die hierhin zeigt, verbindet
+ * Seiten derselben Datenbank — nur so eine kann `next` sein.
+ */
+data_source_id: string, properties: Array<Property>, 
 /**
  * Was core aus den Spalten für die Zuordnung ableitet.
  */

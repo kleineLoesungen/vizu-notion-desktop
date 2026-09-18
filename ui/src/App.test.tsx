@@ -210,6 +210,7 @@ function backend(cmd: string, args: Record<string, unknown> = {}): unknown {
     case "database_inspect":
       return {
         title: "vizu Projekte",
+        data_source_id: "ds",
         properties: [
           { name: "Name", id: "title", kind: "title", relation_to: null },
           { name: "Nächstes", id: "WGBf", kind: "relation", relation_to: "ds" },

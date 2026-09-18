@@ -62,6 +62,9 @@ pub struct FetchStatus {
 pub struct DatabaseSchema {
     /// Wie die Datenbank in Notion heißt — als Vorschlag für den Namen.
     pub title: String,
+    /// Die eigene Datenquelle. Eine Relation, die hierhin zeigt, verbindet
+    /// Seiten derselben Datenbank — nur so eine kann `next` sein.
+    pub data_source_id: String,
     pub properties: Vec<notion::Property>,
     /// Was core aus den Spalten für die Zuordnung ableitet.
     pub suggestion: Vec<ColumnMapping>,
@@ -94,6 +97,7 @@ pub fn inspect<T: Transport>(client: &Client<T>, database_id: &str) -> Result<Da
     let suggestion = source::suggest(&properties, &data_source.id);
     Ok(DatabaseSchema {
         title: database.title(),
+        data_source_id: data_source.id.clone(),
         properties,
         suggestion,
     })

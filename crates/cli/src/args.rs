@@ -214,6 +214,16 @@ pub enum SourceCommand {
         source: String,
     },
 
+    /// Die Spalten einer Notion-Datenbank ansehen, samt Vorschlag — legt nichts an.
+    ///
+    /// Dasselbe, was „Spalten holen" im Fenster fragt. Beispiel:
+    /// `vizu-notion source inspect https://app.notion.com/p/…`
+    Inspect {
+        /// Link oder Kennung der Notion-Datenbank.
+        #[arg(value_name = "LINK")]
+        database: String,
+    },
+
     /// Neue Quelle anlegen.
     ///
     /// Beispiel: `vizu-notion source add Projekte --database 396f6627… --map title=Name --map next=Nächstes`
