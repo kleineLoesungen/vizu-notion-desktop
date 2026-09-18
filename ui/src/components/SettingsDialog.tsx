@@ -40,7 +40,7 @@ export function SettingsDialog({
   const [newToken, setNewToken] = useState("");
 
   return (
-    <Dialog title="Einstellungen" onClose={onClose}>
+    <Dialog title="Einstellungen" onClose={onClose} wide>
       <form
         className="form"
         onSubmit={(e) => {

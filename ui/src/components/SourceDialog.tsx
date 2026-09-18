@@ -79,7 +79,7 @@ export function SourceDialog({
   }
 
   return (
-    <Dialog title={source ? "Quelle ändern" : "Neue Quelle"} onClose={onClose}>
+    <Dialog title={source ? "Quelle ändern" : "Neue Quelle"} onClose={onClose} wide>
       <form
         className="form"
         onSubmit={(e) => {

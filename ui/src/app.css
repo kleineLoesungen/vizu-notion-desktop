@@ -220,11 +220,17 @@ input[type="color"] {
   box-shadow: inset 3px 0 0 var(--accent);
 }
 
+/* Zwei Zeilen, dann erst abgeschnitten — der ganze Titel steht im Tooltip.
+   Einzeilig blieb bei 280 Pixeln von „Roadmap ohne Altlasten — Metro" kaum
+   etwas übrig. */
 .source-title {
   font-weight: 600;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .source-excerpt,
@@ -457,6 +463,12 @@ input[type="color"] {
   border-radius: 10px;
   box-shadow: var(--shadow);
   padding: var(--space-6);
+}
+
+/* Quelle und Einstellungen: Zuordnungszeilen mit langen Spaltennamen und
+   Pfade zu den Dateien passen sonst nicht in eine Zeile. */
+.dialog.wide {
+  width: min(760px, calc(100vw - 32px));
 }
 
 .dialog h2 {
@@ -1132,6 +1144,7 @@ button.destructive {
 /* --- Diagrammliste --------------------------------------------------------- */
 
 .diagram-item {
+  position: relative;
   display: flex;
   align-items: center;
 }
@@ -1141,17 +1154,41 @@ button.destructive {
   min-width: 0;
 }
 
-/* Der Knopf zum Verstecken stünde sonst in jeder Zeile im Weg. Unsichtbar,
-   aber vorhanden: Er bleibt anwählbar und ein Bildschirmleser liest ihn. */
-.diagram-item > button.small {
+/* Ein kleines Symbol, das ÜBER der Zeile liegt statt daneben: Unsichtbar
+   belegte ein Knopf seinen Platz trotzdem, und der fehlte jedem Titel.
+   Erreichbar bleibt er über die Tastatur und für Bildschirmleser. */
+.item-action {
+  position: absolute;
+  right: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: var(--muted);
+  background: var(--surface);
   opacity: 0;
-  flex-shrink: 0;
 }
 
-.diagram-item:hover > button.small,
-.diagram-item > button.small:focus-visible,
-.hidden-section .diagram-item > button.small {
+.item-action:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.diagram-item:hover > .item-action,
+.item-action:focus-visible {
   opacity: 1;
+}
+
+/* Im Bereich „Versteckt" ist der Knopf der Zweck der Zeile: immer sichtbar,
+   und mit eigenem Platz, damit er keinen Titel verdeckt. */
+.hidden-section .item-action {
+  position: static;
+  transform: none;
+  opacity: 1;
+  flex-shrink: 0;
+  margin-right: var(--space-2);
 }
 
 .views-section > summary,

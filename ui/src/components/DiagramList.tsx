@@ -9,6 +9,7 @@
 // (`fetch::views`) — hier steht nur, wie sie heißen.
 
 import type { HiddenDiagram, SourceOverview, Template } from "../bindings";
+import { HideIcon, ShowIcon } from "./icons";
 
 /** Was ausgewählt wurde: eine Vorlage oder eine Ansicht einer Quelle. */
 export type DiagramChoice =
@@ -72,6 +73,7 @@ export function DiagramList({
         // Ohne eigenen Namen läse ein Bildschirmleser „ProjekteFluss“:
         // Titel und Marke stehen ohne Leerzeichen nebeneinander.
         aria-label={`${entry.title} — ${KIND_LABEL[entry.kind]}`}
+        title={entry.title}
         aria-current={
           selected?.kind === entry.kind && selected.id === entry.id ? "true" : undefined
         }
@@ -85,13 +87,14 @@ export function DiagramList({
       </button>
       <button
         type="button"
-        className="ghost small"
+        className="item-action"
         aria-label={`${entry.title} — ${KIND_LABEL[entry.kind]} ${
           hidden ? "einblenden" : "verstecken"
         }`}
+        title={hidden ? "Wieder in die Liste" : "Aus der Liste nehmen"}
         onClick={() => onHide({ kind: entry.kind, id: entry.id }, !hidden)}
       >
-        {hidden ? "Einblenden" : "Verstecken"}
+        {hidden ? <ShowIcon /> : <HideIcon />}
       </button>
     </li>
   );

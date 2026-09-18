@@ -7,6 +7,7 @@
 // Zeichnet nur. Wiederhergestellt wird in App.tsx, gespeichert in core.
 
 import type { View } from "../bindings";
+import { DeleteIcon } from "./icons";
 
 type Props = {
   views: View[];
@@ -37,6 +38,7 @@ export function ViewList({ views, activeId, onOpen, onDelete }: Props) {
               type="button"
               className="source-item"
               aria-label={`Ansicht ${view.name}`}
+              title={view.name}
               aria-current={activeId === view.id ? "true" : undefined}
               onClick={() => onOpen(view)}
             >
@@ -48,11 +50,12 @@ export function ViewList({ views, activeId, onOpen, onDelete }: Props) {
             </button>
             <button
               type="button"
-              className="ghost small"
+              className="item-action"
               aria-label={`Ansicht ${view.name} löschen`}
+              title="Ansicht löschen"
               onClick={() => onDelete(view)}
             >
-              Löschen
+              <DeleteIcon />
             </button>
           </li>
         ))}
