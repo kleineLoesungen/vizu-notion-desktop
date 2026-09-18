@@ -129,28 +129,46 @@ veraltet, und git behält jede Fassung für immer. Der Ort dafür ist ein
 **Release auf GitHub**.
 
 `.github/workflows/release.yml` baut auf beiden Systemen — ein Bündel entsteht
-nur dort, wo es laufen soll — und hängt die Ergebnisse an einen Entwurf:
+nur dort, wo es laufen soll — und hängt die Ergebnisse an einen Entwurf.
 
-```bash
-git tag v0.2.0
-git push origin v0.2.0
-```
+Eine neue Fassung, Schritt für Schritt:
 
-Danach unter *Releases* den Entwurf ansehen und veröffentlichen. Dass er ein
-Entwurf bleibt, ist Absicht: Was unsigniert ist, soll ein Mensch bewusst
-freigeben.
+1. `version` unter `[workspace.package]` in der obersten `Cargo.toml` anheben,
+   etwa auf `0.2.0`. Die Nummer landet in den Dateinamen und im Programm.
+2. `just check` — danach ist auch `Cargo.lock` nachgezogen.
+3. Committen und pushen.
+4. Das Schild setzen und hochladen:
+
+   ```bash
+   git tag v0.2.0
+   git push origin v0.2.0
+   ```
+
+5. Unter *Actions* warten, bis der Lauf „Release" grün ist (etwa zehn Minuten).
+6. Unter *Releases* den Entwurf öffnen, Text prüfen, **Publish release**.
+
+Das Release **nicht vorher von Hand anlegen.** Der Workflow legt es selbst an.
+Gibt es schon eins mit dem Namen, lädt er die Pakete dort hinein — ein von Hand
+veröffentlichtes Release ist dann aber schon öffentlich, bevor die Dateien da
+sind.
+
+Dass der Workflow nur einen Entwurf anlegt, ist Absicht: Was unsigniert ist,
+soll ein Mensch bewusst freigeben.
+
+Die Webseite (`docs/site/index.html`) muss dafür nicht angepasst werden: Ihre
+Download-Knöpfe fragen beim Laden das neueste Release ab.
 
 Gebaut wird auf **Ubuntu 22.04**, nicht auf der neuesten Fassung: Ein Binary
 läuft nur mit einer glibc, die mindestens so neu ist wie die, gegen die es
 gebaut wurde. Auf 24.04 gebaut, startete es auf älteren Systemen nicht mehr.
 
-Es entstehen je Lauf:
+Es entstehen je Lauf (GitHub ersetzt Leerzeichen im Namen durch Punkte):
 
 | Datei | Für |
 |---|---|
-| `Vizu Notion_<version>_aarch64.dmg` | macOS auf Apple Silicon |
-| `vizu-notion_<version>_amd64.deb` | Debian, Ubuntu |
-| `Vizu Notion_<version>_amd64.AppImage` | andere Linux-Systeme |
+| `Vizu.Notion_<version>_aarch64.dmg` | macOS auf Apple Silicon |
+| `Vizu.Notion_<version>_amd64.deb` | Debian, Ubuntu |
+| `Vizu.Notion_<version>_amd64.AppImage` | andere Linux-Systeme |
 | `vizu-notion-cli-<version>-<os>-<arch>.tar.gz` | nur die Kommandozeile |
 
 **Was fehlt, und was das für Benutzer heißt:**

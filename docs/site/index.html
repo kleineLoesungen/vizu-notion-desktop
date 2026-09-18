@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vizu Notion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link
+  rel="stylesheet"
+  href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap"
+>
+
+<style>
+  /* Farben und Schrift stammen aus der Anwendung selbst: die Marken aus
+     ui/src/theme.css, die Linienfarben aus crates/core/src/palette.rs. */
+  :root {
+    --ground: #fafafa;
+    --panel: #ffffff;
+    --ink: #1d1f23;
+    --ink-2: #6a6f78;
+    --rule: #dcdfe4;
+    --accent: #3b6ea5;
+    --line-1: #4e79a7;
+    --line-2: #f28e2b;
+    --line-3: #e15759;
+    --line-4: #76b7b2;
+    --line-5: #59a14f;
+    --code-bg: #f0f1f3;
+
+    --sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #17181b;
+      --panel: #1f2024;
+      --ink: #e6e7ea;
+      --ink-2: #9a9fa8;
+      --rule: #383b42;
+      --accent: #7aa7d4;
+      --code-bg: #2a2c31;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --ground: #17181b;
+    --panel: #1f2024;
+    --ink: #e6e7ea;
+    --ink-2: #9a9fa8;
+    --rule: #383b42;
+    --accent: #7aa7d4;
+    --code-bg: #2a2c31;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding-inline: 20px;
+    padding-block: 56px 72px;
+  }
+
+  /* --- Kopf ------------------------------------------------------------- */
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+    margin: 0;
+  }
+
+  h1 {
+    font-size: clamp(2.2rem, 6vw, 3.1rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+    text-wrap: balance;
+    margin: 14px 0 0;
+  }
+
+  .thesis {
+    max-width: 62ch;
+    font-size: 1.12rem;
+    margin: 20px 0 0;
+  }
+
+  .thesis strong {
+    font-weight: 600;
+    box-shadow: inset 0 -0.42em 0 color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+
+  /* --- Abschnitte ------------------------------------------------------- */
+
+  section {
+    border-top: 1px solid var(--rule);
+    margin-top: 52px;
+    padding-top: 28px;
+  }
+
+  /* Breit genug: Randbemerkungen stehen daneben, wie auf einem Datenblatt. */
+  .grid {
+    display: grid;
+    gap: 28px;
+  }
+
+  @media (min-width: 1000px) {
+    .grid {
+      grid-template-columns: minmax(0, 1fr) 232px;
+      gap: 40px;
+      align-items: start;
+    }
+  }
+
+  h2 {
+    font-size: 1.45rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  h2 .num {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+  }
+
+  h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 6px;
+  }
+
+  p {
+    max-width: 62ch;
+    margin: 0 0 14px;
+  }
+
+  .note {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: var(--ink-2);
+    border-left: 2px solid var(--rule);
+    padding-left: 14px;
+  }
+
+  .note b {
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  /* --- Der Weg der Daten ------------------------------------------------ */
+
+  .stages {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0;
+  }
+
+  /* Die vier Schritte als Linie mit Stationen — dieselbe Sprache wie die
+     Metro-Karte: Anfang und Ende voll, alles dazwischen offen. */
+  .stage {
+    position: relative;
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr);
+    gap: 4px 16px;
+    padding: 12px 0;
+  }
+
+  .stage::before {
+    content: "";
+    position: absolute;
+    left: 11.5px;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--line-1);
+  }
+
+  /* Mitte des Punkts: 12 px Innenabstand + 4 px Rand oben + 9 px halbe Höhe. */
+  .stage:first-child::before {
+    top: 25px;
+  }
+
+  .stage:last-child::before {
+    bottom: calc(100% - 25px);
+  }
+
+  .stage .dot {
+    grid-row: span 2;
+    position: relative;
+    box-sizing: border-box;
+    width: 18px;
+    height: 18px;
+    margin: 4px 0 0 4px;
+    border: 3px solid var(--line-1);
+    border-radius: 50%;
+    background: var(--ground);
+  }
+
+  .stage:first-child .dot,
+  .stage:last-child .dot {
+    background: var(--line-1);
+  }
+
+  .stage p {
+    margin: 2px 0 0;
+    color: var(--ink-2);
+    font-size: 0.95rem;
+  }
+
+  /* --- Diagrammarten ---------------------------------------------------- */
+
+  .kinds {
+    display: grid;
+    gap: 20px;
+  }
+
+  @media (min-width: 620px) {
+    .kinds {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .kind {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .kind figure {
+    margin: 0;
+    background: var(--ground);
+    border: 1px solid var(--rule);
+    padding: 10px;
+  }
+
+  .kind svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .kind .role {
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+
+  .kind p {
+    font-size: 0.92rem;
+    margin: 0;
+    color: var(--ink-2);
+  }
+
+  /* --- Quelltext -------------------------------------------------------- */
+
+  .code {
+    background: var(--code-bg);
+    border: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    line-height: 1.7;
+    padding: 14px 16px;
+    overflow-x: auto;
+    white-space: pre;
+    margin: 0 0 14px;
+    color: var(--ink);
+  }
+
+  .code .c {
+    color: var(--ink-2);
+  }
+
+  .pair {
+    display: grid;
+    gap: 14px;
+  }
+
+  @media (min-width: 720px) {
+    .pair {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      align-items: start;
+    }
+  }
+
+  /* --- Entscheidungen --------------------------------------------------- */
+
+  .decisions {
+    margin: 0;
+    display: grid;
+    gap: 0;
+  }
+
+  .decisions div {
+    display: grid;
+    gap: 4px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  @media (min-width: 720px) {
+    .decisions div {
+      grid-template-columns: 220px minmax(0, 1fr);
+      gap: 24px;
+      align-items: baseline;
+    }
+  }
+
+  .decisions dt {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .decisions dd {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: 0.95rem;
+    max-width: 62ch;
+  }
+
+  /* --- Zahlen ----------------------------------------------------------- */
+
+  .figures {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .figures th,
+  .figures td {
+    text-align: left;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--rule);
+    font-size: 0.95rem;
+  }
+
+  .figures th {
+    font-weight: 400;
+    color: var(--ink-2);
+  }
+
+  .figures td {
+    font-family: var(--mono);
+    text-align: right;
+    font-weight: 500;
+  }
+
+  /* --- Fuß -------------------------------------------------------------- */
+
+  footer {
+    border-top: 1px solid var(--rule);
+    margin-top: 52px;
+    padding-top: 22px;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--ink-2);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 22px;
+  }
+
+  a {
+    color: var(--accent);
+    text-underline-offset: 3px;
+  }
+
+  a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* --- Die drei Ziele --------------------------------------------------- */
+
+  .goals {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 20px;
+  }
+
+  @media (min-width: 720px) {
+    .goals {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .goals li {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-top: 3px solid var(--line-1);
+    padding: 16px;
+  }
+
+  .goals li:nth-child(2) {
+    border-top-color: var(--line-2);
+  }
+
+  .goals li:nth-child(3) {
+    border-top-color: var(--line-5);
+  }
+
+  .goals p {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: 0.95rem;
+  }
+
+  /* --- Herunterladen ---------------------------------------------------- */
+
+  .downloads {
+    display: grid;
+    gap: 12px;
+    margin: 4px 0 18px;
+  }
+
+  @media (min-width: 620px) {
+    .downloads {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .download {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 14px 16px;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--accent);
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .download:hover {
+    border-color: var(--accent);
+  }
+
+  .download strong {
+    font-weight: 600;
+  }
+
+  .download span {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--ink-2);
+  }
+
+  .header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    margin-top: 22px;
+    align-items: center;
+  }
+
+  .button {
+    display: inline-block;
+    padding: 10px 18px;
+    background: var(--accent);
+    color: var(--ground);
+    font-weight: 600;
+    text-decoration: none;
+  }
+</style>
+
+</head>
+<body>
+<div class="page">
+  <header>
+    <p class="eyebrow">Desktop · macOS und Linux · MIT</p>
+    <h1>Vizu Notion</h1>
+    <p class="thesis">
+      Vizu Notion macht aus deinen Notion-Datenbanken <strong>Bilder</strong>. So siehst du
+      auf einen Blick, was zusammengehört und was wann kommt.
+    </p>
+    <div class="header-actions">
+      <a class="button" href="#herunterladen">Herunterladen</a>
+      <a href="https://github.com/kleineLoesungen/vizu-notion-desktop">Quelltext auf GitHub</a>
+    </div>
+  </header>
+
+  <section>
+    <h2><span class="num">01</span> Worum es geht</h2>
+    <ul class="goals">
+      <li>
+        <h3>Ein neuer Blick</h3>
+        <p>
+          Notion zeigt deine Daten als Tabelle oder Liste. Vizu Notion zeigt dieselben Daten
+          als Diagramm – und damit von einer ganz anderen Seite.
+        </p>
+      </li>
+      <li>
+        <h3>Zusammenhänge erkennen</h3>
+        <p>
+          Projekte, Aufgaben, Meilensteine: Oft liegen sie in verschiedenen Datenbanken.
+          Vizu Notion bringt sie in ein Bild und zeigt, was womit verbunden ist.
+        </p>
+      </li>
+      <li>
+        <h3>Schneller verstehen</h3>
+        <p>
+          Ein Bild erfasst man schneller als viele Zeilen Text. Das hilft dir selbst – und
+          allen, denen du etwas erklären willst.
+        </p>
+      </li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="grid">
+      <div>
+        <h2><span class="num">02</span> So funktioniert es</h2>
+        <ol class="stages">
+          <li class="stage">
+            <span class="dot" aria-hidden="true"></span>
+            <h3>Datenbank verbinden</h3>
+            <p>
+              Du wählst eine oder mehrere Notion-Datenbanken aus. Welche Spalte was bedeutet,
+              schlägt die Anwendung selbst vor.
+            </p>
+          </li>
+          <li class="stage">
+            <span class="dot" aria-hidden="true"></span>
+            <h3>Daten holen</h3>
+            <p>
+              Ein Klick lädt die Seiten aus Notion auf deinen Rechner.
+            </p>
+          </li>
+          <li class="stage">
+            <span class="dot" aria-hidden="true"></span>
+            <h3>Diagramm ansehen</h3>
+            <p>
+              Die Anwendung zeichnet daraus ein Diagramm. Filter und Farben stellst du nach
+              Bedarf ein.
+            </p>
+          </li>
+          <li class="stage">
+            <span class="dot" aria-hidden="true"></span>
+            <h3>Weitergeben</h3>
+            <p>
+              Das Bild lässt sich als Datei speichern und teilen.
+            </p>
+          </li>
+        </ol>
+      </div>
+      <p class="note">
+        <b>Deine Daten bleiben bei dir.</b> Kein Konto, kein Server, keine Statistik. Die
+        Anwendung spricht nur mit Notion, und nur wenn du Daten holst.
+      </p>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">03</span> Drei Arten von Diagrammen</h2>
+
+    <div class="kinds">
+      <div class="kind">
+        <span class="role">Eigene Vorlage</span>
+        <figure>
+          <svg viewBox="0 0 260 120" role="img" aria-label="Flussdiagramm aus einer Vorlage: Kickoff zeigt auf Architektur, Architektur auf Datenmodell und Design-System">
+            <g fill="none" stroke="var(--ink-2)" stroke-width="1.5">
+              <path d="M62 24 H88"></path>
+              <path d="M150 24 H176"></path>
+              <path d="M119 38 V66 H176"></path>
+            </g>
+            <g fill="var(--panel)" stroke="var(--line-1)" stroke-width="1.5">
+              <rect x="6" y="12" width="56" height="24" rx="4"></rect>
+              <rect x="88" y="12" width="62" height="24" rx="4"></rect>
+              <rect x="176" y="12" width="76" height="24" rx="4"></rect>
+              <rect x="176" y="54" width="76" height="24" rx="4"></rect>
+            </g>
+            <g fill="var(--ink)" font-family="IBM Plex Mono, monospace" font-size="9" text-anchor="middle">
+              <text x="34" y="28">Kickoff</text>
+              <text x="119" y="28">Architektur</text>
+              <text x="214" y="28">Datenmodell</text>
+              <text x="214" y="70">Design-System</text>
+            </g>
+          </svg>
+        </figure>
+        <p>
+          Du bestimmst selbst, was gezeigt wird – auch über mehrere Datenbanken hinweg.
+          Fertige Beispiele helfen beim Start.
+        </p>
+      </div>
+
+      <div class="kind">
+        <span class="role">Ablauf</span>
+        <figure>
+          <svg viewBox="0 0 260 120" role="img" aria-label="Flussdiagramm über drei Ebenen mit zwei Zweigen">
+            <g fill="none" stroke="var(--ink-2)" stroke-width="1.5">
+              <path d="M130 30 C130 44, 70 40, 70 54"></path>
+              <path d="M130 30 C130 44, 190 40, 190 54"></path>
+              <path d="M70 78 C70 92, 130 88, 130 96"></path>
+              <path d="M190 78 C190 92, 130 88, 130 96"></path>
+            </g>
+            <g fill="var(--panel)" stroke="var(--line-4)" stroke-width="1.5">
+              <rect x="94" y="8" width="72" height="22" rx="4"></rect>
+              <rect x="34" y="56" width="72" height="22" rx="4"></rect>
+              <rect x="154" y="56" width="72" height="22" rx="4"></rect>
+              <rect x="94" y="96" width="72" height="22" rx="4"></rect>
+            </g>
+            <g fill="var(--ink)" font-family="IBM Plex Mono, monospace" font-size="9" text-anchor="middle">
+              <text x="130" y="23">Beta</text>
+              <text x="70" y="71">Rollout EU</text>
+              <text x="190" y="71">Rollout US</text>
+              <text x="130" y="111">Version 1.0</text>
+            </g>
+          </svg>
+        </figure>
+        <p>
+          Was folgt worauf? Die Einträge erscheinen als Kästchen, verbunden mit Pfeilen.
+        </p>
+      </div>
+
+      <div class="kind">
+        <span class="role">Zeitplan als Linienplan</span>
+        <figure>
+          <svg viewBox="0 0 260 120" role="img" aria-label="Metro-Karte: eine Linie auf der Zeitachse mit einer Abzweigung und einer Umsteigestation">
+            <g stroke="var(--rule)" stroke-width="1">
+              <path d="M40 14 V112"></path>
+              <path d="M110 14 V112"></path>
+              <path d="M180 14 V112"></path>
+              <path d="M240 14 V112"></path>
+            </g>
+            <g fill="var(--ink-2)" font-family="IBM Plex Mono, monospace" font-size="7.5" text-anchor="middle">
+              <text x="40" y="10">01/26</text>
+              <text x="110" y="10">04/26</text>
+              <text x="180" y="10">07/26</text>
+              <text x="240" y="10">10/26</text>
+            </g>
+            <path d="M18 44 H242" fill="none" stroke="var(--line-1)" stroke-width="4" stroke-linecap="round"></path>
+            <path d="M75 44 L99 68 H150 L174 44" fill="none" stroke="var(--line-2)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M174 44 L198 92 H236" fill="none" stroke="var(--line-5)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+            <g stroke-width="3">
+              <circle cx="18" cy="44" r="5" fill="var(--line-1)" stroke="var(--line-1)"></circle>
+              <circle cx="110" cy="44" r="5" fill="var(--ground)" stroke="var(--line-1)"></circle>
+              <circle cx="242" cy="44" r="5" fill="var(--line-1)" stroke="var(--line-1)"></circle>
+              <circle cx="128" cy="68" r="5" fill="var(--line-2)" stroke="var(--line-2)"></circle>
+              <circle cx="236" cy="92" r="5" fill="var(--line-5)" stroke="var(--line-5)"></circle>
+              <circle cx="75" cy="44" r="6" fill="var(--ground)" stroke="var(--ink)"></circle>
+              <circle cx="174" cy="44" r="6" fill="var(--ground)" stroke="var(--ink)"></circle>
+            </g>
+          </svg>
+        </figure>
+        <p>
+          Wie ein U-Bahn-Plan: Jeder Eintrag steht an seinem Datum, zusammengehörige
+          Einträge bilden eine Linie.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section id="herunterladen">
+    <div class="grid">
+      <div>
+        <h2><span class="num">04</span> Herunterladen</h2>
+        <p>
+          Die Anwendung ist kostenlos. Lade die Datei für dein System herunter:
+        </p>
+        <div class="downloads">
+          <a class="download" data-asset=".dmg" href="https://github.com/kleineLoesungen/vizu-notion-desktop/releases/latest">
+            <strong>macOS</strong>
+            <span>.dmg · Apple Silicon</span>
+          </a>
+          <a class="download" data-asset=".AppImage" href="https://github.com/kleineLoesungen/vizu-notion-desktop/releases/latest">
+            <strong>Linux</strong>
+            <span>.AppImage · x86_64</span>
+          </a>
+          <a class="download" data-asset=".deb" href="https://github.com/kleineLoesungen/vizu-notion-desktop/releases/latest">
+            <strong>Debian / Ubuntu</strong>
+            <span>.deb · x86_64</span>
+          </a>
+        </div>
+        <p>
+          Ältere Versionen und die Kommandozeile gibt es unter
+          <a href="https://github.com/kleineLoesungen/vizu-notion-desktop/releases">allen Releases</a>.
+        </p>
+        <h3>Danach</h3>
+        <p>
+          In Notion brauchst du eine <strong>interne Integration</strong> und musst deine
+          Datenbank mit ihr teilen. Beim ersten Start erklärt die Anwendung jeden Schritt.
+        </p>
+        <p>
+          Wer lieber selbst baut, braucht Rust, Node und <code>just</code>:
+        </p>
+        <pre class="code">git clone https://github.com/kleineLoesungen/vizu-notion-desktop
+cd vizu-notion-desktop
+just setup
+just dev</pre>
+      </div>
+      <p class="note">
+        <b>Hinweis für macOS:</b> Die Anwendung ist nicht signiert. Meldet macOS beim ersten
+        Start „beschädigt“, hilft <code>xattr -dr com.apple.quarantine</code> auf der
+        Anwendung.
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    <span>MIT-Lizenz</span>
+    <span>© 2026 Sebastian Willer</span>
+    <span><a href="https://github.com/kleineLoesungen/vizu-notion-desktop">github.com/kleineLoesungen/vizu-notion-desktop</a></span>
+  </footer>
+</div>
+<script>
+  // Die Dateinamen tragen die Versionsnummer. Darum werden die Links aus dem
+  // neuesten Release geholt; ohne Netz bleibt der Verweis auf die Release-Seite.
+  fetch("https://api.github.com/repos/kleineLoesungen/vizu-notion-desktop/releases/latest")
+    .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+    .then((release) => {
+      for (const link of document.querySelectorAll("[data-asset]")) {
+        const asset = release.assets.find((a) => a.name.endsWith(link.dataset.asset));
+        if (asset) link.href = asset.browser_download_url;
+      }
+    })
+    .catch(() => {});
+</script>
+</body>
+</html>

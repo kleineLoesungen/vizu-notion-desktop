@@ -110,8 +110,14 @@ jobs:
 
           Alles Weitere in docs/RELEASE.md.
           ENDE
-          gh release create "${GITHUB_REF_NAME}" \
-            --draft \
-            --title "${GITHUB_REF_NAME}" \
-            --notes-file notiz.md \
-            pakete/*/*
+          # Hat jemand das Release schon von Hand angelegt, kommen die Pakete
+          # dort hinein, statt dass der Schritt am vorhandenen Namen scheitert.
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release upload "${GITHUB_REF_NAME}" --clobber pakete/*/*
+          else
+            gh release create "${GITHUB_REF_NAME}" \
+              --draft \
+              --title "${GITHUB_REF_NAME}" \
+              --notes-file notiz.md \
+              pakete/*/*
+          fi
