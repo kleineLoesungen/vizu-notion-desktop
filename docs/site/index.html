@@ -488,6 +488,52 @@
     font-weight: 600;
     text-decoration: none;
   }
+
+  /* --- Installation unter macOS ----------------------------------------- */
+
+  .install {
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    padding: 18px 20px 6px;
+    margin: 0 0 22px;
+  }
+
+  .install ol {
+    margin: 0 0 14px;
+    padding-left: 1.3em;
+    max-width: 62ch;
+  }
+
+  .install li {
+    margin-bottom: 8px;
+  }
+
+  .install li::marker {
+    font-family: var(--mono);
+    color: var(--accent);
+  }
+
+  .install .code {
+    margin: 8px 0 4px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    user-select: all;
+    -webkit-user-select: all;
+  }
+
+  .install .small {
+    font-size: 0.92rem;
+    color: var(--ink-2);
+  }
+
+  kbd {
+    font-family: var(--mono);
+    font-size: 0.82em;
+    padding: 1px 5px;
+    border: 1px solid var(--rule);
+    border-bottom-width: 2px;
+    background: var(--ground);
+  }
 </style>
 
 </head>
@@ -702,6 +748,36 @@
           Ältere Versionen und die Kommandozeile gibt es unter
           <a href="https://github.com/kleineLoesungen/vizu-notion-desktop/releases">allen Releases</a>.
         </p>
+        <div class="install">
+          <h3>Unter macOS installieren</h3>
+          <p class="small">
+            Die Anwendung ist nicht bei Apple signiert. Deshalb meldet macOS beim ersten Start,
+            sie sei „beschädigt“. Die Datei ist in Ordnung – macOS hat sie nur als „aus dem
+            Internet“ markiert. Diese Markierung entfernst du einmalig so:
+          </p>
+          <ol>
+            <li>Die <code>.dmg</code>-Datei öffnen und <b>Vizu Notion</b> in den Ordner
+              <b>Programme</b> ziehen.</li>
+            <li>Das <b>Terminal</b> öffnen: <kbd>⌘</kbd> + <kbd>Leertaste</kbd> drücken,
+              „Terminal“ tippen, <kbd>Enter</kbd>.</li>
+            <li>Diesen Befehl einfügen und mit <kbd>Enter</kbd> bestätigen:
+              <pre class="code">xattr -dr com.apple.quarantine "/Applications/Vizu Notion.app"</pre>
+              Ist alles gut gegangen, erscheint keine Meldung.</li>
+            <li>Vizu Notion ganz normal starten.</li>
+          </ol>
+          <p class="small">
+            <b>„No such file“?</b> Die Anwendung liegt nicht in <b>Programme</b>. Tippe
+            <code>xattr -dr com.apple.quarantine </code> (mit Leerzeichen am Ende) und ziehe die
+            Anwendung aus dem Finder ins Terminalfenster – der Pfad wird eingefügt.
+          </p>
+          <p class="small">
+            <b>„Operation not permitted“?</b> Setze <code>sudo </code> vor den Befehl und gib
+            dein Mac-Passwort ein. Beim Tippen erscheinen keine Zeichen; das ist normal.
+          </p>
+          <p class="small">
+            Nötig ist das einmal je heruntergeladener Version.
+          </p>
+        </div>
         <h3>Danach</h3>
         <p>
           In Notion brauchst du eine <strong>interne Integration</strong> und musst deine
@@ -716,9 +792,9 @@ just setup
 just dev</pre>
       </div>
       <p class="note">
-        <b>Hinweis für macOS:</b> Die Anwendung ist nicht signiert. Meldet macOS beim ersten
-        Start „beschädigt“, hilft <code>xattr -dr com.apple.quarantine</code> auf der
-        Anwendung.
+        <b>Unter Linux</b> die <code>.deb</code> mit einem Doppelklick installieren – oder das
+        <code>.AppImage</code> in den Dateieigenschaften „als Programm ausführbar“ machen und
+        starten.
       </p>
     </div>
   </section>
