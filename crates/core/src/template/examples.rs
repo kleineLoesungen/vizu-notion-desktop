@@ -18,6 +18,122 @@ pub struct Example {
     pub body: String,
 }
 
+/// Ein Baustein: ein Stück Vorlage für ein wiederkehrendes Muster, das man an
+/// der Schreibmarke einsetzt statt es abzutippen.
+///
+/// Platzhalter: `QUELLE` und `ZWEITE` sind Quellnamen, `FELD` eine Rolle der
+/// ersten Quelle. Die Oberfläche fragt nur nach dem, was der Baustein braucht.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+pub struct Block {
+    pub name: String,
+    /// Wozu er gut ist, in einem Satz.
+    pub purpose: String,
+    /// Braucht eine Rolle für `FELD`.
+    pub needs_field: bool,
+    /// Braucht eine zweite Quelle für `ZWEITE`.
+    pub needs_second: bool,
+    pub body: String,
+}
+
+/// Was der Editor als Baustein anbietet.
+pub fn blocks() -> Vec<Block> {
+    [
+        (
+            "Gerüst: Kopf und Knoten",
+            "Ein vollständiger Anfang — Titel, Quelle, ein Knoten je Zeile.",
+            false,
+            false,
+            r##"---
+title: "Neues Diagramm"
+sources:
+  - QUELLE
+---
+flowchart LR
+{{#each QUELLE}}
+  {{title}}
+{{/each}}
+"##,
+        ),
+        (
+            "Ein Knoten je Zeile",
+            "Jede Seite der Quelle als Kasten.",
+            false,
+            false,
+            r##"{{#each QUELLE}}
+  {{title}}
+{{/each}}
+"##,
+        ),
+        (
+            "Pfeile entlang eines Felds",
+            "Von jeder Seite zu dem, worauf das Feld zeigt — etwa `next`.",
+            true,
+            false,
+            r##"{{#each QUELLE}}
+  {{#if FELD}}{{title}} --> {{FELD}}{{/if}}
+{{/each}}
+"##,
+        ),
+        (
+            "Gruppen je Feldwert",
+            "Ein Rahmen (subgraph) je Wert, die Seiten darin.",
+            true,
+            false,
+            r##"{{#each (group QUELLE "FELD")}}
+  subgraph {{nodeId "FELD" FELD}}
+  {{#group-item}}
+    {{title}}
+  {{/group-item}}
+  end
+{{/each}}
+"##,
+        ),
+        (
+            "Farbe je Feldwert",
+            "Jeder Wert bekommt eine eigene Farbe aus der Palette.",
+            true,
+            false,
+            r##"{{#each (group QUELLE "FELD")}}
+  classDef cls-{{classId "FELD" FELD}} fill:{{palette @index}},color:#fff
+  {{#group-item}}
+    {{title}}:::cls-{{classId "FELD" FELD}}
+  {{/group-item}}
+{{/each}}
+"##,
+        ),
+        (
+            "Nur Seiten mit gefülltem Feld",
+            "Lässt weg, was im Feld nichts stehen hat.",
+            true,
+            false,
+            r##"{{#each QUELLE}}
+  {{#if FELD}}{{title}}{{/if}}
+{{/each}}
+"##,
+        ),
+        (
+            "Zwei Quellen verbinden",
+            "Pfeil von einer Seite zur Seite der zweiten Quelle, deren Titel im Feld steht.",
+            true,
+            true,
+            r##"{{#each (join-rows QUELLE "FELD" ZWEITE "title" "z")}}
+{{#if z_title}}  {{title}} --> {{z_title}}
+{{/if}}
+{{/each}}
+"##,
+        ),
+    ]
+    .into_iter()
+    .map(|(name, purpose, needs_field, needs_second, body)| Block {
+        name: name.to_string(),
+        purpose: purpose.to_string(),
+        needs_field,
+        needs_second,
+        body: body.to_string(),
+    })
+    .collect()
+}
+
 /// Eine Zeile des Spickzettels.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
 pub struct Hint {

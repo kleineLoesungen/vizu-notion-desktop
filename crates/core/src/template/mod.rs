@@ -32,7 +32,7 @@ use serde::Serialize;
 use serde_json::{Map, Value};
 use ts_rs::TS;
 
-pub use examples::{Example, Hint};
+pub use examples::{Block, Example, Hint};
 pub use parse::Meta;
 pub use store::{Template, TemplateInput, create, delete, get, import_mmd, list, resolve, update};
 

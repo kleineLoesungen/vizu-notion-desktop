@@ -27,7 +27,7 @@ use vizu_notion_core::metro::{self, MetroMap};
 use vizu_notion_core::notion::Property;
 use vizu_notion_core::secret::{self, TokenStatus};
 use vizu_notion_core::source::{self, Source, SourceInput};
-use vizu_notion_core::template::{self, Diagram, Example, Hint, Template, TemplateInput};
+use vizu_notion_core::template::{self, Block, Diagram, Example, Hint, Template, TemplateInput};
 use vizu_notion_core::view::{self, View, ViewInput};
 use vizu_notion_core::{Config, Paths, notion};
 
@@ -196,6 +196,7 @@ pub async fn template_delete(state: State<'_, AppState>, id: Uuid) -> ApiResult<
 pub async fn template_help() -> ApiResult<TemplateHelp> {
     Ok(TemplateHelp {
         examples: template::examples::examples(),
+        blocks: template::examples::blocks(),
         hints: template::examples::cheat_sheet(),
     })
 }
@@ -204,6 +205,8 @@ pub async fn template_help() -> ApiResult<TemplateHelp> {
 #[derive(Debug, Clone, Serialize, TS)]
 pub struct TemplateHelp {
     pub examples: Vec<Example>,
+    /// Stücke zum Einsetzen an der Schreibmarke.
+    pub blocks: Vec<Block>,
     pub hints: Vec<Hint>,
 }
 

@@ -223,7 +223,19 @@ function backend(cmd: string, args: Record<string, unknown> = {}): unknown {
         ],
       };
     case "template_help":
-      return { examples: [], hints: [] };
+      return {
+        examples: [],
+        hints: [],
+        blocks: [
+          {
+            name: "Pfeile entlang eines Felds",
+            purpose: "Von jeder Seite zu dem, worauf das Feld zeigt.",
+            needs_field: true,
+            needs_second: false,
+            body: "{{#each QUELLE}}\n  {{#if FELD}}{{title}} --> {{FELD}}{{/if}}\n{{/each}}\n",
+          },
+        ],
+      };
     case "template_get":
       return templates[0];
     case "template_delete":
@@ -675,6 +687,51 @@ describe("Oberfläche", () => {
       timeout: 2000,
     });
     expect(commands("template_save")).toHaveLength(0);
+  });
+
+  it("fügt Felder und Bausteine der gewählten Quelle an der Schreibmarke ein", async () => {
+    const user = userEvent.setup();
+    sources = [
+      {
+        ...overview("a", "Projekte", 12),
+        source: {
+          ...overview("a", "Projekte", 12).source,
+          mappings: [
+            { role: "title", property: "Name" },
+            { role: "next", property: "Nächstes" },
+          ],
+        },
+      },
+    ];
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Neu" }));
+    const textfeld = (await screen.findByRole("textbox", {
+      name: "Vorlage",
+    })) as HTMLTextAreaElement;
+    await user.clear(textfeld);
+
+    // Die Felder der Quelle stehen zum Anklicken da, mit ihren Rollen.
+    const felder = screen.getByRole("group", { name: "Felder von Projekte" });
+    await user.click(within(felder).getByRole("button", { name: "next" }));
+    expect(textfeld.value).toBe("{{next}}");
+
+    // Als Text statt als Knoten: `this.` davor, wie im Spickzettel.
+    await user.click(screen.getByRole("button", { name: "Text" }));
+    await user.click(within(felder).getByRole("button", { name: "title" }));
+    expect(textfeld.value).toBe("{{next}}{{this.title}}");
+
+    // Ein Baustein bekommt Quelle und Feld eingesetzt.
+    await user.clear(textfeld);
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "Baustein" }),
+      "Pfeile entlang eines Felds",
+    );
+    await user.selectOptions(screen.getByRole("combobox", { name: "Feld" }), "next");
+    await user.click(screen.getByRole("button", { name: "Einfügen" }));
+    expect(textfeld.value).toBe(
+      "{{#each Projekte}}\n  {{#if next}}{{title}} --> {{next}}{{/if}}\n{{/each}}\n",
+    );
   });
 
   it("speichert eine Vorlage mit Kurznamen", async () => {

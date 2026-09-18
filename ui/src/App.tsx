@@ -716,7 +716,10 @@ export function App() {
             dirty={draft.body + draft.slug !== draft.saved}
             isNew={draft.id === null}
             dark={dark}
-            sources={sources.map((s) => s.source.name)}
+            sources={sources.map((s) => ({
+              name: s.source.name,
+              roles: s.source.mappings.map((m) => m.role),
+            }))}
             help={help}
             fieldMessage={fieldMessage}
             onSlugChange={(slug) => setDraft({ ...draft, slug })}

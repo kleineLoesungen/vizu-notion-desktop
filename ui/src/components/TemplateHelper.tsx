@@ -1,0 +1,151 @@
+// Hilfe beim Schreiben einer Vorlage: die Felder einer Quelle zum Anklicken
+// und Bausteine für wiederkehrende Muster.
+//
+// Zeichnet nur. Was eingefügt wird, meldet `onInsert` — an der Schreibmarke
+// setzt es der Editor ein. Die Bausteine kommen aus core
+// (`template::examples::blocks`), wo sie mit echten Daten geprüft werden.
+
+import { useState } from "react";
+import type { Block } from "../bindings";
+
+/** Eine Quelle, wie der Editor sie braucht: Name und Rollen. */
+export type SourceFields = { name: string; roles: string[] };
+
+type Props = {
+  sources: SourceFields[];
+  blocks: Block[];
+  /** Der Vorlagentext — um die Quelle vorzuwählen, die er schon nennt. */
+  body: string;
+  onInsert: (text: string) => void;
+};
+
+export function TemplateHelper({ sources, blocks, body, onInsert }: Props) {
+  // Vorgewählt ist die erste Quelle, die im Text schon vorkommt: Wer an
+  // „Projekte" schreibt, will die Felder von „Projekte" sehen.
+  const named = sources.find((s) => body.includes(s.name)) ?? sources[0];
+  const [chosen, setChosen] = useState<string | null>(null);
+  const source = sources.find((s) => s.name === chosen) ?? named;
+
+  const [asText, setAsText] = useState(false);
+  const [blockName, setBlockName] = useState("");
+  const [field, setField] = useState("");
+  const [second, setSecond] = useState("");
+
+  if (!source) {
+    return (
+      <p className="muted">
+        Noch keine Quelle eingerichtet — ohne Quelle gibt es keine Felder zum Einfügen.
+      </p>
+    );
+  }
+
+  const block = blocks.find((b) => b.name === blockName);
+  const fieldValue = field || source.roles.find((r) => r !== "title") || source.roles[0] || "";
+  const others = sources.filter((s) => s.name !== source.name);
+  const secondValue = second || others[0]?.name || source.name;
+
+  function insertBlock() {
+    if (!block || !source) return;
+    onInsert(
+      block.body
+        .replaceAll("QUELLE", source.name)
+        .replaceAll("ZWEITE", secondValue)
+        .replaceAll("FELD", fieldValue),
+    );
+  }
+
+  return (
+    <details className="template-helper" open>
+      <summary>Felder und Bausteine</summary>
+
+      <div className="helper-row">
+        <label>
+          Quelle
+          <select value={source.name} onChange={(e) => setChosen(e.target.value)}>
+            {sources.map((s) => (
+              <option key={s.name} value={s.name}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <fieldset className="segmented" aria-label="Einfügen als">
+          <button type="button" aria-pressed={!asText} onClick={() => setAsText(false)}>
+            Knoten
+          </button>
+          <button type="button" aria-pressed={asText} onClick={() => setAsText(true)}>
+            Text
+          </button>
+        </fieldset>
+      </div>
+
+      {/* Ein Klick fügt das Feld an der Schreibmarke ein: als Knoten
+          ({{feld}}) oder als roher Text ({{this.feld}}) — so steht es auch im
+          Spickzettel. Die Seiten-ID ist immer Text. */}
+      <fieldset className="field-chips" aria-label={`Felder von ${source.name}`}>
+        {source.roles.map((role) => (
+          <button
+            key={role}
+            type="button"
+            className="chip"
+            onClick={() => onInsert(asText ? `{{this.${role}}}` : `{{${role}}}`)}
+          >
+            {role}
+          </button>
+        ))}
+        <button type="button" className="chip" onClick={() => onInsert("{{this.id}}")}>
+          id
+        </button>
+        <button
+          type="button"
+          className="chip"
+          onClick={() => onInsert(`{{#each ${source.name}}}\n  \n{{/each}}\n`)}
+        >
+          #each {source.name}
+        </button>
+      </fieldset>
+
+      <div className="helper-row">
+        <label className="grow-x">
+          Baustein
+          <select value={blockName} onChange={(e) => setBlockName(e.target.value)}>
+            <option value="">auswählen …</option>
+            {blocks.map((b) => (
+              <option key={b.name} value={b.name}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        {block?.needs_field && (
+          <label>
+            Feld
+            <select value={fieldValue} onChange={(e) => setField(e.target.value)}>
+              {source.roles.map((role) => (
+                <option key={role} value={role}>
+                  {role}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {block?.needs_second && (
+          <label>
+            Zweite Quelle
+            <select value={secondValue} onChange={(e) => setSecond(e.target.value)}>
+              {(others.length > 0 ? others : [source]).map((s) => (
+                <option key={s.name} value={s.name}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        <button type="button" disabled={!block} onClick={insertBlock}>
+          Einfügen
+        </button>
+      </div>
+      {block && <p className="muted helper-purpose">{block.purpose}</p>}
+    </details>
+  );
+}

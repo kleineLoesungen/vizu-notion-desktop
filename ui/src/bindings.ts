@@ -93,6 +93,27 @@ id: string, title: string,
 subtitle: string, x: number, y: number, };
 
 /**
+ * Ein Baustein: ein Stück Vorlage für ein wiederkehrendes Muster, das man an
+ * der Schreibmarke einsetzt statt es abzutippen.
+ *
+ * Platzhalter: `QUELLE` und `ZWEITE` sind Quellnamen, `FELD` eine Rolle der
+ * ersten Quelle. Die Oberfläche fragt nur nach dem, was der Baustein braucht.
+ */
+export type Block = { name: string, 
+/**
+ * Wozu er gut ist, in einem Satz.
+ */
+purpose: string, 
+/**
+ * Braucht eine Rolle für `FELD`.
+ */
+needs_field: boolean, 
+/**
+ * Braucht eine zweite Quelle für `ZWEITE`.
+ */
+needs_second: boolean, body: string, };
+
+/**
  * Ein fertiges Diagramm.
  */
 export type Diagram = { title: string, 
@@ -286,7 +307,11 @@ body: string, created_at: string, updated_at: string, };
 /**
  * Was der Editor an Hilfe anzeigt.
  */
-export type TemplateHelp = { examples: Array<Example>, hints: Array<Hint>, };
+export type TemplateHelp = { examples: Array<Example>, 
+/**
+ * Stücke zum Einsetzen an der Schreibmarke.
+ */
+blocks: Array<Block>, hints: Array<Hint>, };
 
 /**
  * Was von außen hereinkommt — ungeprüft.

@@ -119,3 +119,62 @@ fn jedes_beispiel_zeichnet_und_bleibt_wie_festgehalten() {
         );
     }
 }
+
+/// Welche Rolle ein Baustein im Test für `FELD` bekommt — eine, bei der er in
+/// den Fixtures auch etwas zeichnet.
+fn feld_fuer(baustein: &str) -> &'static str {
+    match baustein {
+        "Pfeile entlang eines Felds" => "next",
+        "Zwei Quellen verbinden" => "parent",
+        "Nur Seiten mit gefülltem Feld" => "date",
+        _ => "status",
+    }
+}
+
+#[test]
+fn jeder_baustein_zeichnet_und_bleibt_wie_festgehalten() {
+    let app = app_mit_quellen();
+    let update = std::env::var_os("UPDATE_EXAMPLES").is_some();
+    let all = examples::blocks();
+    assert!(all.len() >= 6, "nur {} Bausteine", all.len());
+
+    for block in all {
+        let fragment = block
+            .body
+            .replace("QUELLE", "Projekte")
+            .replace("ZWEITE", "Ziele")
+            .replace("FELD", feld_fuer(&block.name));
+        // Ein Baustein ist ein Stück, keine Vorlage: Er bekommt den Kopf, den er
+        // im Editor unter sich hätte. Das Gerüst bringt seinen eigenen mit.
+        let body = if fragment.starts_with("---") {
+            fragment
+        } else {
+            format!(
+                "---\ntitle: \"Baustein\"\nsources:\n  - Projekte\n  - Ziele\n---\nflowchart LR\n{fragment}"
+            )
+        };
+        let diagram = template::render_body(app.conn(), &body, &HashSet::new())
+            .unwrap_or_else(|e| panic!("Baustein „{}“ zeichnet nicht: {e}", block.name));
+        assert!(
+            diagram.mermaid.lines().count() > 1,
+            "Baustein „{}“ ergibt nur eine Zeile: {:?}",
+            block.name,
+            diagram.mermaid
+        );
+
+        // Neben den Beispielen, damit ui/src/lib/examples.test.ts sie
+        // ebenfalls von mermaid.js lesen lässt.
+        let path = fixture_path(&format!("baustein {}", block.name));
+        if update {
+            std::fs::write(&path, &diagram.mermaid).unwrap();
+            continue;
+        }
+        let expected = std::fs::read_to_string(&path).unwrap_or_else(|e| {
+            panic!(
+                "{}: {e} — neu schreiben mit UPDATE_EXAMPLES=1",
+                path.display()
+            )
+        });
+        assert_eq!(diagram.mermaid, expected, "Baustein „{}“", block.name);
+    }
+}

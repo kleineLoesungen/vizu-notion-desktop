@@ -4,9 +4,11 @@
 // Diagramm erzeugt (`diagram_preview` → `template::render_body`) — sie kann
 // deshalb nicht davon abweichen.
 
+import { useRef } from "react";
 import type { Diagram, TemplateHelp } from "../bindings";
 import { DiagramView } from "./DiagramView";
 import { FieldMessage } from "./FieldMessage";
+import { type SourceFields, TemplateHelper } from "./TemplateHelper";
 
 type Props = {
   slug: string;
@@ -17,8 +19,8 @@ type Props = {
   isNew: boolean;
   dark: boolean;
   fieldMessage: (field: string) => string | undefined;
-  /** Die Namen der eingerichteten Quellen — für die Beispiele. */
-  sources: string[];
+  /** Die eingerichteten Quellen mit ihren Rollen — für Beispiele und Felder. */
+  sources: SourceFields[];
   /** Beispiele und Spickzettel aus core. */
   help: TemplateHelp | null;
   onSlugChange: (slug: string) => void;
@@ -51,6 +53,27 @@ export function TemplateEditor({
   onDelete,
   onClose,
 }: Props) {
+  const text = useRef<HTMLTextAreaElement>(null);
+  const names = sources.map((s) => s.name);
+
+  /** Setzt Text an der Schreibmarke ein — oder ersetzt, was markiert ist. */
+  function insert(snippet: string) {
+    const area = text.current;
+    if (!area) {
+      onBodyChange(body + snippet);
+      return;
+    }
+    const start = area.selectionStart;
+    const end = area.selectionEnd;
+    onBodyChange(body.slice(0, start) + snippet + body.slice(end));
+    // Nach dem Neuzeichnen: Schreibmarke hinter das Eingefügte, damit man
+    // gleich weiterschreiben oder das nächste Feld anklicken kann.
+    requestAnimationFrame(() => {
+      area.focus();
+      area.setSelectionRange(start + snippet.length, start + snippet.length);
+    });
+  }
+
   return (
     <section className="editor">
       <header className="detail-head">
@@ -87,7 +110,7 @@ export function TemplateEditor({
                 value=""
                 onChange={(e) => {
                   const example = help?.examples.find((x) => x.name === e.target.value);
-                  if (example) onBodyChange(withSources(example.body, sources));
+                  if (example) onBodyChange(withSources(example.body, names));
                 }}
               >
                 <option value="">auswählen …</option>
@@ -101,9 +124,17 @@ export function TemplateEditor({
           </div>
           <FieldMessage id="slug-error" message={fieldMessage("slug")} />
 
+          <TemplateHelper
+            sources={sources}
+            blocks={help?.blocks ?? []}
+            body={body}
+            onInsert={insert}
+          />
+
           <label className="grow">
             Vorlage
             <textarea
+              ref={text}
               className="template-body"
               value={body}
               spellCheck={false}
