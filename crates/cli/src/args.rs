@@ -299,6 +299,43 @@ pub enum TemplateCommand {
         template: String,
     },
 
+    /// Eine Vorlage aus einer Auswahl bauen und ausgeben — wie der Assistent.
+    ///
+    /// Beispiel: `vizu-notion template new pie Projekte --group status > status.mmd`
+    New {
+        /// flowchart, pie, gantt oder mindmap.
+        #[arg(value_name = "ART")]
+        kind: String,
+
+        /// Die Quelle, aus der gezeichnet wird.
+        #[arg(value_name = "QUELLE")]
+        source: String,
+
+        /// Titel des Diagramms (sonst „<Art> aus <Quelle>").
+        #[arg(long)]
+        title: Option<String>,
+
+        /// Flowchart: Pfeile entlang dieser Rolle.
+        #[arg(long, value_name = "ROLLE")]
+        link: Option<String>,
+
+        /// Rahmen, Stück, Abschnitt oder Zweig je Wert dieser Rolle.
+        #[arg(long, value_name = "ROLLE")]
+        group: Option<String>,
+
+        /// Pie: Summe dieses Zahlenfelds statt der Anzahl.
+        #[arg(long, value_name = "ROLLE")]
+        sum: Option<String>,
+
+        /// Flowchart: eine Farbe je Wert dieser Rolle.
+        #[arg(long, value_name = "ROLLE")]
+        color: Option<String>,
+
+        /// Gantt: das Datum.
+        #[arg(long, value_name = "ROLLE")]
+        date: Option<String>,
+    },
+
     /// `.mmd`-Dateien einlesen. Ein vorhandener Kurzname wird ersetzt.
     ///
     /// Der Kurzname ist der Dateiname ohne Endung. Ein Verzeichnis liest alle

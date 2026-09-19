@@ -253,6 +253,9 @@ pub struct SourceOverview {
     pub fetch: Option<FetchStatus>,
     /// Welche fertigen Ansichten die Zuordnung hergibt — ohne Vorlage.
     pub views: Vec<ViewKind>,
+    /// Taugt der Name für `{{#each Name}}`? „vizu Roadmap" mit Leerzeichen
+    /// geht für Fluss und Metro, aber nicht in einer Vorlage.
+    pub template_ready: bool,
 }
 
 /// Eine Ansicht, die sich allein aus der Zuordnung ergibt.
@@ -285,6 +288,7 @@ pub fn overview(conn: &Connection) -> Result<Vec<SourceOverview>> {
             let fetch = status(conn, source.id)?;
             let views = views(&source);
             Ok(SourceOverview {
+                template_ready: crate::template::usable_source_name(&source.name),
                 source,
                 fetch,
                 views,

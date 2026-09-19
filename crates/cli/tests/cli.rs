@@ -677,3 +677,26 @@ fn loescht_eine_ansicht_nur_nach_rueckfrage() {
         "Ansicht ist noch da"
     );
 }
+
+// --- Vorlage aus dem Assistenten -------------------------------------------------
+
+#[test]
+fn baut_eine_vorlage_wie_der_assistent() {
+    let ctx = Ctx::new();
+    ctx.seed();
+
+    let out = ctx
+        .run(&["template", "new", "pie", "Projekte", "--group", "status"])
+        .ok();
+    assert!(
+        out.stdout.starts_with("---\ntitle: \"pie aus Projekte\"\n"),
+        "{}",
+        out.stdout
+    );
+    assert!(out.stdout.contains("pie showData"), "{}", out.stdout);
+
+    // Was einer Art fehlt, ist ein Eingabefehler — Rückgabewert 4.
+    let ohne = ctx.run(&["template", "new", "pie", "Projekte"]);
+    assert_eq!(ohne.code, 4, "{}", ohne.stderr);
+    assert!(ohne.stderr.contains("group"), "{}", ohne.stderr);
+}

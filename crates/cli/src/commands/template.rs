@@ -10,6 +10,36 @@ use crate::output::Out;
 
 pub fn run(cmd: TemplateCommand, app: &App, out: &Out) -> Result<()> {
     match cmd {
+        TemplateCommand::New {
+            kind,
+            source,
+            title,
+            link,
+            group,
+            sum,
+            color,
+            date,
+        } => {
+            let spec = template::Spec {
+                title: title.unwrap_or_else(|| format!("{kind} aus {source}")),
+                kind,
+                source,
+                link,
+                group,
+                sum,
+                color,
+                date,
+            };
+            let body = template::compose(&spec)?;
+            if out.json {
+                println!("{}", serde_json::json!({ "body": body }));
+            } else {
+                // Auf stdout, damit man sie umleiten und dann einlesen kann.
+                print!("{body}");
+            }
+            Ok(())
+        }
+
         TemplateCommand::List => {
             out.templates(&template::list(app.conn())?);
             Ok(())

@@ -361,6 +361,30 @@ pub fn cheat_sheet() -> Vec<Hint> {
             r##"eine von zehn unterscheidbaren Farben"##,
         ),
         (
+            r##"{{node title "Quelle"}}"##,
+            r##"Knoten ohne Gruppe in der Kennung — damit Pfeile auch Knoten in Rahmen treffen"##,
+        ),
+        (
+            r##"{{valueClass feld}}"##,
+            r##"eine Klasse je Wert, in jeder Gruppe gleich — für Farbe je Wert"##,
+        ),
+        (
+            r##"{{label feld "Ersatz"}}"##,
+            r##"Freitext ohne Doppelpunkt, Klammern, Anführungszeichen — für Gantt, Mindmap, Pie"##,
+        ),
+        (
+            r##"{{day date}} · {{day date_end}}"##,
+            r##"nur der Tag, ohne Uhrzeit; `_end` ist das Ende eines Zeitraums"##,
+        ),
+        (
+            r##"(unique Quelle) · (group-pages Quelle "feld")"##,
+            r##"jede Seite einmal — ohne die Kopien je Relationsziel"##,
+        ),
+        (
+            r##"{{sum items "feld"}}"##,
+            r##"Summe eines Zahlenfelds über die Seiten einer Gruppe"##,
+        ),
+        (
             r##"{{len items}}"##,
             r##"Anzahl der Zeilen einer Gruppe — für Kreisdiagramme"##,
         ),

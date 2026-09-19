@@ -59,6 +59,7 @@ const STAMP = "2026-09-16T06:39:51Z";
 function overview(id: string, name: string, pages?: number): SourceOverview {
   return {
     views: [],
+    template_ready: !/[^A-Za-z0-9_]/.test(name),
     source: {
       id,
       name,
@@ -173,7 +174,7 @@ function backend(cmd: string, args: Record<string, unknown> = {}): unknown {
         created_at: STAMP,
         updated_at: STAMP,
       };
-      sources = [{ source: created, fetch: null, views: [] }];
+      sources = [{ source: created, fetch: null, views: [], template_ready: true }];
       return created;
     }
     case "metro_render":
@@ -270,6 +271,12 @@ function backend(cmd: string, args: Record<string, unknown> = {}): unknown {
           { role: "title", property: "Name" },
         ],
       };
+    case "template_compose": {
+      // Keine eigenen Regeln: Wie core eine Vorlage baut, prüft
+      // crates/core/tests/compose.rs.
+      const spec = args.spec as { title: string; source: string };
+      return `---\ntitle: "${spec.title}"\nsources:\n  - ${spec.source}\n---\npie showData\n`;
+    }
     case "template_insert": {
       // Keine eigenen Regeln: Die Attrappe hängt nur an. Wie core einsetzt,
       // prüft crates/core/tests/assemble.rs.
@@ -760,6 +767,7 @@ describe("Oberfläche", () => {
     render(<App />);
 
     await user.click(await screen.findByRole("button", { name: "Neu" }));
+    await user.click(await screen.findByRole("button", { name: "Ohne Assistent beginnen" }));
     const textfeld = await screen.findByRole("textbox", { name: "Vorlage" });
     await user.clear(textfeld);
     await user.type(textfeld, "x");
@@ -788,6 +796,7 @@ describe("Oberfläche", () => {
     render(<App />);
 
     await user.click(await screen.findByRole("button", { name: "Neu" }));
+    await user.click(await screen.findByRole("button", { name: "Ohne Assistent beginnen" }));
     const textfeld = (await screen.findByRole("textbox", {
       name: "Vorlage",
     })) as HTMLTextAreaElement;
@@ -835,6 +844,7 @@ describe("Oberfläche", () => {
     render(<App />);
 
     await user.click(await screen.findByRole("button", { name: "Neu" }));
+    await user.click(await screen.findByRole("button", { name: "Ohne Assistent beginnen" }));
 
     const textfeld = (await screen.findByRole("textbox", {
       name: "Vorlage",
@@ -844,11 +854,76 @@ describe("Oberfläche", () => {
     expect(textfeld.value).not.toContain("QUELLE");
   });
 
+  it("baut eine Vorlage im Assistenten und öffnet sie im Editor", async () => {
+    const user = userEvent.setup();
+    sources = [
+      {
+        ...overview("a", "Projekte", 12),
+        source: {
+          ...overview("a", "Projekte", 12).source,
+          mappings: [
+            { role: "title", property: "Name" },
+            { role: "status", property: "Status" },
+            { role: "punkte", property: "Punkte" },
+          ],
+        },
+      },
+      // Ein Name mit Leerzeichen taugt nicht für Vorlagen.
+      overview("b", "vizu Roadmap", 17),
+    ];
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Neu" }));
+    const assistent = await screen.findByRole("region", { name: "Neue Vorlage" });
+
+    await user.click(within(assistent).getByRole("radio", { name: /Pie Chart/ }));
+    const quelle = within(assistent).getByRole("combobox", { name: "Daten aus" });
+    expect(within(quelle).getByRole("option", { name: /vizu Roadmap/ })).toHaveProperty(
+      "disabled",
+      true,
+    );
+    // Beim Kreisdiagramm ist status vorgewählt; die Größe wird die Summe.
+    expect(
+      within(assistent).getByRole("combobox", { name: "Ein Stück je Wert von" }),
+    ).toHaveProperty("value", "status");
+    await user.selectOptions(
+      within(assistent).getByRole("combobox", { name: "Größe des Stücks" }),
+      "punkte",
+    );
+    await user.click(within(assistent).getByRole("button", { name: "Vorlage erstellen" }));
+
+    await waitFor(() => expect(commands("template_compose")).toHaveLength(1));
+    expect(commands("template_compose")[0]?.args).toEqual({
+      spec: {
+        kind: "pie",
+        title: "Projekte nach status",
+        source: "Projekte",
+        link: null,
+        group: "status",
+        color: null,
+        date: null,
+        sum: "punkte",
+      },
+    });
+
+    // Danach der gewohnte Editor, mit der gebauten Vorlage und einem
+    // vorgeschlagenen Kurznamen.
+    const textfeld = (await screen.findByRole("textbox", {
+      name: "Vorlage",
+    })) as HTMLTextAreaElement;
+    expect(textfeld.value).toContain("pie showData");
+    expect(screen.getByRole("textbox", { name: "Kurzname" })).toHaveProperty(
+      "value",
+      "projekte-nach-status",
+    );
+  });
+
   it("speichert eine Vorlage mit Kurznamen", async () => {
     const user = userEvent.setup();
     render(<App />);
 
     await user.click(await screen.findByRole("button", { name: "Neu" }));
+    await user.click(await screen.findByRole("button", { name: "Ohne Assistent beginnen" }));
     await user.type(await screen.findByRole("textbox", { name: "Kurzname" }), "fahrplan");
     await user.click(screen.getByRole("button", { name: "Speichern" }));
 

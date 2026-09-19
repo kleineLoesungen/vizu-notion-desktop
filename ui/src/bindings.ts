@@ -308,7 +308,43 @@ fetch: FetchStatus | null,
 /**
  * Welche fertigen Ansichten die Zuordnung hergibt — ohne Vorlage.
  */
-views: Array<ViewKind>, };
+views: Array<ViewKind>, 
+/**
+ * Taugt der Name für `{{#each Name}}`? „vizu Roadmap" mit Leerzeichen
+ * geht für Fluss und Metro, aber nicht in einer Vorlage.
+ */
+template_ready: boolean, };
+
+/**
+ * Was im Assistenten gewählt wurde. Welche Felder zählen, hängt an `kind`;
+ * die übrigen bleiben leer.
+ */
+export type Spec = { 
+/**
+ * `flowchart`, `pie`, `gantt` oder `mindmap`.
+ */
+kind: string, title: string, source: string, 
+/**
+ * Flowchart: Pfeile entlang dieser Rolle — einer Relation wie `next`.
+ */
+link: string | null, 
+/**
+ * Flowchart: ein Rahmen je Wert. Pie: ein Stück je Wert. Gantt: ein
+ * Abschnitt je Wert. Mindmap: ein Zweig je Wert.
+ */
+group: string | null, 
+/**
+ * Pie: die Summe dieses Zahlenfelds statt der Anzahl der Seiten.
+ */
+sum: string | null, 
+/**
+ * Flowchart: eine Farbe je Wert dieser Rolle, aus der Palette.
+ */
+color: string | null, 
+/**
+ * Gantt: das Datum — Anfang, bei einem Zeitraum auch das Ende.
+ */
+date: string | null, };
 
 export type StationKind = "start" | "stop" | "terminus" | "single";
 

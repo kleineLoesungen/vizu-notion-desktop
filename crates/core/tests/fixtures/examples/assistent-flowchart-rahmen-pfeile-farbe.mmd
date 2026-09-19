@@ -1,0 +1,42 @@
+flowchart LR
+  classDef v-n1qgdvl7 fill:#4e79a7,color:#fff
+  classDef v-nj80a2m fill:#f28e2b,color:#fff
+  classDef v-neadcuw fill:#e15759,color:#fff
+  classDef v-n1o186am fill:#76b7b2,color:#fff
+  classDef v-n425751 fill:#59a14f,color:#fff
+  classDef v-n16bwd7j fill:#edc948,color:#fff
+  classDef v-n1t4h52i fill:#b07aa1,color:#fff
+  subgraph v-ngjdxt2 ["Done"]
+    n1yeb9pw["Q3 Review & Plan"]:::v-n1qgdvl7
+    n1dxjmxl["Lizenzen prüfen"]:::v-n1o186am
+    nr2d00y["Qualitätssicherung"]:::v-n1o186am
+    n132tkh0["Launch"]:::v-n16bwd7j
+  end
+  subgraph v-nvwp5kc ["In progress"]
+    n1atq7fr["Ohne Ziel"]:::v-nj80a2m
+    n17mjxxd["Cloud-Umzug"]:::v-nj80a2m
+    n1g8ljew["Newsletter"]:::v-n1o186am
+    n1dymd0v["App 🚀"]:::v-n1t4h52i
+  end
+  subgraph v-nnmuahe ["Not started"]
+    n1njlt2w["Website"]:::v-neadcuw
+    n1wcfcn6["Testautomatisierung"]:::v-n1o186am
+    n1f6yws1["Überarbeitung Shop"]:::v-n425751
+    n1njlt2w["Website"]:::v-neadcuw
+  end
+  n1yeb9pw["Q3 Review & Plan"] --> n1njlt2w["Website"]
+  n1yeb9pw["Q3 Review & Plan"] --> n1njlt2w["Website"]
+  n1yeb9pw["Q3 Review & Plan"] --> n1njlt2w["Website"]
+  
+  n1njlt2w["Website"] --> n1njlt2w["Website"]
+  
+  
+  n1wcfcn6["Testautomatisierung"] --> n1dxjmxl["Lizenzen prüfen"]
+  n1wcfcn6["Testautomatisierung"] --> n132tkh0["Launch"]
+  nr2d00y["Qualitätssicherung"] --> n1wcfcn6["Testautomatisierung"]
+  n1g8ljew["Newsletter"] --> n1dymd0v["App 🚀"]
+  n1f6yws1["Überarbeitung Shop"] --> n132tkh0["Launch"]
+  
+  n1dymd0v["App 🚀"] --> n132tkh0["Launch"]
+  n1dymd0v["App 🚀"] --> n132tkh0["Launch"]
+  n1njlt2w["Website"] --> n132tkh0["Launch"]

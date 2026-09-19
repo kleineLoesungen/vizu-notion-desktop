@@ -18,7 +18,8 @@ expression: text
       "updated_at": "[zeit]"
     },
     "fetch": null,
-    "views": []
+    "views": [],
+    "template_ready": true
   },
   {
     "source": {
@@ -41,6 +42,7 @@ expression: text
     "fetch": null,
     "views": [
       "flow"
-    ]
+    ],
+    "template_ready": true
   }
 ]

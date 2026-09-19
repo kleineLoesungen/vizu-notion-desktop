@@ -34,6 +34,7 @@ import type {
   Source,
   SourceInput,
   SourceOverview,
+  Spec,
   Template,
   TemplateHelp,
   TemplateInput,
@@ -140,6 +141,8 @@ export const api = {
      * die Regeln dafür stehen in core (`template::assemble`).
      */
     insert: (input: InsertInput) => call<Inserted>("template_insert", { input }),
+    /** Baut eine Vorlage aus der Auswahl im Assistenten — in core. */
+    compose: (spec: Spec) => call<string>("template_compose", { spec }),
     /** Beispiele und Spickzettel — sie stehen in core, nicht im Webview. */
     help: () => call<TemplateHelp>("template_help"),
     /** Dasselbe für einen Text, der noch nicht gespeichert ist. */

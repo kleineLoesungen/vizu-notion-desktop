@@ -23,6 +23,7 @@ import type {
   Source,
   SourceInput,
   SourceOverview,
+  Spec,
   Template,
   TemplateHelp,
   TokenStatus,
@@ -43,6 +44,7 @@ import { SourceDialog } from "./components/SourceDialog";
 import { SourceList } from "./components/SourceList";
 import { SourceRefresh } from "./components/SourceRefresh";
 import { TemplateEditor } from "./components/TemplateEditor";
+import { TemplateWizard } from "./components/TemplateWizard";
 import { ViewList } from "./components/ViewList";
 import { setValueVisible, withNeighbours } from "./lib/graph";
 import { applyTheme, useIsDark } from "./lib/theme";
@@ -64,6 +66,21 @@ function deleteMessage(what: { kind: keyof typeof DELETE_TITLE; name: string }):
     default:
       return `${name} wird gelöscht. Das Diagramm selbst bleibt — nur die gespeicherten Einstellungen sind weg.`;
   }
+}
+
+/**
+ * Ein Vorschlag für den Kurznamen aus dem Titel: „Projekte nach status" →
+ * `projekte-nach-status`. Ob er taugt, prüft core beim Speichern.
+ */
+function slugFrom(title: string): string {
+  return title
+    .toLowerCase()
+    .replaceAll("ä", "ae")
+    .replaceAll("ö", "oe")
+    .replaceAll("ü", "ue")
+    .replaceAll("ß", "ss")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 type Selection =
@@ -108,6 +125,8 @@ export function App() {
   /** Welche Ansicht gerade offen ist; `null`, sobald man etwas anderes wählt. */
   const [activeView, setActiveView] = useState<string | null>(null);
   const [saveViewOpen, setSaveViewOpen] = useState(false);
+  /** Der Assistent für eine neue Vorlage ist offen. */
+  const [wizardOpen, setWizardOpen] = useState(false);
   const [selection, setSelection] = useState<Selection>({ kind: "none" });
 
   const [diagram, setDiagram] = useState<Diagram | null>(null);
@@ -283,6 +302,7 @@ export function App() {
   /** Ein Eintrag aus der Diagrammliste — Vorlage, Fluss oder Metro. */
   function selectDiagram(choice: DiagramChoice) {
     setActiveView(null);
+    setWizardOpen(false);
     setSelection(choice);
     setDraft(null);
     setDiagram(null);
@@ -526,8 +546,29 @@ export function App() {
     }
   }
 
+  /** „Neu": erst der Assistent, der Editor danach. */
+  function newTemplate() {
+    setFieldError(null);
+    setSelection({ kind: "none" });
+    setDraft(null);
+    setWizardOpen(true);
+  }
+
+  /** Was der Assistent gewählt hat, baut core zu einer Vorlage. */
+  async function composeTemplate(spec: Spec) {
+    setFieldError(null);
+    try {
+      const body = await api.templates.compose(spec);
+      setWizardOpen(false);
+      setDraft({ id: null, slug: slugFrom(spec.title), body, saved: "" });
+    } catch (raw) {
+      fail(raw);
+    }
+  }
+
   async function editTemplate(id: string | null) {
     setFieldError(null);
+    setWizardOpen(false);
     setSelection({ kind: "none" });
     if (id === null) {
       // Mit der ersten eingerichteten Quelle statt des Platzhalters: Sonst
@@ -656,7 +697,7 @@ export function App() {
           hiddenDiagrams={hiddenDiagrams}
           onSelect={selectDiagram}
           onHide={(choice, hide) => void hideDiagram(choice, hide)}
-          onCreate={() => void editTemplate(null)}
+          onCreate={newTemplate}
         />
         <ViewList
           views={views}
@@ -717,6 +758,23 @@ export function App() {
             onFetch={() => void fetchOne(selectedSource.source.id)}
             onEdit={() => void openSourceDialog(selectedSource.source)}
             onOpenLink={openLink}
+          />
+        )}
+
+        {wizardOpen && !draft && (
+          <TemplateWizard
+            sources={sources.map((s) => ({
+              name: s.source.name,
+              roles: s.source.mappings.map((m) => m.role),
+              ready: s.template_ready,
+            }))}
+            fieldMessage={fieldMessage}
+            onCompose={(spec) => void composeTemplate(spec)}
+            onBlank={() => void editTemplate(null)}
+            onCancel={() => {
+              setFieldError(null);
+              setWizardOpen(false);
+            }}
           />
         )}
 
@@ -875,6 +933,7 @@ export function App() {
 
         {selection.kind === "none" &&
           !draft &&
+          !wizardOpen &&
           (ready ? (
             <EmptyState />
           ) : (
@@ -889,7 +948,7 @@ export function App() {
               }}
               onCreateSource={() => void openSourceDialog(null)}
               onFetchAll={() => void fetchAll()}
-              onCreateTemplate={() => void editTemplate(null)}
+              onCreateTemplate={newTemplate}
             />
           ))}
       </main>

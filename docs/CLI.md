@@ -149,6 +149,30 @@ Relation. In `nodes` stehen sie weiterhin.
 > Token speichern, Vorlagen bearbeiten mit Vorschau und das Diagramm als SVG
 > speichern. Beide Schalen arbeiten auf derselben Datenbank.
 
+### Eine Vorlage bauen lassen
+
+Was der Assistent im Fenster tut, geht auch hier: Art, Quelle und je Art ein
+paar Rollen, heraus kommt eine gewöhnliche Vorlage auf stdout.
+
+```bash
+vizu-notion template new flowchart Projekte --link next --group status --color tag
+vizu-notion template new pie Aufgaben --group erledigt --sum punkte > punkte.mmd
+vizu-notion template new gantt Projekte --date date --group status
+vizu-notion template new mindmap Projekte --group parent
+vizu-notion template import punkte.mmd
+```
+
+| Art | Optionen |
+|---|---|
+| `flowchart` | `--link` Pfeile entlang einer Relation · `--group` Rahmen je Wert · `--color` Farbe je Wert |
+| `pie` | `--group` ein Stück je Wert (**Pflicht**) · `--sum` Summe eines Zahlenfelds statt der Anzahl |
+| `gantt` | `--date` das Datum (**Pflicht**) · `--group` Abschnitt je Wert |
+| `mindmap` | `--group` Zweig je Wert |
+
+Gezählt wird je **Seite**, nicht je Zeile: Eine Seite mit drei Zielen steht
+im Kreisdiagramm einmal, nicht dreimal. Ein Quellname mit Leerzeichen taugt
+nicht für Vorlagen — der Befehl sagt das, statt eine kaputte Vorlage zu bauen.
+
 ## Ohne Vorlage: Fluss und Metro-Karte
 
 Hat eine Quelle die Rolle `next`, lässt sich ihr Ablauf ohne Vorlage zeichnen —

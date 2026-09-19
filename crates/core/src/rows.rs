@@ -238,6 +238,16 @@ fn row(
             }
         } else {
             row.insert(mapping.role.clone(), text_of(value));
+            // Ein Zeitraum hat auch ein Ende. Die Rolle selbst bleibt der
+            // Anfang (so sah es die Webapp), das Ende steht unter
+            // `<rolle>_end` — für Gantt. Eine eigene Zuordnung mit diesem
+            // Namen geht vor.
+            if value["type"] == "date"
+                && let Some(end) = value["date"]["end"].as_str()
+            {
+                row.entry(format!("{}_end", mapping.role))
+                    .or_insert_with(|| end.to_string());
+            }
         }
     }
     (row, multi)

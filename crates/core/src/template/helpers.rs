@@ -12,6 +12,20 @@
 //!
 //! Die Ausgabe muss der von handlebars.js entsprechen — geprüft an den
 //! Referenzfällen in `crates/core/tests/fixtures/templates/`.
+//!
+//! Dazu kommen Helfer, die die Webapp nicht kannte. Sie ändern keine
+//! vorhandene Vorlage — die benutzt sie ja nicht —, aber der Assistent baut
+//! damit Vorlagen, die nicht an Sonderzeichen oder Gruppen scheitern:
+//!
+//! | Helfer | Wozu |
+//! |---|---|
+//! | `node` | ein Knoten **ohne** Gruppe in der Kennung — damit Pfeile auch Knoten in Rahmen treffen |
+//! | `valueClass` | eine Klasse je Wert, gleich in jeder Gruppe — für Farbe je Wert |
+//! | `label` | Freitext, der in Gantt, Mindmap und Kreisdiagramm nichts zerbricht |
+//! | `day` | nur der Tag aus einem Notion-Datum, ohne Uhrzeit |
+//! | `sum` | Summe eines Zahlenfelds über die Seiten einer Gruppe |
+//! | `unique` | jede Seite einmal — ohne die Kopien je Relationsziel |
+//! | `group-pages` | wie `group`, aber jede Seite je Gruppe einmal |
 
 use std::sync::{Arc, Mutex};
 
@@ -108,6 +122,233 @@ pub fn register(hb: &mut Handlebars<'_>, classes: ClassAssignments) {
     hb.register_helper("palette", Box::new(Palette));
     hb.register_helper("join-rows", Box::new(JoinRows));
     hb.register_helper("lookup-by", Box::new(LookupBy));
+    hb.register_helper("node", Box::new(NodeHelper));
+    hb.register_helper("valueClass", Box::new(ValueClass));
+    hb.register_helper("label", Box::new(Label));
+    hb.register_helper("day", Box::new(Day));
+    hb.register_helper("sum", Box::new(Sum));
+    hb.register_helper("unique", Box::new(Unique));
+    hb.register_helper("group-pages", Box::new(GroupPages));
+}
+
+/// Zeilen ohne Doppel: je Seiten-ID die erste.
+///
+/// Eine Seite mit drei Zielen steht als drei Zeilen im Kontext — richtig für
+/// Pfeile (einer je Ziel), falsch für einen Balken je Seite oder die Anzahl
+/// der Seiten. So war es in der Webapp, und `group` bleibt deshalb dabei.
+fn unique_rows(rows: &[Value]) -> Vec<Value> {
+    let mut seen = std::collections::HashSet::new();
+    rows.iter()
+        .filter(|row| seen.insert(js_string(row.get("id"))))
+        .cloned()
+        .collect()
+}
+
+/// `(unique Quelle)` — jede Seite einmal.
+struct Unique;
+
+impl HelperDef for Unique {
+    fn call_inner<'reg: 'rc, 'rc>(
+        &self,
+        h: &Helper<'rc>,
+        _: &'reg Handlebars<'reg>,
+        _: &'rc Context,
+        _: &mut RenderContext<'reg, 'rc>,
+    ) -> Result<ScopedJson<'rc>, RenderError> {
+        let rows = h
+            .param(0)
+            .and_then(|p| p.value().as_array())
+            .map(|rows| unique_rows(rows))
+            .unwrap_or_default();
+        Ok(ScopedJson::Derived(Value::Array(rows)))
+    }
+}
+
+/// `(group-pages Quelle "feld")` — wie `group`, aber jede Seite je Gruppe
+/// einmal. Eine Seite mit zwei Zielen steht so unter jedem ihrer Ziele — aber
+/// nicht dreimal unter demselben Status, nur weil sie drei Nachfolger hat.
+struct GroupPages;
+
+impl HelperDef for GroupPages {
+    fn call_inner<'reg: 'rc, 'rc>(
+        &self,
+        h: &Helper<'rc>,
+        r: &'reg Handlebars<'reg>,
+        ctx: &'rc Context,
+        rc: &mut RenderContext<'reg, 'rc>,
+    ) -> Result<ScopedJson<'rc>, RenderError> {
+        let grouped = Group.call_inner(h, r, ctx, rc)?;
+        let mut groups = grouped.as_json().clone();
+        for group in groups.as_array_mut().into_iter().flatten() {
+            if let Some(Value::Array(items)) = group.get_mut("items") {
+                *items = unique_rows(items);
+            }
+        }
+        Ok(ScopedJson::Derived(groups))
+    }
+}
+
+/// `{{node wert "Quelle"}}` — wie der Knoten, den der Umschreiber aus
+/// `{{feld}}` macht, aber **ohne** den Gruppenschlüssel in der Kennung.
+///
+/// `nodeId` nimmt in einer Gruppe deren Schlüssel mit in die Kennung, damit
+/// eine Seite in zwei Gruppen zweimal stehen kann. Das hat einen Preis: Ein
+/// Pfeil von außen trifft diesen Knoten nicht. Mit `node` stimmt die Kennung
+/// mit der aus `{{title}}` außerhalb der Gruppe überein.
+struct NodeHelper;
+
+impl HelperDef for NodeHelper {
+    fn call<'reg: 'rc, 'rc>(
+        &self,
+        h: &Helper<'rc>,
+        _: &'reg Handlebars<'reg>,
+        _: &'rc Context,
+        _: &mut RenderContext<'reg, 'rc>,
+        out: &mut dyn Output,
+    ) -> HelperResult {
+        let value = js_string(h.param(0).map(|p| p.value()));
+        let source = js_string(h.param(1).map(|p| p.value()));
+        let id = stable_id(&value, &source);
+        let label: String = value.chars().filter(|c| !"\"[]{}()".contains(*c)).collect();
+        let (open, close) = style::brackets("rectangle");
+        out.write(&format!("{id}{open}{label}{close}"))?;
+        Ok(())
+    }
+}
+
+/// `{{valueClass wert}}` — ein Klassenname, der nur vom Wert abhängt.
+///
+/// `classId` rechnet wie `nodeId` den Gruppenschlüssel mit ein; damit hätte
+/// derselbe Status in der `classDef`-Schleife eine andere Klasse als am
+/// Knoten. Hier nicht.
+struct ValueClass;
+
+impl HelperDef for ValueClass {
+    fn call<'reg: 'rc, 'rc>(
+        &self,
+        h: &Helper<'rc>,
+        _: &'reg Handlebars<'reg>,
+        _: &'rc Context,
+        _: &mut RenderContext<'reg, 'rc>,
+        out: &mut dyn Output,
+    ) -> HelperResult {
+        let value = js_string(h.param(0).map(|p| p.value()));
+        out.write(&format!("v-{}", stable_id(&value, "value")))?;
+        Ok(())
+    }
+}
+
+/// `{{label wert "Ersatz"}}` — Freitext für zeilenbasierte Diagrammarten.
+///
+/// Gantt, Mindmap und Kreisdiagramm lesen Doppelpunkte, Klammern,
+/// Anführungszeichen und `#` als Syntax. Die fallen weg; ist danach nichts
+/// übrig, steht der Ersatz da. Ohne Maskierung, denn `&amp;` stünde sonst
+/// wörtlich im Diagramm.
+struct Label;
+
+impl HelperDef for Label {
+    fn call<'reg: 'rc, 'rc>(
+        &self,
+        h: &Helper<'rc>,
+        _: &'reg Handlebars<'reg>,
+        _: &'rc Context,
+        _: &mut RenderContext<'reg, 'rc>,
+        out: &mut dyn Output,
+    ) -> HelperResult {
+        let text = label_text(&js_string(h.param(0).map(|p| p.value())));
+        let text = if text.is_empty() {
+            label_text(&js_string(h.param(1).map(|p| p.value())))
+        } else {
+            text
+        };
+        out.write(&text)?;
+        Ok(())
+    }
+}
+
+/// Was [`Label`] aus einem Text macht.
+pub fn label_text(raw: &str) -> String {
+    let cleaned: String = raw
+        .chars()
+        .map(|c| {
+            if c.is_control() || ":;#\"'`[](){}<>|\\".contains(c) {
+                ' '
+            } else {
+                c
+            }
+        })
+        .collect();
+    // `%%` leitet in Mermaid einen Kommentar ein.
+    cleaned
+        .replace("%%", "%")
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// `{{day datum}}` — `2026-04-01T09:30:00+02:00` → `2026-04-01`.
+///
+/// Gantt erwartet ein Datum im Format von `dateFormat`; mit Uhrzeit scheitert
+/// die ganze Zeile. Ist es kein Datum, bleibt die Ausgabe leer.
+struct Day;
+
+impl HelperDef for Day {
+    fn call<'reg: 'rc, 'rc>(
+        &self,
+        h: &Helper<'rc>,
+        _: &'reg Handlebars<'reg>,
+        _: &'rc Context,
+        _: &mut RenderContext<'reg, 'rc>,
+        out: &mut dyn Output,
+    ) -> HelperResult {
+        let raw = js_string(h.param(0).map(|p| p.value()));
+        let day = raw.get(..10).unwrap_or_default();
+        let bytes = day.as_bytes();
+        let looks_like_day = bytes.len() == 10
+            && bytes[4] == b'-'
+            && bytes[7] == b'-'
+            && bytes
+                .iter()
+                .enumerate()
+                .all(|(i, b)| i == 4 || i == 7 || b.is_ascii_digit());
+        if looks_like_day {
+            out.write(day)?;
+        }
+        Ok(())
+    }
+}
+
+/// `{{sum items "feld"}}` — Summe eines Zahlenfelds über die Seiten einer
+/// Gruppe, jede Seite einmal. Was keine Zahl ist, zählt nicht mit.
+struct Sum;
+
+impl HelperDef for Sum {
+    fn call_inner<'reg: 'rc, 'rc>(
+        &self,
+        h: &Helper<'rc>,
+        _: &'reg Handlebars<'reg>,
+        _: &'rc Context,
+        _: &mut RenderContext<'reg, 'rc>,
+    ) -> Result<ScopedJson<'rc>, RenderError> {
+        let field = js_string(h.param(1).map(|p| p.value()));
+        // Je Seite einmal — sonst zählten die Kopien je Relationsziel mit.
+        let rows = h
+            .param(0)
+            .and_then(|p| p.value().as_array())
+            .map(|rows| unique_rows(rows))
+            .unwrap_or_default();
+        let total: f64 = rows
+            .iter()
+            .filter_map(|row| js_string(row.get(&field)).trim().parse::<f64>().ok())
+            .sum();
+        // Wie JavaScript: `12` statt `12.0`.
+        let value = if total.fract() == 0.0 && total.abs() < 9.0e15 {
+            json!(total as i64)
+        } else {
+            json!(total)
+        };
+        Ok(ScopedJson::Derived(value))
+    }
 }
 
 /// `{{nodeId "attribut" wert shape=… className=… source=…}}`
