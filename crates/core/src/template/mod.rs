@@ -35,7 +35,7 @@ use serde_json::{Map, Value};
 use ts_rs::TS;
 
 pub use assemble::{InsertInput, Inserted, insert};
-pub use compose::{Spec, compose, usable_source_name};
+pub use compose::{AssistantState, SourcePart, Spec, assistant, compose, usable_source_name};
 pub use examples::{Block, Example, Hint};
 pub use parse::{Meta, meta as parse_meta};
 pub use store::{Template, TemplateInput, create, delete, get, import_mmd, list, resolve, update};
@@ -84,6 +84,29 @@ pub fn render_rows(body: &str, context: &Context) -> Result<String> {
     to_mermaid(parse::body(body), &meta, context)
 }
 
+/// `classDef`-Zeilen für die Klassen aus `valueClass`, in der Reihenfolge
+/// ihres ersten Auftretens — außer denen, die die Vorlage selbst definiert.
+fn value_class_defs(diagram: &str) -> String {
+    static USED: std::sync::LazyLock<regex::Regex> =
+        std::sync::LazyLock::new(|| regex::Regex::new(r":::(v-n[0-9a-z]+)").unwrap());
+    let mut seen: Vec<&str> = Vec::new();
+    for c in USED.captures_iter(diagram) {
+        let name = c.get(1).map_or("", |m| m.as_str());
+        let defined = diagram.contains(&format!("classDef {name} "));
+        if !defined && !seen.contains(&name) {
+            seen.push(name);
+        }
+    }
+    seen.iter()
+        .enumerate()
+        .map(|(i, name)| {
+            let color = crate::palette::TABLEAU_10[i % crate::palette::TABLEAU_10.len()];
+            format!("  classDef {name} fill:{color},color:#fff")
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 /// Der eigentliche Lauf: umschreiben, füllen, Stile anhängen.
 fn to_mermaid(body: &str, meta: &Meta, context: &Context) -> Result<String> {
     let classes = helpers::ClassAssignments::default();
@@ -128,6 +151,16 @@ fn to_mermaid(body: &str, meta: &Meta, context: &Context) -> Result<String> {
             .map_or(0, |i| i + 1);
         lines.insert(first, &defs);
         diagram = lines.join("\n");
+    }
+
+    // Farben je Wert: Für jede Klasse aus `valueClass`, die am Knoten steht
+    // (`:::v-…`) und keine eigene `classDef` hat, eine Farbe aus der Palette —
+    // einmal für das ganze Diagramm. So hat „Done" in jeder Quelle dieselbe
+    // Farbe; mit `@index` je Quelle wäre es in der einen blau, in der anderen
+    // rot. Wer die Farbe selbst bestimmen will, schreibt die `classDef`.
+    let auto = value_class_defs(&diagram);
+    if !auto.is_empty() {
+        diagram = format!("{}\n{auto}", diagram.trim_end());
     }
 
     // Und zum Schluss `class …`-Zeilen für jeden eingefärbten Knoten. Das

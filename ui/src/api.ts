@@ -19,6 +19,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import type {
   ApiError as ApiErrorData,
   AppInfo,
+  AssistantState,
   Config,
   DatabaseSchema,
   Diagram,
@@ -143,6 +144,8 @@ export const api = {
     insert: (input: InsertInput) => call<Inserted>("template_insert", { input }),
     /** Baut eine Vorlage aus der Auswahl im Assistenten — in core. */
     compose: (spec: Spec) => call<string>("template_compose", { spec }),
+    /** Die Auswahl aus dem Kopf einer Vorlage, falls der Assistent sie gebaut hat. */
+    assistant: (body: string) => call<AssistantState | null>("template_assistant", { body }),
     /** Beispiele und Spickzettel — sie stehen in core, nicht im Webview. */
     help: () => call<TemplateHelp>("template_help"),
     /** Dasselbe für einen Text, der noch nicht gespeichert ist. */

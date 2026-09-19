@@ -699,4 +699,41 @@ fn baut_eine_vorlage_wie_der_assistent() {
     let ohne = ctx.run(&["template", "new", "pie", "Projekte"]);
     assert_eq!(ohne.code, 4, "{}", ohne.stderr);
     assert!(ohne.stderr.contains("group"), "{}", ohne.stderr);
+
+    // Mehrere Quellen, Pfeile von einer zur anderen.
+    let zwei = ctx
+        .run(&[
+            "template",
+            "new",
+            "flowchart",
+            "Aufgaben",
+            "Projekte",
+            "--link",
+            "Aufgaben.next=Projekte",
+            "--by-source",
+        ])
+        .ok();
+    assert!(
+        zwei.stdout.contains("  - Aufgaben\n  - Projekte\n"),
+        "{}",
+        zwei.stdout
+    );
+    assert!(
+        zwei.stdout.contains("join-rows Aufgaben"),
+        "{}",
+        zwei.stdout
+    );
+
+    // Ohne Quelle vor der Rolle ist bei zweien nicht klar, welche gemeint ist.
+    let unklar = ctx.run(&[
+        "template",
+        "new",
+        "flowchart",
+        "Aufgaben",
+        "Projekte",
+        "--link",
+        "next",
+    ]);
+    assert_eq!(unklar.code, 1, "{}", unklar.stderr);
+    assert!(unklar.stderr.contains("QUELLE.ROLLE"), "{}", unklar.stderr);
 }

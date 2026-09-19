@@ -1,12 +1,12 @@
-// Der Assistent für eine neue Mermaid-Vorlage: Typ, Quelle, Aufbau, Titel.
+// Der Assistent für eine Mermaid-Vorlage: Typ, Quellen, Aufbau, Titel.
 //
-// Zeichnet nur. Die Vorlage baut core (`template::compose`) — mit Helfern,
-// die an Rahmen und Sonderzeichen nicht scheitern, und jede Kombination ist
-// dort mit echten Daten geprüft. Danach öffnet der gewohnte Editor, in dem
-// man die Vorlage weiter von Hand anpassen kann.
+// Zeichnet nur. Die Vorlage baut core (`template::compose`) und schreibt die
+// Auswahl in ihren Kopf — so öffnet „Im Assistenten ändern" sie wieder, mit
+// allem, was man gewählt hatte. Danach öffnet der gewohnte Editor, in dem man
+// die Vorlage weiter von Hand anpassen kann.
 
 import { useState } from "react";
-import type { Spec } from "../bindings";
+import type { SourcePart, Spec } from "../bindings";
 import { FieldMessage } from "./FieldMessage";
 
 /** Eine Quelle, wie der Assistent sie braucht. */
@@ -26,12 +26,19 @@ const KINDS: { kind: Kind; name: string; what: string }[] = [
   { kind: "mindmap", name: "Mindmap", what: "Ein Baum — Seiten nach einem Feld sortiert" },
 ];
 
+/** Die Farbe im Flowchart: keine, je Quelle oder je Wert einer Rolle. */
+const BY_SOURCE = "@quelle";
+
 type Props = {
   sources: WizardSource[];
+  /** Eine frühere Auswahl — „Im Assistenten ändern". */
+  initial: Spec | null;
+  /** Die Vorlage wurde seit dem Assistenten von Hand geändert. */
+  edited: boolean;
   fieldMessage: (field: string) => string | undefined;
   onCompose: (spec: Spec) => void;
   /** Ohne Assistent: eine schlichte Vorlage zum Selberschreiben. */
-  onBlank: () => void;
+  onBlank?: () => void;
   onCancel: () => void;
 };
 
@@ -40,39 +47,80 @@ function prefer(roles: string[], ...wanted: string[]): string {
   return wanted.find((w) => roles.includes(w)) ?? "";
 }
 
-export function TemplateWizard({ sources, fieldMessage, onCompose, onBlank, onCancel }: Props) {
-  const firstReady = sources.find((s) => s.ready) ?? sources[0];
-  const [kind, setKind] = useState<Kind>("flowchart");
-  const [sourceName, setSourceName] = useState(firstReady?.name ?? "");
-  const source = sources.find((s) => s.name === sourceName);
-  const roles = (source?.roles ?? []).filter((r) => r !== "title");
+export function TemplateWizard({
+  sources,
+  initial,
+  edited,
+  fieldMessage,
+  onCompose,
+  onBlank,
+  onCancel,
+}: Props) {
+  const firstReady = sources.find((s) => s.ready);
+  const [kind, setKind] = useState<Kind>((initial?.kind as Kind) ?? "flowchart");
+  const [chosen, setChosen] = useState<SourcePart[]>(
+    initial?.sources ??
+      (firstReady
+        ? [
+            {
+              name: firstReady.name,
+              link: prefer(firstReady.roles, "next") || null,
+              link_to: null,
+            },
+          ]
+        : []),
+  );
+  const [group, setGroup] = useState<string | null>(initial ? (initial.group ?? "") : null);
+  const [byFrame, setByFrame] = useState(initial?.by_source ?? false);
+  const [color, setColor] = useState(initial?.color_by_source ? BY_SOURCE : (initial?.color ?? ""));
+  const [date, setDate] = useState<string | null>(initial?.date ?? null);
+  const [sum, setSum] = useState(initial?.sum ?? "");
+  const [title, setTitle] = useState<string | null>(initial?.title ?? null);
 
-  // Vorgewählt, was eine Quelle üblicherweise hergibt — änderbar.
-  const [link, setLink] = useState<string | null>(null);
-  const [group, setGroup] = useState<string | null>(null);
-  const [color, setColor] = useState<string | null>(null);
-  const [date, setDate] = useState<string | null>(null);
-  const [sum, setSum] = useState("");
-  const [title, setTitle] = useState<string | null>(null);
+  const names = chosen.map((c) => c.name);
+  const several = chosen.length > 1;
+  const rolesOf = (name: string) =>
+    (sources.find((s) => s.name === name)?.roles ?? []).filter((r) => r !== "title");
+  // Alle Rollen der gewählten Quellen — eine Rolle, die nur eine Quelle hat,
+  // wirkt auch nur dort.
+  const roles = [...new Set(names.flatMap(rolesOf))];
 
-  const linkValue = link ?? prefer(roles, "next");
   const groupValue =
     group ?? (kind === "flowchart" ? "" : prefer(roles, "status", "tag", "parent"));
-  const colorValue = color ?? "";
   const dateValue = date ?? prefer(roles, "date");
   const kindName = KINDS.find((k) => k.kind === kind)?.name ?? kind;
+  const joined = names.join(" und ");
   const titleValue =
-    title ?? (groupValue ? `${sourceName} nach ${groupValue}` : `${sourceName} — ${kindName}`);
+    title ?? (groupValue ? `${joined} nach ${groupValue}` : `${joined} — ${kindName}`);
+
+  function toggleSource(name: string, on: boolean) {
+    setChosen(
+      on
+        ? [...chosen, { name, link: prefer(rolesOf(name), "next") || null, link_to: null }]
+        : chosen.filter((c) => c.name !== name),
+    );
+  }
+
+  function changePart(name: string, patch: Partial<SourcePart>) {
+    setChosen(chosen.map((c) => (c.name === name ? { ...c, ...patch } : c)));
+  }
 
   function submit() {
     const pick = (value: string) => (value === "" ? null : value);
     onCompose({
       kind,
       title: titleValue,
-      source: sourceName,
-      link: kind === "flowchart" ? pick(linkValue) : null,
+      // Pfeile gibt es nur im Flowchart; eine Zielquelle, die nicht mehr
+      // gewählt ist, fällt weg, statt einen Fehler auszulösen.
+      sources: chosen.map((c) => ({
+        name: c.name,
+        link: kind === "flowchart" ? (c.link ?? null) : null,
+        link_to: kind === "flowchart" && c.link_to && names.includes(c.link_to) ? c.link_to : null,
+      })),
       group: pick(groupValue),
-      color: kind === "flowchart" ? pick(colorValue) : null,
+      by_source: kind === "flowchart" && several && byFrame,
+      color: kind === "flowchart" && color !== BY_SOURCE ? pick(color) : null,
+      color_by_source: kind === "flowchart" && color === BY_SOURCE,
       date: kind === "gantt" ? pick(dateValue) : null,
       sum: kind === "pie" ? pick(sum) : null,
     });
@@ -110,18 +158,34 @@ export function TemplateWizard({ sources, fieldMessage, onCompose, onBlank, onCa
   );
 
   return (
-    <section className="wizard" aria-label="Neue Vorlage">
+    <section
+      className="wizard"
+      aria-label={initial ? "Vorlage im Assistenten ändern" : "Neue Vorlage"}
+    >
       <header className="detail-head">
-        <h1>Neues Diagramm</h1>
+        <h1>{initial ? "Im Assistenten ändern" : "Neues Diagramm"}</h1>
         <div className="head-tools">
-          <button type="button" className="ghost" onClick={onBlank}>
-            Ohne Assistent beginnen
-          </button>
+          {onBlank && (
+            <button type="button" className="ghost" onClick={onBlank}>
+              Ohne Assistent beginnen
+            </button>
+          )}
           <button type="button" className="ghost" onClick={onCancel}>
             Abbrechen
           </button>
         </div>
       </header>
+
+      {edited && (
+        // Der Assistent baut die Vorlage neu — was man von Hand geändert hat,
+        // wäre weg. Das Ergebnis landet ungespeichert im Editor; man kann es
+        // dort noch verwerfen.
+        <p className="wizard-warning" role="status">
+          Diese Vorlage wurde seit dem Assistenten von Hand geändert. Baut der Assistent sie neu,
+          fallen diese Änderungen weg — das Ergebnis erscheint ungespeichert im Editor und lässt
+          sich dort noch verwerfen.
+        </p>
+      )}
 
       <form
         className="wizard-steps"
@@ -131,7 +195,7 @@ export function TemplateWizard({ sources, fieldMessage, onCompose, onBlank, onCa
         }}
       >
         {/* Die Schritte bauen aufeinander auf — was man wählen kann, hängt
-            vom Typ und von der Quelle davor ab. */}
+            vom Typ und von den Quellen davor ab. */}
         <fieldset className="wizard-step">
           <legend>
             <span className="step-number">1</span> Diagrammtyp
@@ -156,26 +220,25 @@ export function TemplateWizard({ sources, fieldMessage, onCompose, onBlank, onCa
 
         <fieldset className="wizard-step">
           <legend>
-            <span className="step-number">2</span> Quelle
+            <span className="step-number">2</span> Quellen
           </legend>
-          <label className="wizard-field">
-            <span>Daten aus</span>
-            <select
-              id="source"
-              value={sourceName}
-              onChange={(e) => setSourceName(e.target.value)}
-              aria-describedby="source-error"
-            >
-              {sources.map((s) => (
-                // Ein Name mit Leerzeichen taugt nicht für `{{#each …}}` —
-                // lieber gleich sagen als eine kaputte Vorlage bauen.
-                <option key={s.name} value={s.name} disabled={!s.ready}>
-                  {s.ready ? s.name : `${s.name} (Name taugt nicht für Vorlagen)`}
-                </option>
-              ))}
-            </select>
-            <FieldMessage id="source-error" message={fieldMessage("source")} />
-          </label>
+          <fieldset className="source-checks" aria-label="Quellen">
+            {sources.map((s) => (
+              <label key={s.name} className="source-check" data-disabled={!s.ready}>
+                <input
+                  type="checkbox"
+                  checked={names.includes(s.name)}
+                  // Ein Name mit Leerzeichen taugt nicht für `{{#each …}}` —
+                  // lieber gleich sagen als eine kaputte Vorlage bauen.
+                  disabled={!s.ready}
+                  onChange={(e) => toggleSource(s.name, e.target.checked)}
+                />
+                <span>{s.name}</span>
+                {!s.ready && <span className="muted">Name taugt nicht für Vorlagen</span>}
+              </label>
+            ))}
+          </fieldset>
+          <FieldMessage id="sources-error" message={fieldMessage("sources")} />
           {sources.some((s) => !s.ready) && (
             <p className="muted wizard-hint">
               Eine Quelle, deren Name Leerzeichen oder Bindestriche enthält, lässt sich in Vorlagen
@@ -188,29 +251,116 @@ export function TemplateWizard({ sources, fieldMessage, onCompose, onBlank, onCa
           <legend>
             <span className="step-number">3</span> Aufbau
           </legend>
-          <div className="wizard-grid">
-            {kind === "flowchart" && (
-              <>
-                {roleSelect("link", "Pfeile entlang", linkValue, setLink)}
+
+          {kind === "flowchart" && (
+            <>
+              {/* Pfeile gehören zu einer Quelle — und können zu einer
+                  anderen gewählten führen: Aufgaben → ihr Projekt. */}
+              <div className="link-rows">
+                {chosen.map((part) => (
+                  <div key={part.name} className="link-row">
+                    <span className="link-from">{part.name}</span>
+                    <label className="inline-label">
+                      Pfeile entlang
+                      <select
+                        aria-label={`Pfeile von ${part.name} entlang`}
+                        value={part.link ?? ""}
+                        onChange={(e) => changePart(part.name, { link: e.target.value || null })}
+                      >
+                        <option value="">—</option>
+                        {rolesOf(part.name).map((role) => (
+                          <option key={role} value={role}>
+                            {role}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    {part.link && several && (
+                      <label className="inline-label">
+                        zu
+                        <select
+                          aria-label={`Pfeile von ${part.name} zu`}
+                          value={part.link_to ?? ""}
+                          onChange={(e) =>
+                            changePart(part.name, { link_to: e.target.value || null })
+                          }
+                        >
+                          <option value="">{part.name} (dieselbe)</option>
+                          {names
+                            .filter((n) => n !== part.name)
+                            .map((n) => (
+                              <option key={n} value={n}>
+                                {n}
+                              </option>
+                            ))}
+                        </select>
+                      </label>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <FieldMessage id="link-error" message={fieldMessage("link")} />
+              <div className="wizard-grid">
                 {roleSelect("group", "Rahmen je Wert von", groupValue, setGroup)}
-                {roleSelect("color", "Farbe je Wert von", colorValue, setColor)}
-              </>
-            )}
-            {kind === "pie" && (
-              <>
-                {roleSelect("group", "Ein Stück je Wert von", groupValue, setGroup, null)}
-                {roleSelect("sum", "Größe des Stücks", sum, setSum, "Anzahl der Seiten")}
-              </>
-            )}
-            {kind === "gantt" && (
-              <>
-                {roleSelect("date", "Datum", dateValue, setDate, null)}
-                {roleSelect("group", "Abschnitt je Wert von", groupValue, setGroup)}
-              </>
-            )}
-            {kind === "mindmap" && roleSelect("group", "Zweig je Wert von", groupValue, setGroup)}
-          </div>
-          <p className="muted wizard-hint">{explain(kind, sum)}</p>
+                <label className="wizard-field">
+                  <span>Farbe</span>
+                  <select
+                    id="color"
+                    value={color}
+                    onChange={(e) => setColor(e.target.value)}
+                    aria-describedby="color-error"
+                  >
+                    <option value="">keine</option>
+                    {several && <option value={BY_SOURCE}>je Quelle</option>}
+                    {roles.map((role) => (
+                      <option key={role} value={role}>
+                        je Wert von {role}
+                      </option>
+                    ))}
+                  </select>
+                  <FieldMessage id="color-error" message={fieldMessage("color")} />
+                </label>
+              </div>
+              {several && (
+                <label className="wizard-check">
+                  <input
+                    type="checkbox"
+                    checked={byFrame}
+                    onChange={(e) => setByFrame(e.target.checked)}
+                  />
+                  Ein Rahmen je Quelle
+                </label>
+              )}
+            </>
+          )}
+
+          {kind === "pie" && (
+            <div className="wizard-grid">
+              {roleSelect(
+                "group",
+                several ? "Stücke je Quelle, dazu je Wert von" : "Ein Stück je Wert von",
+                groupValue,
+                setGroup,
+                several ? "—" : null,
+              )}
+              {roleSelect("sum", "Größe des Stücks", sum, setSum, "Anzahl der Seiten")}
+            </div>
+          )}
+
+          {kind === "gantt" && (
+            <div className="wizard-grid">
+              {roleSelect("date", "Datum", dateValue, setDate, null)}
+              {roleSelect("group", "Abschnitt je Wert von", groupValue, setGroup)}
+            </div>
+          )}
+
+          {kind === "mindmap" && (
+            <div className="wizard-grid">
+              {roleSelect("group", "Zweig je Wert von", groupValue, setGroup)}
+            </div>
+          )}
+
+          <p className="muted wizard-hint">{explain(kind, sum, several)}</p>
         </fieldset>
 
         <fieldset className="wizard-step">
@@ -231,8 +381,8 @@ export function TemplateWizard({ sources, fieldMessage, onCompose, onBlank, onCa
 
         <div className="wizard-actions">
           <p className="muted">Die Vorlage lässt sich danach im Editor von Hand anpassen.</p>
-          <button type="submit" className="primary" disabled={!source}>
-            Vorlage erstellen
+          <button type="submit" className="primary" disabled={chosen.length === 0}>
+            {initial ? "Vorlage neu bauen" : "Vorlage erstellen"}
           </button>
         </div>
       </form>
@@ -241,17 +391,27 @@ export function TemplateWizard({ sources, fieldMessage, onCompose, onBlank, onCa
 }
 
 /** Ein Satz dazu, was herauskommt — und wie die Farben entstehen. */
-function explain(kind: Kind, sum: string): string {
+function explain(kind: Kind, sum: string, several: boolean): string {
   switch (kind) {
     case "flowchart":
-      return "Jede Seite ein Kasten. Rahmen und Farbe kommen aus den Werten des gewählten Felds — die Farben aus einer Palette von zehn.";
-    case "pie":
-      return sum
-        ? `Jedes Stück ist so groß wie die Summe von „${sum}“ seiner Seiten. Die Farben wählt Mermaid.`
-        : "Jedes Stück ist so groß wie die Anzahl seiner Seiten — jede Seite zählt einmal. Die Farben wählt Mermaid.";
+      return several
+        ? "Jede Seite ein Kasten. Pfeile können zu einer anderen Quelle führen — etwa von einer Aufgabe zu ihrem Projekt. Gleiche Werte haben in jeder Quelle dieselbe Farbe."
+        : "Jede Seite ein Kasten. Rahmen und Farbe kommen aus den Werten des gewählten Felds — die Farben aus einer Palette von zehn.";
+    case "pie": {
+      const size = sum
+        ? `so groß wie die Summe von „${sum}“ seiner Seiten`
+        : "so groß wie die Anzahl seiner Seiten — jede Seite zählt einmal";
+      return several
+        ? `Jede Quelle ein Stück, mit Feld je Quelle und Wert — jedes ${size}. Die Farben wählt Mermaid.`
+        : `Jedes Stück ist ${size}. Die Farben wählt Mermaid.`;
+    }
     case "gantt":
-      return "Jede Seite mit Datum wird ein Balken. Ein Zeitraum in Notion ergibt einen langen Balken, ein einzelner Tag einen kurzen.";
+      return several
+        ? "Jede Quelle ein Abschnitt, jede Seite mit Datum ein Balken. Ein Zeitraum in Notion ergibt einen langen Balken."
+        : "Jede Seite mit Datum wird ein Balken. Ein Zeitraum in Notion ergibt einen langen Balken, ein einzelner Tag einen kurzen.";
     default:
-      return "Die Quelle ist die Mitte, die Werte des Felds die Zweige, die Seiten die Blätter. Ohne Feld hängen alle Seiten direkt an der Mitte.";
+      return several
+        ? "Der Titel ist die Mitte, jede Quelle ein Zweig, darunter die Werte des Felds und die Seiten."
+        : "Die Quelle ist die Mitte, die Werte des Felds die Zweige, die Seiten die Blätter.";
   }
 }

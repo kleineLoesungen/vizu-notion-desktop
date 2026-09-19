@@ -271,11 +271,32 @@ function backend(cmd: string, args: Record<string, unknown> = {}): unknown {
           { role: "title", property: "Name" },
         ],
       };
+    case "template_assistant": {
+      // Keine eigenen Regeln: Ob eine Vorlage aus dem Assistenten stammt und
+      // von Hand geändert wurde, prüft crates/core/tests/compose.rs.
+      const body = args.body as string;
+      if (!body.includes("assistant:")) return null;
+      return {
+        spec: {
+          kind: "pie",
+          title: "Projekte nach status",
+          sources: [{ name: "Projekte", link: null, link_to: null }],
+          group: "status",
+          by_source: false,
+          color: null,
+          color_by_source: false,
+          date: null,
+          sum: null,
+        },
+        edited: body.includes("von Hand"),
+      };
+    }
     case "template_compose": {
       // Keine eigenen Regeln: Wie core eine Vorlage baut, prüft
       // crates/core/tests/compose.rs.
-      const spec = args.spec as { title: string; source: string };
-      return `---\ntitle: "${spec.title}"\nsources:\n  - ${spec.source}\n---\npie showData\n`;
+      const spec = args.spec as { title: string; sources: { name: string }[] };
+      const names = spec.sources.map((s) => `  - ${s.name}`).join("\n");
+      return `---\ntitle: "${spec.title}"\nsources:\n${names}\nassistant: {}\n---\npie showData\n`;
     }
     case "template_insert": {
       // Keine eigenen Regeln: Die Attrappe hängt nur an. Wie core einsetzt,
@@ -877,8 +898,12 @@ describe("Oberfläche", () => {
     const assistent = await screen.findByRole("region", { name: "Neue Vorlage" });
 
     await user.click(within(assistent).getByRole("radio", { name: /Pie Chart/ }));
-    const quelle = within(assistent).getByRole("combobox", { name: "Daten aus" });
-    expect(within(quelle).getByRole("option", { name: /vizu Roadmap/ })).toHaveProperty(
+    const quellen = within(assistent).getByRole("group", { name: "Quellen" });
+    expect(within(quellen).getByRole("checkbox", { name: /Projekte/ })).toHaveProperty(
+      "checked",
+      true,
+    );
+    expect(within(quellen).getByRole("checkbox", { name: /vizu Roadmap/ })).toHaveProperty(
       "disabled",
       true,
     );
@@ -897,10 +922,11 @@ describe("Oberfläche", () => {
       spec: {
         kind: "pie",
         title: "Projekte nach status",
-        source: "Projekte",
-        link: null,
+        sources: [{ name: "Projekte", link: null, link_to: null }],
         group: "status",
+        by_source: false,
         color: null,
+        color_by_source: false,
         date: null,
         sum: "punkte",
       },
@@ -916,6 +942,77 @@ describe("Oberfläche", () => {
       "value",
       "projekte-nach-status",
     );
+  });
+
+  it("verbindet im Assistenten zwei Quellen mit Pfeilen", async () => {
+    const user = userEvent.setup();
+    const mit = (id: string, name: string, roles: string[]) => ({
+      ...overview(id, name, 12),
+      source: {
+        ...overview(id, name, 12).source,
+        mappings: roles.map((role) => ({ role, property: role })),
+      },
+    });
+    sources = [mit("a", "Aufgaben", ["title", "projekt"]), mit("b", "Projekte", ["title", "next"])];
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Neu" }));
+    const assistent = await screen.findByRole("region", { name: "Neue Vorlage" });
+    const quellen = within(assistent).getByRole("group", { name: "Quellen" });
+    await user.click(within(quellen).getByRole("checkbox", { name: /Projekte/ }));
+
+    // Je Quelle eine Zeile: Aufgaben zeigen entlang „projekt" auf Projekte.
+    await user.selectOptions(
+      within(assistent).getByRole("combobox", { name: "Pfeile von Aufgaben entlang" }),
+      "projekt",
+    );
+    await user.selectOptions(
+      within(assistent).getByRole("combobox", { name: "Pfeile von Aufgaben zu" }),
+      "Projekte",
+    );
+    await user.click(within(assistent).getByRole("checkbox", { name: "Ein Rahmen je Quelle" }));
+    await user.click(within(assistent).getByRole("button", { name: "Vorlage erstellen" }));
+
+    await waitFor(() => expect(commands("template_compose")).toHaveLength(1));
+    const spec = (commands("template_compose")[0]?.args as { spec: Record<string, unknown> })?.spec;
+    expect(spec?.sources).toEqual([
+      { name: "Aufgaben", link: "projekt", link_to: "Projekte" },
+      { name: "Projekte", link: "next", link_to: null },
+    ]);
+    expect(spec?.by_source).toBe(true);
+  });
+
+  it("öffnet eine Vorlage wieder im Assistenten und behält ihre Kennung", async () => {
+    const user = userEvent.setup();
+    templates = [
+      {
+        ...template("t1", "Status"),
+        body: '---\ntitle: "Status"\nsources:\n  - Projekte\nassistant: {}\n---\npie showData\n  von Hand\n',
+      },
+    ];
+    sources = [overview("a", "Projekte", 12)];
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "Status — Mermaid" }));
+    await user.click(await screen.findByRole("button", { name: "Im Assistenten ändern" }));
+
+    const assistent = await screen.findByRole("region", { name: "Vorlage im Assistenten ändern" });
+    // Die frühere Auswahl ist da …
+    expect(within(assistent).getByRole("radio", { name: /Pie Chart/ })).toHaveProperty(
+      "checked",
+      true,
+    );
+    // … und die Warnung, dass Änderungen von Hand wegfielen.
+    expect(within(assistent).getByRole("status").textContent).toContain("von Hand geändert");
+
+    await user.click(within(assistent).getByRole("button", { name: "Vorlage neu bauen" }));
+
+    // Ungespeichert im Editor — mit Knopf „Speichern", derselben Vorlage.
+    await screen.findByRole("textbox", { name: "Vorlage" });
+    expect(screen.getByRole("textbox", { name: "Kurzname" })).toHaveProperty("value", "status");
+    await user.click(screen.getByRole("button", { name: "Speichern" }));
+    await waitFor(() => expect(commands("template_save")).toHaveLength(1));
+    expect(commands("template_save")[0]?.args).toMatchObject({ id: "t1" });
   });
 
   it("speichert eine Vorlage mit Kurznamen", async () => {

@@ -28,6 +28,8 @@ type Props = {
   /** Lässt core einen Baustein einsetzen — mit Kopf und `sources`. */
   onAssemble: (input: InsertInput) => Promise<Inserted | null>;
   onSave: () => void;
+  /** Stammt die Vorlage aus dem Assistenten, lässt sie sich dort ändern. */
+  onAssistant?: () => void;
   onDelete?: () => void;
   onClose: () => void;
 };
@@ -53,6 +55,7 @@ export function TemplateEditor({
   onBodyChange,
   onAssemble,
   onSave,
+  onAssistant,
   onDelete,
   onClose,
 }: Props) {
@@ -104,6 +107,11 @@ export function TemplateEditor({
           {onDelete && (
             <button type="button" className="ghost destructive" onClick={onDelete}>
               Löschen
+            </button>
+          )}
+          {onAssistant && (
+            <button type="button" className="ghost" onClick={onAssistant}>
+              Im Assistenten ändern
             </button>
           )}
           <button type="button" className="ghost" onClick={onClose}>

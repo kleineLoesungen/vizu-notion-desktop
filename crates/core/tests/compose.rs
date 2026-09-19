@@ -13,7 +13,7 @@ use std::path::PathBuf;
 
 use common::{FixtureNotion, Ids, client};
 use vizu_notion_core::source::{self, ColumnMapping, SourceInput};
-use vizu_notion_core::template::{self, Spec, compose};
+use vizu_notion_core::template::{self, SourcePart, Spec, assistant, compose};
 use vizu_notion_core::{App, ErrorCode, fetch};
 
 fn app() -> App {
@@ -62,9 +62,26 @@ fn spec(kind: &str, source: &str) -> Spec {
     Spec {
         kind: kind.to_string(),
         title: format!("{kind} aus {source}"),
-        source: source.to_string(),
+        sources: vec![SourcePart::new(source)],
         ..Spec::default()
     }
+}
+
+/// Dieselbe Auswahl mit mehreren Quellen.
+fn specs(kind: &str, sources: &[&str]) -> Spec {
+    Spec {
+        kind: kind.to_string(),
+        title: format!("{kind} aus {}", sources.join(" und ")),
+        sources: sources.iter().map(|s| SourcePart::new(*s)).collect(),
+        ..Spec::default()
+    }
+}
+
+/// Pfeile entlang `link` für die Quelle an Stelle `i`, optional zu `to`.
+fn link(mut spec: Spec, i: usize, role: &str, to: Option<&str>) -> Spec {
+    spec.sources[i].link = Some(role.to_string());
+    spec.sources[i].link_to = to.map(str::to_string);
+    spec
 }
 
 fn with(mut spec: Spec, set: impl FnOnce(&mut Spec)) -> Spec {
@@ -88,8 +105,7 @@ fn jede_kombination_zeichnet_und_bleibt_wie_festgehalten() {
         ("flowchart-knoten", spec("flowchart", "Projekte")),
         (
             "flowchart-pfeile-farbe",
-            with(spec("flowchart", "Projekte"), |s| {
-                s.link = some("next");
+            with(link(spec("flowchart", "Projekte"), 0, "next", None), |s| {
                 s.color = some("status");
             }),
         ),
@@ -97,9 +113,8 @@ fn jede_kombination_zeichnet_und_bleibt_wie_festgehalten() {
         // Knoten im Rahmen eine andere Kennung bekam.
         (
             "flowchart-rahmen-pfeile-farbe",
-            with(spec("flowchart", "Projekte"), |s| {
+            with(link(spec("flowchart", "Projekte"), 0, "next", None), |s| {
                 s.group = some("status");
-                s.link = some("next");
                 s.color = some("tag");
             }),
         ),
@@ -129,6 +144,41 @@ fn jede_kombination_zeichnet_und_bleibt_wie_festgehalten() {
         (
             "mindmap-zweige",
             with(spec("mindmap", "Projekte"), |s| s.group = some("parent")),
+        ),
+        // Mehrere Quellen: Pfeile von Aufgaben zu ihrem Projekt, ein Rahmen
+        // und eine Farbe je Quelle.
+        (
+            "flowchart-zwei-quellen",
+            with(
+                link(
+                    link(
+                        specs("flowchart", &["Aufgaben", "Projekte"]),
+                        0,
+                        "projekt",
+                        Some("Projekte"),
+                    ),
+                    1,
+                    "next",
+                    None,
+                ),
+                |s| {
+                    s.by_source = true;
+                    s.color_by_source = true;
+                },
+            ),
+        ),
+        ("pie-je-quelle", specs("pie", &["Aufgaben", "Projekte"])),
+        (
+            "gantt-zwei-quellen",
+            with(specs("gantt", &["Projekte", "Aufgaben"]), |s| {
+                s.date = some("date");
+            }),
+        ),
+        (
+            "mindmap-zwei-quellen",
+            with(specs("mindmap", &["Projekte", "Aufgaben"]), |s| {
+                s.group = some("status");
+            }),
         ),
     ];
 
@@ -160,10 +210,12 @@ fn jede_kombination_zeichnet_und_bleibt_wie_festgehalten() {
 #[test]
 fn rahmen_und_pfeile_treffen_dieselben_knoten() {
     let app = app();
-    let body = compose(&with(spec("flowchart", "Projekte"), |s| {
-        s.group = Some("status".into());
-        s.link = Some("next".into());
-    }))
+    let body = compose(&with(
+        link(spec("flowchart", "Projekte"), 0, "next", None),
+        |s| {
+            s.group = Some("status".into());
+        },
+    ))
     .unwrap();
     let mermaid = template::render_body(app.conn(), &body, &HashSet::new())
         .unwrap()
@@ -196,7 +248,10 @@ fn ein_quellname_mit_leerzeichen_wird_vorher_abgelehnt() {
 
     assert_eq!(err.code(), ErrorCode::ValidationFailed);
     let fields = err.fields().expect("kein Eingabefehler");
-    let source = fields.iter().find(|f| f.field == "source").expect("source");
+    let source = fields
+        .iter()
+        .find(|f| f.field == "sources")
+        .expect("sources");
     assert!(source.message.contains("umbenennen"), "{}", source.message);
     assert!(!template::usable_source_name("vizu Roadmap"));
     assert!(template::usable_source_name("vizu_Roadmap"));
@@ -222,9 +277,12 @@ fn was_eine_art_braucht_fehlt_am_feld() {
 
 #[test]
 fn eine_rolle_ist_ein_bezeichner_und_keine_syntax() {
-    let err = compose(&with(spec("flowchart", "Projekte"), |s| {
-        s.link = Some("next}}{{evil".into());
-    }))
+    let err = compose(&link(
+        spec("flowchart", "Projekte"),
+        0,
+        "next}}{{evil",
+        None,
+    ))
     .unwrap_err();
     assert!(err.fields().unwrap().iter().any(|f| f.field == "link"));
 }
@@ -271,4 +329,99 @@ fn ein_gantt_zeigt_jede_seite_einmal() {
         .mermaid;
 
     assert_eq!(mermaid.matches("Q3 Review & Plan").count(), 1, "{mermaid}");
+}
+
+#[test]
+fn pfeile_zwischen_quellen_treffen_die_kaesten_beider_quellen() {
+    let app = app();
+    let body = compose(&link(
+        specs("flowchart", &["Aufgaben", "Projekte"]),
+        0,
+        "projekt",
+        Some("Projekte"),
+    ))
+    .unwrap();
+    let mermaid = template::render_body(app.conn(), &body, &HashSet::new())
+        .unwrap()
+        .mermaid;
+
+    // Jeder Kasten steht einmal als eigene Zeile; jeder Pfeil muss von einem
+    // Aufgaben-Kasten zu einem Projekte-Kasten gehen, nicht zu einem losen.
+    let boxes: HashSet<&str> = mermaid
+        .lines()
+        .filter(|l| !l.contains("-->"))
+        .filter_map(|l| l.trim().split('[').next())
+        .filter(|id| id.starts_with('n'))
+        .collect();
+    let edges: Vec<(&str, &str)> = mermaid
+        .lines()
+        .filter_map(|l| l.split_once(" --> "))
+        .filter_map(|(a, b)| Some((a.trim().split('[').next()?, b.split('[').next()?)))
+        .collect();
+    assert!(!edges.is_empty(), "keine Pfeile:\n{mermaid}");
+    for (from, to) in edges {
+        assert!(boxes.contains(from), "{from} ist kein Kasten:\n{mermaid}");
+        assert!(boxes.contains(to), "{to} ist kein Kasten:\n{mermaid}");
+    }
+}
+
+#[test]
+fn derselbe_wert_hat_in_jeder_quelle_dieselbe_farbe() {
+    let app = app();
+    // „status" gibt es nur in Projekte; mit zwei Quellen und Farbe je Quelle
+    // bekommt jede Quelle genau eine Farbe, einmal definiert.
+    let body = compose(&with(specs("flowchart", &["Aufgaben", "Projekte"]), |s| {
+        s.color_by_source = true;
+    }))
+    .unwrap();
+    let mermaid = template::render_body(app.conn(), &body, &HashSet::new())
+        .unwrap()
+        .mermaid;
+
+    let defs: Vec<&str> = mermaid
+        .lines()
+        .filter(|l| l.trim().starts_with("classDef v-"))
+        .collect();
+    assert_eq!(defs.len(), 2, "{mermaid}");
+    let farbe = |line: &str| line.trim().split(' ').nth(2).map(str::to_string);
+    assert_ne!(farbe(defs[0]), farbe(defs[1]), "zwei Quellen, zwei Farben");
+}
+
+#[test]
+fn die_auswahl_steht_im_kopf_und_kommt_zurueck() {
+    let auswahl = with(link(spec("flowchart", "Projekte"), 0, "next", None), |s| {
+        s.group = Some("status".into());
+        s.color = Some("tag".into());
+    });
+    let body = compose(&auswahl).unwrap();
+
+    let state = assistant(&body).expect("keine Auswahl im Kopf");
+    assert_eq!(state.spec, auswahl);
+    assert!(!state.edited, "frisch gebaut gilt nicht als geändert");
+
+    // Der Kopf bleibt eine gültige Vorlage — `assistant` stört ihn nicht.
+    let meta = template::parse_meta(&body).unwrap();
+    assert_eq!(meta.sources, vec!["Projekte"]);
+}
+
+#[test]
+fn eine_von_hand_geaenderte_vorlage_wird_erkannt() {
+    let body = compose(&spec("mindmap", "Projekte")).unwrap();
+    let geaendert = format!("{body}    Nachtrag\n");
+
+    assert!(assistant(&geaendert).unwrap().edited);
+    // Eine Vorlage ohne Assistent hat keine Auswahl.
+    assert!(assistant("---\ntitle: \"x\"\nsources:\n  - Projekte\n---\nflowchart TD\n").is_none());
+}
+
+#[test]
+fn pfeile_zu_einer_nicht_gewaehlten_quelle_werden_abgelehnt() {
+    let err = compose(&link(
+        spec("flowchart", "Aufgaben"),
+        0,
+        "projekt",
+        Some("Projekte"),
+    ))
+    .unwrap_err();
+    assert!(err.fields().unwrap().iter().any(|f| f.field == "link"));
 }

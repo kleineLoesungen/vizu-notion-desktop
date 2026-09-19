@@ -151,27 +151,38 @@ Relation. In `nodes` stehen sie weiterhin.
 
 ### Eine Vorlage bauen lassen
 
-Was der Assistent im Fenster tut, geht auch hier: Art, Quelle und je Art ein
-paar Rollen, heraus kommt eine gewöhnliche Vorlage auf stdout.
+Was der Assistent im Fenster tut, geht auch hier: Art, eine oder mehrere
+Quellen und je Art ein paar Rollen, heraus kommt eine gewöhnliche Vorlage auf
+stdout.
 
 ```bash
 vizu-notion template new flowchart Projekte --link next --group status --color tag
+vizu-notion template new flowchart Aufgaben Projekte --link Aufgaben.projekt=Projekte \
+    --link Projekte.next --by-source --color-by-source
 vizu-notion template new pie Aufgaben --group erledigt --sum punkte > punkte.mmd
-vizu-notion template new gantt Projekte --date date --group status
+vizu-notion template new gantt Projekte Aufgaben --date date
 vizu-notion template new mindmap Projekte --group parent
 vizu-notion template import punkte.mmd
 ```
 
 | Art | Optionen |
 |---|---|
-| `flowchart` | `--link` Pfeile entlang einer Relation · `--group` Rahmen je Wert · `--color` Farbe je Wert |
-| `pie` | `--group` ein Stück je Wert (**Pflicht**) · `--sum` Summe eines Zahlenfelds statt der Anzahl |
-| `gantt` | `--date` das Datum (**Pflicht**) · `--group` Abschnitt je Wert |
-| `mindmap` | `--group` Zweig je Wert |
+| `flowchart` | `--link QUELLE.ROLLE[=ZIEL]` Pfeile, auch zu einer anderen Quelle · `--group` Rahmen je Wert · `--by-source` Rahmen je Quelle · `--color` Farbe je Wert · `--color-by-source` Farbe je Quelle |
+| `pie` | eine Quelle: `--group` ein Stück je Wert (**Pflicht**); mehrere: ein Stück je Quelle · `--sum` Summe statt Anzahl |
+| `gantt` | `--date` das Datum (**Pflicht**) · `--group` Abschnitt je Wert; mehrere Quellen: ein Abschnitt je Quelle |
+| `mindmap` | `--group` Zweig je Wert; mehrere Quellen: ein Zweig je Quelle |
 
-Gezählt wird je **Seite**, nicht je Zeile: Eine Seite mit drei Zielen steht
-im Kreisdiagramm einmal, nicht dreimal. Ein Quellname mit Leerzeichen taugt
-nicht für Vorlagen — der Befehl sagt das, statt eine kaputte Vorlage zu bauen.
+Bei einer einzigen Quelle genügt `--link next`.
+
+* **Gezählt wird je Seite**, nicht je Zeile: Eine Seite mit drei Zielen steht im
+  Kreisdiagramm einmal, nicht dreimal.
+* **Gleiche Werte, gleiche Farbe** — auch über Quellen hinweg. Die Farben
+  vergibt core einmal für das ganze Diagramm; eine eigene `classDef` in der
+  Vorlage hat Vorrang.
+* **Die Auswahl steht im Kopf** (`assistant: {…}`). Das Fenster öffnet sie über
+  „Im Assistenten ändern" wieder.
+* Ein Quellname mit Leerzeichen taugt nicht für Vorlagen — der Befehl sagt das,
+  statt eine kaputte Vorlage zu bauen.
 
 ## Ohne Vorlage: Fluss und Metro-Karte
 

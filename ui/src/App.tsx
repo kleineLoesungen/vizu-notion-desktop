@@ -69,6 +69,14 @@ function deleteMessage(what: { kind: keyof typeof DELETE_TITLE; name: string }):
 }
 
 /**
+ * Trägt der Kopf eine Auswahl des Assistenten? Nur, um den Knopf zu zeigen —
+ * lesen und prüfen tut core (`template::assistant`).
+ */
+function fromAssistant(body: string): boolean {
+  return /\nassistant:/.test(body);
+}
+
+/**
  * Ein Vorschlag für den Kurznamen aus dem Titel: „Projekte nach status" →
  * `projekte-nach-status`. Ob er taugt, prüft core beim Speichern.
  */
@@ -125,8 +133,17 @@ export function App() {
   /** Welche Ansicht gerade offen ist; `null`, sobald man etwas anderes wählt. */
   const [activeView, setActiveView] = useState<string | null>(null);
   const [saveViewOpen, setSaveViewOpen] = useState(false);
-  /** Der Assistent für eine neue Vorlage ist offen. */
-  const [wizardOpen, setWizardOpen] = useState(false);
+  /**
+   * Der Assistent ist offen. `initial` ist eine frühere Auswahl („Im
+   * Assistenten ändern"), `target` die Vorlage, die er neu baut — `null` für
+   * eine neue. `saved` ist deren gespeicherter Stand, damit der Editor danach
+   * weiß, ob es etwas zu speichern gibt.
+   */
+  const [wizard, setWizard] = useState<{
+    initial: Spec | null;
+    edited: boolean;
+    target: { id: string | null; slug: string; saved: string } | null;
+  } | null>(null);
   const [selection, setSelection] = useState<Selection>({ kind: "none" });
 
   const [diagram, setDiagram] = useState<Diagram | null>(null);
@@ -302,7 +319,7 @@ export function App() {
   /** Ein Eintrag aus der Diagrammliste — Vorlage, Fluss oder Metro. */
   function selectDiagram(choice: DiagramChoice) {
     setActiveView(null);
-    setWizardOpen(false);
+    setWizard(null);
     setSelection(choice);
     setDraft(null);
     setDiagram(null);
@@ -551,7 +568,32 @@ export function App() {
     setFieldError(null);
     setSelection({ kind: "none" });
     setDraft(null);
-    setWizardOpen(true);
+    setWizard({ initial: null, edited: false, target: null });
+  }
+
+  /**
+   * „Im Assistenten ändern": die Auswahl aus dem Kopf der Vorlage wieder
+   * öffnen. Ob sie seither von Hand geändert wurde, sagt core.
+   */
+  async function reopenAssistant(
+    body: string,
+    target: { id: string | null; slug: string; saved: string },
+  ) {
+    setFieldError(null);
+    try {
+      const state = await api.templates.assistant(body);
+      if (!state) {
+        setBanner(
+          "Diese Vorlage stammt nicht aus dem Assistenten — sie lässt sich nur im Editor ändern.",
+        );
+        return;
+      }
+      setSelection({ kind: "none" });
+      setDraft(null);
+      setWizard({ initial: state.spec, edited: state.edited, target });
+    } catch (raw) {
+      fail(raw);
+    }
   }
 
   /** Was der Assistent gewählt hat, baut core zu einer Vorlage. */
@@ -559,8 +601,16 @@ export function App() {
     setFieldError(null);
     try {
       const body = await api.templates.compose(spec);
-      setWizardOpen(false);
-      setDraft({ id: null, slug: slugFrom(spec.title), body, saved: "" });
+      const target = wizard?.target;
+      setWizard(null);
+      // Das Ergebnis geht ungespeichert in den Editor — eine vorhandene
+      // Vorlage behält ihre Kennung und ihren Kurznamen.
+      setDraft({
+        id: target?.id ?? null,
+        slug: target?.slug ?? slugFrom(spec.title),
+        body,
+        saved: target?.saved ?? "",
+      });
     } catch (raw) {
       fail(raw);
     }
@@ -568,7 +618,7 @@ export function App() {
 
   async function editTemplate(id: string | null) {
     setFieldError(null);
-    setWizardOpen(false);
+    setWizard(null);
     setSelection({ kind: "none" });
     if (id === null) {
       // Mit der ersten eingerichteten Quelle statt des Platzhalters: Sonst
@@ -761,25 +811,39 @@ export function App() {
           />
         )}
 
-        {wizardOpen && !draft && (
+        {wizard && !draft && (
           <TemplateWizard
+            // Neu aufsetzen, wenn eine andere Auswahl geöffnet wird.
+            key={wizard.target?.id ?? "neu"}
             sources={sources.map((s) => ({
               name: s.source.name,
               roles: s.source.mappings.map((m) => m.role),
               ready: s.template_ready,
             }))}
+            initial={wizard.initial}
+            edited={wizard.edited}
             fieldMessage={fieldMessage}
             onCompose={(spec) => void composeTemplate(spec)}
-            onBlank={() => void editTemplate(null)}
+            {...(wizard.initial ? {} : { onBlank: () => void editTemplate(null) })}
             onCancel={() => {
               setFieldError(null);
-              setWizardOpen(false);
+              setWizard(null);
             }}
           />
         )}
 
         {draft && (
           <TemplateEditor
+            {...(fromAssistant(draft.body)
+              ? {
+                  onAssistant: () =>
+                    void reopenAssistant(draft.body, {
+                      id: draft.id,
+                      slug: draft.slug,
+                      saved: draft.saved,
+                    }),
+                }
+              : {})}
             slug={draft.slug}
             body={draft.body}
             preview={diagram}
@@ -835,6 +899,21 @@ export function App() {
                 >
                   Ansicht speichern
                 </button>
+                {fromAssistant(selectedTemplate.body) && (
+                  <button
+                    type="button"
+                    className="ghost"
+                    onClick={() =>
+                      void reopenAssistant(selectedTemplate.body, {
+                        id: selectedTemplate.id,
+                        slug: selectedTemplate.slug,
+                        saved: selectedTemplate.body + selectedTemplate.slug,
+                      })
+                    }
+                  >
+                    Im Assistenten ändern
+                  </button>
+                )}
                 <button
                   type="button"
                   className="ghost"
@@ -933,7 +1012,7 @@ export function App() {
 
         {selection.kind === "none" &&
           !draft &&
-          !wizardOpen &&
+          !wizard &&
           (ready ? (
             <EmptyState />
           ) : (

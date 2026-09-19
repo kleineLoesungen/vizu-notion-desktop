@@ -70,6 +70,7 @@ pub fn configure<R: Runtime>(builder: tauri::Builder<R>, state: AppState) -> tau
             commands::template_list,
             commands::template_insert,
             commands::template_compose,
+            commands::template_assistant,
             commands::view_list,
             commands::view_save,
             commands::view_delete,

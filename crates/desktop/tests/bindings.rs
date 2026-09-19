@@ -23,7 +23,8 @@ use vizu_notion_core::rows::NodeInfo;
 use vizu_notion_core::secret::{TokenOrigin, TokenStatus};
 use vizu_notion_core::source::{ColumnMapping, Source, SourceInput};
 use vizu_notion_core::template::{
-    Block, Diagram, Example, Hint, InsertInput, Inserted, Spec, Template, TemplateInput,
+    AssistantState, Block, Diagram, Example, Hint, InsertInput, Inserted, SourcePart, Spec,
+    Template, TemplateInput,
 };
 use vizu_notion_core::view::{View, ViewInput};
 use vizu_notion_core::{Config, ErrorCode, FieldError, Theme};
@@ -55,6 +56,7 @@ fn generate() -> String {
         decl::<FlowEdge>(&cfg),
         decl::<FlowGraph>(&cfg),
         decl::<FlowNode>(&cfg),
+        decl::<AssistantState>(&cfg),
         decl::<Block>(&cfg),
         decl::<Diagram>(&cfg),
         decl::<Example>(&cfg),
@@ -74,6 +76,7 @@ fn generate() -> String {
         decl::<Source>(&cfg),
         decl::<SourceInput>(&cfg),
         decl::<SourceOverview>(&cfg),
+        decl::<SourcePart>(&cfg),
         decl::<Spec>(&cfg),
         decl::<StationKind>(&cfg),
         decl::<Template>(&cfg),

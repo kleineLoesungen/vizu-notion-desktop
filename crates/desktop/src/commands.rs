@@ -28,7 +28,8 @@ use vizu_notion_core::notion::Property;
 use vizu_notion_core::secret::{self, TokenStatus};
 use vizu_notion_core::source::{self, Source, SourceInput};
 use vizu_notion_core::template::{
-    self, Block, Diagram, Example, Hint, InsertInput, Inserted, Spec, Template, TemplateInput,
+    self, AssistantState, Block, Diagram, Example, Hint, InsertInput, Inserted, Spec, Template,
+    TemplateInput,
 };
 use vizu_notion_core::view::{self, View, ViewInput};
 use vizu_notion_core::{Config, Paths, notion};
@@ -198,6 +199,14 @@ pub async fn template_delete(state: State<'_, AppState>, id: Uuid) -> ApiResult<
 #[tauri::command]
 pub async fn template_compose(spec: Spec) -> ApiResult<String> {
     Ok(template::compose(&spec)?)
+}
+
+/// Die Auswahl, aus der der Assistent eine Vorlage gebaut hat — `null`, wenn
+/// sie nicht aus dem Assistenten stammt. `edited` sagt, ob sie seither von
+/// Hand geändert wurde.
+#[tauri::command]
+pub async fn template_assistant(body: String) -> ApiResult<Option<AssistantState>> {
+    Ok(template::assistant(&body))
 }
 
 /// Setzt einen Baustein so in eine Vorlage, dass ihr Aufbau hält: Kopf und

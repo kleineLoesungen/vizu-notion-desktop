@@ -93,6 +93,16 @@ id: string, title: string,
 subtitle: string, x: number, y: number, };
 
 /**
+ * Die Auswahl einer Vorlage, falls sie aus dem Assistenten stammt.
+ */
+export type AssistantState = { spec: Spec, 
+/**
+ * Wurde die Vorlage seither von Hand geändert? Dann ersetzt ein neuer Lauf
+ * des Assistenten diese Änderungen.
+ */
+edited: boolean, };
+
+/**
  * Ein Baustein: ein Stück Vorlage für ein wiederkehrendes Muster, das man an
  * der Schreibmarke einsetzt statt es abzutippen.
  *
@@ -316,6 +326,19 @@ views: Array<ViewKind>,
 template_ready: boolean, };
 
 /**
+ * Eine Quelle im Assistenten.
+ */
+export type SourcePart = { name: string, 
+/**
+ * Flowchart: Pfeile entlang dieser Rolle …
+ */
+link?: string | null, 
+/**
+ * … zu den Seiten dieser Quelle. Leer: dieselbe Quelle.
+ */
+link_to?: string | null, };
+
+/**
  * Was im Assistenten gewählt wurde. Welche Felder zählen, hängt an `kind`;
  * die übrigen bleiben leer.
  */
@@ -323,28 +346,37 @@ export type Spec = {
 /**
  * `flowchart`, `pie`, `gantt` oder `mindmap`.
  */
-kind: string, title: string, source: string, 
+kind: string, title: string, 
 /**
- * Flowchart: Pfeile entlang dieser Rolle — einer Relation wie `next`.
+ * Eine oder mehrere Quellen, in der gewählten Reihenfolge.
  */
-link: string | null, 
+sources: Array<SourcePart>, 
 /**
- * Flowchart: ein Rahmen je Wert. Pie: ein Stück je Wert. Gantt: ein
- * Abschnitt je Wert. Mindmap: ein Zweig je Wert.
+ * Rahmen (Flowchart), Stück (Pie), Abschnitt (Gantt), Zweig (Mindmap)
+ * je Wert dieser Rolle.
  */
-group: string | null, 
+group?: string | null, 
 /**
- * Pie: die Summe dieses Zahlenfelds statt der Anzahl der Seiten.
+ * Flowchart: ein Rahmen je Quelle. Mit `group` zusammen: je Quelle, darin
+ * je Wert.
  */
-sum: string | null, 
+by_source?: boolean, 
 /**
- * Flowchart: eine Farbe je Wert dieser Rolle, aus der Palette.
+ * Flowchart: eine Farbe je Wert dieser Rolle.
  */
-color: string | null, 
+color?: string | null, 
+/**
+ * Flowchart: eine Farbe je Quelle.
+ */
+color_by_source?: boolean, 
 /**
  * Gantt: das Datum — Anfang, bei einem Zeitraum auch das Ende.
  */
-date: string | null, };
+date?: string | null, 
+/**
+ * Pie: die Summe dieses Zahlenfelds statt der Anzahl der Seiten.
+ */
+sum?: string | null, };
 
 export type StationKind = "start" | "stop" | "terminus" | "single";
 

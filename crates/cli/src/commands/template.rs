@@ -12,23 +12,47 @@ pub fn run(cmd: TemplateCommand, app: &App, out: &Out) -> Result<()> {
     match cmd {
         TemplateCommand::New {
             kind,
-            source,
+            sources,
             title,
-            link,
+            links,
             group,
+            by_source,
             sum,
             color,
+            color_by_source,
             date,
         } => {
+            let mut parts: Vec<template::SourcePart> =
+                sources.iter().map(template::SourcePart::new).collect();
+            for link in &links {
+                // `Quelle.Rolle=Ziel`, `Quelle.Rolle` — bei einer Quelle auch nur `Rolle`.
+                let (from, target) = match link.split_once('=') {
+                    Some((from, target)) => (from, Some(target.to_string())),
+                    None => (link.as_str(), None),
+                };
+                let (source, role) = match from.split_once('.') {
+                    Some((source, role)) => (source.to_string(), role.to_string()),
+                    None if sources.len() == 1 => (sources[0].clone(), from.to_string()),
+                    None => bail!(
+                        "--link {link}: bei mehreren Quellen als QUELLE.ROLLE angeben, etwa Aufgaben.projekt"
+                    ),
+                };
+                let Some(part) = parts.iter_mut().find(|p| p.name == source) else {
+                    bail!("--link {link}: „{source}\u{201c} ist keine der genannten Quellen");
+                };
+                part.link = Some(role);
+                part.link_to = target;
+            }
             let spec = template::Spec {
-                title: title.unwrap_or_else(|| format!("{kind} aus {source}")),
+                title: title.unwrap_or_else(|| format!("{kind} aus {}", sources.join(" und "))),
                 kind,
-                source,
-                link,
+                sources: parts,
                 group,
-                sum,
+                by_source,
                 color,
+                color_by_source,
                 date,
+                sum,
             };
             let body = template::compose(&spec)?;
             if out.json {

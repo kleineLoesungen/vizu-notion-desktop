@@ -301,27 +301,33 @@ pub enum TemplateCommand {
 
     /// Eine Vorlage aus einer Auswahl bauen und ausgeben — wie der Assistent.
     ///
-    /// Beispiel: `vizu-notion template new pie Projekte --group status > status.mmd`
+    /// Beispiel: `vizu-notion template new pie Projekte --group status > status.mmd`,
+    /// `vizu-notion template new flowchart Aufgaben Projekte --link Aufgaben.projekt=Projekte`
     New {
         /// flowchart, pie, gantt oder mindmap.
         #[arg(value_name = "ART")]
         kind: String,
 
-        /// Die Quelle, aus der gezeichnet wird.
-        #[arg(value_name = "QUELLE")]
-        source: String,
+        /// Eine oder mehrere Quellen.
+        #[arg(value_name = "QUELLE", required = true)]
+        sources: Vec<String>,
 
-        /// Titel des Diagramms (sonst „<Art> aus <Quelle>").
+        /// Titel des Diagramms (sonst „<Art> aus <Quellen>").
         #[arg(long)]
         title: Option<String>,
 
-        /// Flowchart: Pfeile entlang dieser Rolle.
-        #[arg(long, value_name = "ROLLE")]
-        link: Option<String>,
+        /// Flowchart: Pfeile — `QUELLE.ROLLE`, zu einer anderen Quelle
+        /// `QUELLE.ROLLE=ZIEL`. Bei einer Quelle genügt `ROLLE`. Mehrfach.
+        #[arg(long = "link", value_name = "QUELLE.ROLLE[=ZIEL]")]
+        links: Vec<String>,
 
         /// Rahmen, Stück, Abschnitt oder Zweig je Wert dieser Rolle.
         #[arg(long, value_name = "ROLLE")]
         group: Option<String>,
+
+        /// Flowchart: ein Rahmen je Quelle.
+        #[arg(long)]
+        by_source: bool,
 
         /// Pie: Summe dieses Zahlenfelds statt der Anzahl.
         #[arg(long, value_name = "ROLLE")]
@@ -330,6 +336,10 @@ pub enum TemplateCommand {
         /// Flowchart: eine Farbe je Wert dieser Rolle.
         #[arg(long, value_name = "ROLLE")]
         color: Option<String>,
+
+        /// Flowchart: eine Farbe je Quelle.
+        #[arg(long)]
+        color_by_source: bool,
 
         /// Gantt: das Datum.
         #[arg(long, value_name = "ROLLE")]
