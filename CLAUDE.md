@@ -28,6 +28,8 @@ ui/src/components/ Zeichnen nur. Props rein, Rückrufe raus.
 ui/src/lib/        Reine Hilfsfunktionen: Markdown, Mermaid, Datum, Farbschema.
 ui/src/bindings.ts ERZEUGT aus Rust-Typen. Nie von Hand ändern → `just bindings`.
 ui/src/theme.css   Die EINZIGE Datei mit Farben.
+site/              Projektwebseite (vizu.se-wi.com). Eigenständig, nicht Teil der App;
+                   .github/workflows/pages.yml veröffentlicht nur diesen Ordner.
 ```
 
 Es gibt **kein `src-tauri/`**. Die Tauri-Schale liegt in `crates/desktop`,

@@ -1,0 +1,44 @@
+# Die Projektseite unter https://vizu.se-wi.com.
+#
+# Veröffentlicht wird nur der Ordner site/ — nicht docs/. Ohne diesen Workflow
+# stellt GitHub Pages den ganzen Ordner docs/ ins Netz, samt der
+# Entwicklerdokumente.
+#
+# Einmalig nötig: Settings → Pages → Source auf „GitHub Actions“ stellen. Die
+# eigene Domain steht ebenfalls dort; eine CNAME-Datei braucht es dann nicht.
+
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Nie zwei Veröffentlichungen gleichzeitig; eine laufende wird zu Ende gebracht.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

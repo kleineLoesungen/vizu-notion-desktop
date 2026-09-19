@@ -155,7 +155,7 @@ sind.
 Dass der Workflow nur einen Entwurf anlegt, ist Absicht: Was unsigniert ist,
 soll ein Mensch bewusst freigeben.
 
-Die Webseite (`docs/site/index.html`) muss dafür nicht angepasst werden: Ihre
+Die Webseite (`site/index.html`) muss dafür nicht angepasst werden: Ihre
 Download-Knöpfe fragen beim Laden das neueste Release ab.
 
 Gebaut wird auf **Ubuntu 22.04**, nicht auf der neuesten Fassung: Ein Binary
